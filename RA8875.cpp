@@ -455,22 +455,6 @@ void RA8875::setCursor(uint16_t x, uint16_t y) {
 	writeReg(RA8875_F_CURYH,y >> 8);
 }
 
-void RA8875::deb() {
-	uint8_t t1,t2;
-	uint16_t x,y;
-	t1 = readReg(RA8875_F_CURXL);
-	t2 = readReg(RA8875_F_CURXH);
-	x = (t2 << 8) | (t1 & 0xFF);
-	t1 = readReg(RA8875_F_CURYL);
-	t2 = readReg(RA8875_F_CURYH);
-	y = (t2 << 8) | (t1 & 0xFF);
-	//println();
-	print("x:");
-	print(x,DEC);
-	print(" - y:");
-	print(y,DEC);
-	print(" ... ");
-}
 
 void RA8875::updateFontLoc(void) {
 	uint8_t t1,t2;

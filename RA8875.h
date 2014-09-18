@@ -252,8 +252,6 @@ class RA8875 : public Print {
 	void    touchEnable(boolean on);
 	boolean touched(void);
 	boolean touchRead(uint16_t *x, uint16_t *y);
-	
-	void 	deb();
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
