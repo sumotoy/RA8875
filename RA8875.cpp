@@ -1343,7 +1343,10 @@ boolean RA8875::touched(void) {
 boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
 	uint16_t tx, ty;
 	uint8_t temp;
-  
+	uint16_t minX = 0;
+	uint16_t minY = 0;
+	uint16_t maxX = 1024;
+	uint16_t maxY = 1024;
 	tx = readReg(RA8875_TPXH);
 	ty = readReg(RA8875_TPYH);
 	temp = readReg(RA8875_TPXYL);
@@ -1351,9 +1354,44 @@ boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
 	ty <<= 2;
 	tx |= temp & 0x03;        // get the bottom x bits
 	ty |= (temp >> 2) & 0x03; // get the bottom y bits
-
-	*x = tx;
-	*y = ty;
+	#if defined (INVERTETOUCH_X)
+	tx = 1024 - tx;
+	#endif
+	#if defined (INVERTETOUCH_Y)
+	ty = 1024 - ty;
+	#endif
+	//calibrate???
+	  #if (TOUCSRCAL_XLOW != 0)
+		minX = TOUCSRCAL_XLOW;
+		if (tx < TOUCSRCAL_XLOW) tx = TOUCSRCAL_XLOW;
+	  #endif
+	  #if (TOUCSRCAL_YLOW != 0)
+		minY = TOUCSRCAL_YLOW;
+		if (ty < TOUCSRCAL_YLOW) ty = TOUCSRCAL_YLOW;
+	  #endif
+	  #if (TOUCSRCAL_XHIGH != 0)
+		maxX = TOUCSRCAL_XHIGH;
+		if (tx > TOUCSRCAL_XHIGH) tx = TOUCSRCAL_XHIGH;
+	  #endif
+	  #if (TOUCSRCAL_XHIGH != 0)
+		maxY = TOUCSRCAL_YHIGH;
+		if (ty > TOUCSRCAL_YHIGH) ty = TOUCSRCAL_YHIGH;
+	  #endif
+	#if defined (TOUCHINPIXELS)
+		*x = map(tx,minX,maxX,0,_width-1);
+		*y = map(ty,minY,maxY,0,_height-1);
+	#else
+		#if (TOUCSRCAL_XLOW != 0 || (TOUCSRCAL_XHIGH != 0))
+		*x = map(tx,minX,maxX,0,1024);
+		#else
+		*x = tx;
+		#endif
+		#if (TOUCSRCAL_YLOW != 0 || (TOUCSRCAL_YHIGH != 0))
+		*y = map(ty,minY,maxY,0,1024);
+		#else
+		*y = ty;
+		#endif
+	#endif
 
 	/* Clear TP INT Status */
 	writeReg(RA8875_INTC2, RA8875_INTCx_TP);

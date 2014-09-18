@@ -72,7 +72,30 @@ INT:		pin 3  (selectable)
 RESET:		pin 9  (selectable and optional)
 In some modules you can leave unconnected but check if it's needed
 
-
+-------------SUPPORTED EXTERNAL FONT CHIP
+East Rising
+	ER3300-1
+	ER3302-1
+	ER3303-1 <--- 8x16, 16,24 Arial
+	ER3304-1
+	ER3301-1
+	ER3303-1
+Genicomp
+	GT21L16T1W
+	GT23L16U2W
+	GT23L24T3Y
+	GT23L24M1Z
+	GT23L32S4W
+Note: East Rising and Genicomp looks the same chip! Just named different
+-------------SUPPORTED EXTERNAL FONT ENCODING
+	GB2312
+	GB12345
+	BIG5
+	UNICODE
+	ASCII
+	UNIJIS
+	JIS0208
+	LATIN/GREEK/ARABIC
 */
 
 #ifndef _RA8875MC_H_
@@ -87,48 +110,52 @@ In some modules you can leave unconnected but check if it's needed
 #endif
 
 #include "_utility/RA8875Registers.h"
+/* ---------------------------- USER SETTINGS ---------------------*/
 
+/* SPI TRANSACTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++
+If you have an SPI library that support SPI TRANSACTIONS
+this library will use it, however if you vant to use the old one for compatibility
+just comment the following line */
 #define USESPITRANSACTIONS//uncomment will force to use the standard SPI library
+/* TOUCH SCREEN AXIS INVERSION +++++++++++++++++++++++++++++++++++++++
+Some chinese product have both axis inverted (EastRising),
+you can uncomment INVERTETOUCH_Y or INVERTETOUCH_X or both
+if your display fall in that case! */
+#define INVERTETOUCH_Y
+#define INVERTETOUCH_X
+/* TOUCH SCREEN IN PIXELS ++++++++++++++++++++++++++++++++++++++++++++
+Normally Touch Screen return ADC values (0...1024) but decomment
+the following it will return values in pixels */
+#define TOUCHINPIXELS
+/* ------------- TOUCH SCREEN CALIBRATION (how to) -----------
+Touch Screen are not all the same and needs a calibration, you will see
+yourself by load touchPaint.ino example, try to paint all over the screen!
+If you have space on one or more side you prolly need to calibrate values  
+    ---- perform calibration ----
+To perform the touch screen calibration, load libTouchSCalibration.ino and open serial terminal:
+1) the lowest value of x by touch the top/left angle of your tft, put value in TOUCSRCAL_XLOW
+2) you can get the lowest value of y in the same time, put value in TOUCSRCAL_YLOW
+3) the highest value of x by touching the lower/bottom corner of your tft, put the value in TOUCSRCAL_XHIGH
+4) in the same manner you get the max value of y, put that value in TOUCSRCAL_XHIGH
 
-
-
-/* EXTERNAL FONT CHIP (EastRising)
-	ER3300-1
-	ER3302-1
-	ER3303-1 <--- 8x16, 16,24 Arial
-	ER3304-1
-	ER3301-1
-	ER3303-1
-	
-	GT21L16T1W
-	GT23L16U2W
-	GT23L24T3Y
-	GT23L24M1Z
-	GT23L32S4W
- EXTERNAL ROM CODING
-	GB2312
-	GB12345
-	BIG5
-	UNICODE
-	ASCII
-	UNIJIS
-	JIS0208
-	LATIN
 */
-
-/*
-Max Speed it's used only in SPI Transaction mode,
-it ensure the max and correct speed for accessing
-RA8875 in Read/Write...
-Datasceet it's clear:
+#define TOUCSRCAL_XLOW	62//44
+#define TOUCSRCAL_YLOW	153//147
+#define TOUCSRCAL_XHIGH	924//945
+#define TOUCSRCAL_YHIGH	917//934
+/* Max Speed it's used only in SPI Transaction mode,
+it ensure the max and correct speed for accessing RA8875 in Read/Write...
+Datasheet it's clear:
 
 System clock/3(only write cycle)
 System clock/6(with read cycle)
 
 My TFT uses a 20Mhz xtal so...
-
 Write:	6.67Mhz
 Read: 	3.34Mhz
+
+MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
+Not all MCU are capable to work at those speeds. Those parameters should work fine.
 */
 #if defined(__MK20DX128__) || defined(__MK20DX256__)
 	#define MAXSPISPEED 			6600000
@@ -138,11 +165,8 @@ Read: 	3.34Mhz
 	#define MAXSPISPEED 			4000000
 #endif
 
-/*
-MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
-Not all MCU are capable to work at this speed.
-*/
 
+/* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
 // Colors (RGB565)
 #define	RA8875_BLACK            0x0000
 #define	RA8875_BLUE             0x001F
@@ -186,7 +210,7 @@ class RA8875 : public Print {
 	RA8875(uint8_t cs, uint8_t rst);
 	RA8875(uint8_t cs);
 //------------- Setup -------------------------
-	boolean begin(enum RA8875sizes s);
+	boolean 	begin(enum RA8875sizes s);
 //------------- Hardware related -------------------------
 	bool		useExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void    	softReset(void);
@@ -196,62 +220,64 @@ class RA8875 : public Print {
 	void 		changeMode(enum RA8875modes m);//GRAPHIC,TEXT
 	uint8_t 	readStatus(void);
 //--------------area & color -------------------------
-	void	setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);
-	uint16_t width(void);
-	uint16_t height(void);
-	void	setForegroundColor(uint16_t color);
-	void	setForegroundColor(uint8_t R,uint8_t G,uint8_t B);
-	void	setBackgroundColor(uint16_t color);
-	void	setBackgroundColor(uint8_t R,uint8_t G,uint8_t B);
-	void 	setTrasparentColor(uint16_t color);
-	void 	setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);
+	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);
+	uint16_t 	width(void);
+	uint16_t 	height(void);
+	void		setForegroundColor(uint16_t color);
+	void		setForegroundColor(uint8_t R,uint8_t G,uint8_t B);
+	void		setBackgroundColor(uint16_t color);
+	void		setBackgroundColor(uint8_t R,uint8_t G,uint8_t B);
+	void 		setTrasparentColor(uint16_t color);
+	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);
 //--------------Text functions ------------------------- 
-	void	showCursor(boolean cur);
-	void 	cursorBlink(uint8_t rate);
-	void 	cursorNormal(void);
-	void    setCursor(uint16_t x, uint16_t y);
-	void    setTextColor(uint16_t fColor, uint16_t bColor);
-	void 	setTextColor(uint16_t fColor);//transparent background
-	void    setFontScale(uint8_t scale);
-	void    setFontSize(enum RA8875tsize ts,boolean halfSize=false);
-	void 	setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
-	void 	setFont(enum RA8875fontSource s);
-	void 	setFontFullAlign(boolean align);
-	void 	setFontRotate(boolean rot);
-	void 	setFontInterline(uint8_t pix);
-	void 	updateFontLoc(void);
+	void		showCursor(boolean cur);//show text cursor
+	void 		cursorBlink(uint8_t rate);//0...255 0:faster
+	void 		cursorNormal(void);
+	void    	setCursor(uint16_t x, uint16_t y);
+	void    	setTextColor(uint16_t fColor, uint16_t bColor);
+	void 		setTextColor(uint16_t fColor);//transparent background
+	void    	setFontScale(uint8_t scale);//0..3
+	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
+	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
+	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
+	void 		setFontFullAlign(boolean align);
+	void 		setFontRotate(boolean rot);//true = 90 degrees
+	void 		setFontInterline(uint8_t pix);//0...63 pix
+	void 		updateFontLoc(void);//update the library _cursorX,_cursorY internally
+	//this is useful sometime because the chip track cursor internally only
 //--------------Graphic Funcions -------------------------
-	void    setXY(uint16_t x, uint16_t y);
-	void 	setGraphicCursor(uint8_t cur);
-	void 	showGraphicCursor(boolean cur);
+	void    	setXY(uint16_t x, uint16_t y);//graphic set location
+	void 		setGraphicCursor(uint8_t cur);//0...7 Select a custom graphic cursor (you should upload first)
+	void 		showGraphicCursor(boolean cur);//show graphic cursor
 	//--------------- DRAW -------------------------
-	void    pushPixels(uint32_t num, uint16_t p);
-	void    fillRect(void);
-	void    drawPixel(int16_t x, int16_t y, uint16_t color);
-	void    drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
-	void    drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
-	void    fillScreen(uint16_t color);
-	void    drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
-	void    drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-	void    fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-	void    drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-	void    fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-	void    drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-	void    fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-	void    drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color);
-	void    fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color);
-	void    drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
-	void    fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
-	void 	drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
-	void 	fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
+	void    	pushPixels(uint32_t num, uint16_t p);//push large number of pixels
+	void    	fillRect(void);
+	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
+	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
+	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+	void    	fillScreen(uint16_t color);
+	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+	void    	fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+	void    	drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+	void    	fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+	void    	drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+	void    	fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+	void    	drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color);
+	void    	fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color);
+	void    	drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
+	void    	fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
+	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
+	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 //--------------GPIO & PWM -------------------------
-	void    GPIOX(boolean on);
-	void    PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
+	void    	GPIOX(boolean on);
+	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
 
 //--------------Touch Screen -------------------------
-	void    touchEnable(boolean on);
-	boolean touched(void);
-	boolean touchRead(uint16_t *x, uint16_t *y);
+	void    	touchEnable(boolean on);
+	boolean 	touched(void);
+	boolean 	touchRead(uint16_t *x, uint16_t *y);
+	
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -296,9 +322,9 @@ using Print::write;
 	enum RA8875fontSource 	_fontSource;
 	
 	
-	volatile uint32_t	_spiSpeed;//for SPI transactions
-	uint16_t			_cursorX, _cursorY;
-    /* Low level access */
+	volatile uint32_t		_spiSpeed;//for SPI transactions
+	uint16_t				_cursorX, _cursorY;
+    // Low level access  commands ----------------------
 	void    	writeReg(uint8_t reg, uint8_t val);
 	uint8_t 	readReg(uint8_t reg);
 	void    	writeData(uint8_t d);
@@ -310,7 +336,7 @@ using Print::write;
 	void 		startSend();
 	void 		endSend();
 	
-	
+	// Register containers -----------------------------------------
 	uint8_t		_MWCR0Reg;//keep track of the register 		  [0x40]
 	uint8_t		_FNCR0Reg;//Font Control Register 0 		  [0x21]
 	uint8_t		_FNCR1Reg;//Font Control Register1 			  [0x22]
