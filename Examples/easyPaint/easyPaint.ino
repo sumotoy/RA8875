@@ -106,7 +106,8 @@ void loop()
           tft.fillCircle(tft.width()-10,10,5,RA8875_BLACK);
         }
       } else { //paint
-        if (choosenColor != 0) tft.fillCircle(tx,ty,1,choosenColor);
+        //if (choosenColor != 0) tft.fillCircle(tx,ty,1,choosenColor);
+        if (choosenColor != 0) tft.drawPixel(tx,ty,choosenColor);
       }
     } 
   }
@@ -122,5 +123,4 @@ void interface(){
   tft.fillRect(10+(40*6)+(10*6),10,40,40,RA8875_YELLOW);
   tft.drawRect(10+(40*7)+(10*7),10,40,40,RA8875_WHITE);
 }
-
 
