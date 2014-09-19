@@ -2,7 +2,7 @@
 	----------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver
 	----------------------------------------
-	Version:0.01(early alpha)
+	Version:0.1(early beta)
 	++++++++++++++++++++++++++++++++++++++++
 RA8875 it's an amazing device, it can drive LCD/TFT till 800x480 in 2,3,4 wire
 or 8/16 bit parallel (6800/8080). It's different from other chip because most graphic
@@ -58,7 +58,7 @@ Using SPI Transitions will force you to check if the other libraries that use SP
 are compatible, fortunately it's easy stuff to do but better say in advance. If you use a non SPI transitions
 library the code will automatically compile with standard one but speed will suffer so it's highly raccomanded.
 
-This is an early alpha version of the library, only SPI supported, it's has been tested ONLY with Teensy3 and Teensy3.1
+Now an early beta, only SPI supported, it's has been tested ONLY with Teensy3 and Teensy3.1
 
 Wiring
 
@@ -137,7 +137,6 @@ To perform the touch screen calibration, load libTouchSCalibration.ino and open 
 2) you can get the lowest value of y in the same time, put value in TOUCSRCAL_YLOW
 3) the highest value of x by touching the lower/bottom corner of your tft, put the value in TOUCSRCAL_XHIGH
 4) in the same manner you get the max value of y, put that value in TOUCSRCAL_XHIGH
-
 */
 #define TOUCSRCAL_XLOW	62//44
 #define TOUCSRCAL_YLOW	153//147
@@ -157,16 +156,23 @@ Read: 	3.34Mhz
 MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
 Not all MCU are capable to work at those speeds. Those parameters should work fine.
 */
-#if defined(__MK20DX128__) || defined(__MK20DX256__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3
 	#define MAXSPISPEED 			6600000
-#elif defined(__SAM3X8E__)
+#elif defined(__SAM3X8E__)							 // due
 	#define MAXSPISPEED 			6600000
-#else
+#else												 //rest of the world
 	#define MAXSPISPEED 			4000000
 #endif
-
-
+/* DEFAULT CURSOR BLINK RATE ++++++++++++++++++++++++++++++++++++++++++++
+Nothing special here, you can set the default blink rate */
+#define DEFAULTCURSORBLINKRATE		10
+/* DEFAULT INTERNAL FONT ENCODING ++++++++++++++++++++++++++++++++++++++++++++
+RA8875 has 4 different font set, same shape but suitable for most languages
+please look at RA8875 datasheet and choose the correct one for your language!
+The default one it's the most common one and should work in most situations */
+#define DEFAULTINTENCODING			ISO_IEC_8859_1//ISO_IEC_8859_2,ISO_IEC_8859_3,ISO_IEC_8859_4
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
+
 // Colors (RGB565)
 #define	RA8875_BLACK            0x0000
 #define	RA8875_BLUE             0x001F
@@ -180,6 +186,7 @@ Not all MCU are capable to work at those speeds. Those parameters should work fi
 
 enum RA8875sizes { RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_800x480 };
 enum RA8875modes { GRAPHIC,TEXT };
+enum RA8875tcursor { NORMAL,BLINK };
 enum RA8875tsize { X16,X24,X32 };
 enum RA8875fontSource { INT, EXT };
 enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
@@ -230,28 +237,30 @@ class RA8875 : public Print {
 	void 		setTrasparentColor(uint16_t color);
 	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);
 //--------------Text functions ------------------------- 
-	void		showCursor(boolean cur);//show text cursor
-	void 		cursorBlink(uint8_t rate);//0...255 0:faster
-	void 		cursorNormal(void);
+	//----------cursor stuff................
+	void		showCursor(boolean cur,enum RA8875tcursor c=BLINK);//show text cursor, select cursor typ (NORMAL,BLINK)
+	void 		setCursorBlinkRate(uint8_t rate);//0...255 0:faster
 	void    	setCursor(uint16_t x, uint16_t y);
+	void 		getCursor(uint16_t *x, uint16_t *y);//update the library _cursorX,_cursorY internally
+				//and get the current data, this is useful sometime because the chip track cursor internally only
 	void    	setTextColor(uint16_t fColor, uint16_t bColor);
 	void 		setTextColor(uint16_t fColor);//transparent background
 	void    	setFontScale(uint8_t scale);//0..3
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
-	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
-	void 		setFontFullAlign(boolean align);
 	void 		setFontRotate(boolean rot);//true = 90 degrees
 	void 		setFontInterline(uint8_t pix);//0...63 pix
-	void 		updateFontLoc(void);//update the library _cursorX,_cursorY internally
-	//this is useful sometime because the chip track cursor internally only
+	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
+	//----------Font Selection and related..............................
+	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
+	void 		setIntFontCoding(enum RA8875fontCoding f);
 //--------------Graphic Funcions -------------------------
-	void    	setXY(uint16_t x, uint16_t y);//graphic set location
+	void    	setXY(int16_t x, int16_t y);//graphic set location
 	void 		setGraphicCursor(uint8_t cur);//0...7 Select a custom graphic cursor (you should upload first)
 	void 		showGraphicCursor(boolean cur);//show graphic cursor
 	//--------------- DRAW -------------------------
 	void    	pushPixels(uint32_t num, uint16_t p);//push large number of pixels
-	void    	fillRect(void);
+	//void    	fillRect(void);
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
@@ -272,12 +281,10 @@ class RA8875 : public Print {
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
-
 //--------------Touch Screen -------------------------
 	void    	touchEnable(boolean on);
 	boolean 	touched(void);
 	boolean 	touchRead(uint16_t *x, uint16_t *y);
-	
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -291,18 +298,6 @@ virtual size_t write(const uint8_t *buffer, size_t size) {
 using Print::write;
 
  private:
-	void initialize(void);
-	/* GFX Helper Functions */
-	void 	circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
-	void 	rectHelper  (int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
-	void 	triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
-	void 	ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled);
-	void 	curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled);
-	void 	lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
-	void 	curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
-	void 	roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);
-	void    textWrite(const char* buffer, uint16_t len=0);
-	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
 	//------------- VARS ----------------------------
 	uint8_t 		 		_cs, _rst;
 	uint16_t 		 		_width, _height;
@@ -320,10 +315,26 @@ using Print::write;
 	enum RA8875modes 		_currentMode;
 	enum RA8875sizes 		_size;
 	enum RA8875fontSource 	_fontSource;
+	enum RA8875tcursor		_textCursorStyle;
 	
 	
 	volatile uint32_t		_spiSpeed;//for SPI transactions
 	uint16_t				_cursorX, _cursorY;
+	//		functions --------------------------
+	void 	initialize(void);
+	void    textWrite(const char* buffer, uint16_t len=0);
+	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
+	// 		helpers-----------------------------
+	void 	checkLimitsHelper(int16_t &x,int16_t &y);
+	void 	circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
+	void 	rectHelper  (int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
+	void 	triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
+	void 	ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled);
+	void 	curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled);
+	void 	lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
+	void 	curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
+	void 	roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);
+	//---------------------------------------------------------
     // Low level access  commands ----------------------
 	void    	writeReg(uint8_t reg, uint8_t val);
 	uint8_t 	readReg(uint8_t reg);
@@ -335,14 +346,12 @@ using Print::write;
 	boolean 	waitPoll(uint8_t r, uint8_t f);
 	void 		startSend();
 	void 		endSend();
-	
 	// Register containers -----------------------------------------
 	uint8_t		_MWCR0Reg;//keep track of the register 		  [0x40]
 	uint8_t		_FNCR0Reg;//Font Control Register 0 		  [0x21]
 	uint8_t		_FNCR1Reg;//Font Control Register1 			  [0x22]
 	uint8_t		_FWTSETReg;//Font Write Type Setting Register [0x2E]
 	uint8_t		_SFRSETReg;//Serial Font ROM Setting 		  [0x2F]
-	
 };
 
 #endif

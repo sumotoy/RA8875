@@ -61,6 +61,7 @@ boolean RA8875::begin(enum RA8875sizes s) {
 	_fontRotation = false;
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
+	_textCursorStyle = BLINK;
 /*	Memory Write Control Register 0
 	7: 0(graphic mode), 1(textx mode)
 	6: 0(font-memory cursor not visible), 1(visible)
@@ -189,15 +190,16 @@ void RA8875::initialize(void) {
 	writeReg(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);//clear display
 	
 	delay(100); 
-  
+    //now starts the first time setting up
 	displayOn(true);//turn On Display
 	if (_size == Adafruit_480x272 || _size == Adafruit_800x480) GPIOX(true);//only for adafruit stuff 
 	PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
 	PWMout(1,255);//turn on PWM1
-	
-	setFont(INT);
-	
-	//now tft it's ready to go and in Graphic mode
+	setCursorBlinkRate(DEFAULTCURSORBLINKRATE);//set default blink rate
+	if (_textCursorStyle == BLINK) showCursor(false,BLINK); //set default text cursor type and turn off
+	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
+	setFont(INT);	//set internal font use
+	//now tft it's ready to go and in [Graphic mode]
 }
 
 /**************************************************************************/
@@ -271,6 +273,32 @@ void RA8875::changeMode(enum RA8875modes m) {
 	}
 }
 
+/**************************************************************************/
+/*!   
+		Set internal Font Encoding
+		Parameters:
+		f:ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4
+		default:ISO_IEC_8859_1
+*/
+/**************************************************************************/
+void RA8875::setIntFontCoding(enum RA8875fontCoding f) {
+	_FNCR0Reg &= ~((1<<1) | (1<<0));// Clear bits 1 and 0
+	switch (f){
+		case ISO_IEC_8859_1:
+			 //do nothing
+		break;
+		case ISO_IEC_8859_2:
+			_FNCR0Reg |= (1 << 0);
+		break;
+		case ISO_IEC_8859_3:
+			_FNCR0Reg |= (1 << 1);
+		break;
+		case ISO_IEC_8859_4:
+			_FNCR0Reg |= ((1<<1) | (1<<0));// Set bits 1 and 0
+		break;
+	}
+	writeReg(RA8875_FNCR0,_FNCR0Reg);
+}
 
 /**************************************************************************/
 /*!  
@@ -447,16 +475,24 @@ void RA8875::setCursor(uint16_t x, uint16_t y) {
 		if (x >= _width) x = _width-1;
 		if (y >= _height) y = _height-1;
 	}
-	_cursorX = x;//TODO if auto advance....
-	_cursorY = y;//TODO if auto advance....
+	_cursorX = x;
+	_cursorY = y;
 	writeReg(RA8875_F_CURXL,x & 0xFF);
 	writeReg(RA8875_F_CURXH,x >> 8);
 	writeReg(RA8875_F_CURYL,y & 0xFF);
 	writeReg(RA8875_F_CURYH,y >> 8);
 }
 
-
-void RA8875::updateFontLoc(void) {
+/**************************************************************************/
+/*!   
+		Update the library tracked  _cursorX,_cursorX and give back
+		Parameters:
+		x*:horizontal pos in pixels
+		y*:vertical pos in pixels
+		USE: xxx.getCursor(&myX,&myY);
+*/
+/**************************************************************************/
+void RA8875::getCursor(uint16_t *x, uint16_t *y) {
 	uint8_t t1,t2;
 	t1 = readReg(RA8875_F_CURXL);
 	t2 = readReg(RA8875_F_CURXH);
@@ -464,14 +500,24 @@ void RA8875::updateFontLoc(void) {
 	t1 = readReg(RA8875_F_CURYL);
 	t2 = readReg(RA8875_F_CURYH);
 	_cursorY = (t2 << 8) | (t1 & 0xFF);
+	*x = _cursorX;
+	*y = _cursorY;
 }
 /**************************************************************************/
 /*!     Show/Hide text cursor
 		Parameters:
 		cur:(true/false) true:visible, false:not visible
+		c: cursor type (NORMAL, BLINK)
 */
 /**************************************************************************/
-void RA8875::showCursor(boolean cur){
+void RA8875::showCursor(boolean cur,enum RA8875tcursor c){
+	if (c == BLINK){
+		_textCursorStyle = c;
+		_MWCR0Reg |= (1 << 5);
+	} else {
+		_textCursorStyle = NORMAL;
+		_MWCR0Reg &= ~(1 << 5);
+	}
 	bitWrite(_MWCR0Reg,6,cur);//set cursor visibility flag
 	writeReg(RA8875_MWCR0,_MWCR0Reg);
 }
@@ -482,23 +528,10 @@ void RA8875::showCursor(boolean cur){
 		rate:blink speed (fast 0...255 slow)
 */
 /**************************************************************************/
-void RA8875::cursorBlink(uint8_t rate){
-	//bitSet(_MWCR0Reg,5);//set Blink Cursor flag
-	 _MWCR0Reg |= (1 << 5);
-	writeReg(RA8875_MWCR0,_MWCR0Reg);
+void RA8875::setCursorBlinkRate(uint8_t rate){
+	// _MWCR0Reg |= (1 << 5);
+	//writeReg(RA8875_MWCR0,_MWCR0Reg);
 	writeReg(RA8875_BTCR,rate);//set blink rate
-}
-
-/**************************************************************************/
-/*!     Set cursor property as normal
-		Parameters:
-		none
-*/
-/**************************************************************************/
-void RA8875::cursorNormal(void){
-	//bitClear(_MWCR0Reg,5);//set normal cursor flag
-	_MWCR0Reg &= ~(1 << 5);
-	writeReg(RA8875_MWCR0,_MWCR0Reg);
 }
 
 /**************************************************************************/
@@ -769,9 +802,10 @@ boolean RA8875::waitPoll(uint8_t regname, uint8_t waitflag) {
 		y:vertical position
 */
 /**************************************************************************/
-void RA8875::setXY(uint16_t x, uint16_t y) {
-	if (x >= _width) x = _width-1;
-	if (y >= _height) y = _height-1;
+void RA8875::setXY(int16_t x, int16_t y) {
+	//if (x >= _width) x = _width-1;
+	//if (y >= _height) y = _height-1;
+	checkLimitsHelper(x,y);
 	writeReg(RA8875_CURH0, x);
 	writeReg(RA8875_CURH1, x >> 8);
 	writeReg(RA8875_CURV0, y);
@@ -802,12 +836,12 @@ void RA8875::pushPixels(uint32_t num, uint16_t p) {
 
 */
 /**************************************************************************/
-void RA8875::fillRect(void) {
+/* void RA8875::fillRect(void) {
 	writeCommand(RA8875_DCR);
 	writeData(RA8875_DCR_LINESQUTRI_STOP | RA8875_DCR_DRAWSQUARE);
 	writeData(RA8875_DCR_LINESQUTRI_START | RA8875_DCR_FILL | RA8875_DCR_DRAWSQUARE);
 }
-
+ */
 /**************************************************************************/
 /*!
       Basic pixel write
@@ -818,8 +852,9 @@ void RA8875::fillRect(void) {
 */
 /**************************************************************************/
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color){
-	if (x < 0) x = 0;
-	if (y < 0) y = 0;
+/* 	if (x < 0) x = 0;
+	if (y < 0) y = 0; */
+	checkLimitsHelper(x,y);
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
 	writeData16(color);
@@ -838,13 +873,11 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color){
 /**************************************************************************/
 void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color){
 
-	if (x0 < 0) x0 = 0;
-	if (y0 < 0) y0 = 0;
-	//if (x1 <= 0 || y1 <= 0) return;
-	if (x1 >= width()) x1 = width()-1;
-	if (y1 >= height()) y1 = height()-1;
-	//if (x0 >= x1) x1 = x0+1;
-	//if (y0 >= y1) y1 = y0+1;
+/* 	if (x0 < 0) x0 = 0;
+	if (y0 < 0) y0 = 0; */
+	checkLimitsHelper(x0,y0);
+	if (x1 >= _width) x1 = _width-1;
+	if (y1 >= _height) y1 = _height-1;
 	
 	lineAddressing(x0,y0,x1,y1);
 	setForegroundColor(color);
@@ -865,8 +898,6 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 */
 /**************************************************************************/
 void RA8875::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color){
-	if (x < 0) x = 0;
-	if (y < 0) y = 0;
 	if (h < 1) h = 1;
 	drawLine(x, y, x, y+h, color);
 }
@@ -883,8 +914,6 @@ void RA8875::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color){
 */
 /**************************************************************************/
 void RA8875::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color){
-	if (x < 0) x = 0;
-	if (y < 0) y = 0;
 	if (w < 1) w = 1;
 	drawLine(x, y, x+w, y, color);
 }
@@ -920,18 +949,16 @@ void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 */
 /**************************************************************************/
 void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color){
-	if (x < 0) x = 0;
-	if (y < 0) y = 0;
-	if (w < 1) w = 1;
-	if (h < 1) h = 1;
+/* 	if (w < 1) w = 1;
+	if (h < 1) h = 1; */
 	rectHelper(x, y, x+w, y+h, color, true);
 }
 
 /**************************************************************************/
 /*!
-      Fills the screen with the spefied RGB565 color
-
-      @args color[in] The RGB565 color to use when drawing the pixel
+      Fill the screen by using a specified RGB565 color
+	  Parameters:
+	  color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::fillScreen(uint16_t color){  
@@ -940,49 +967,45 @@ void RA8875::fillScreen(uint16_t color){
 
 /**************************************************************************/
 /*!
-      Draws a HW accelerated circle on the display
-
-      @args x[in]     The 0-based x location of the center of the circle
-      @args y[in]     The 0-based y location of the center of the circle
-      @args w[in]     The circle's radius
-      @args color[in] The RGB565 color to use when drawing the pixel
+      Draw circle
+	  Parameters:
+      x0:The 0-based x location of the center of the circle
+      y0:The 0-based y location of the center of the circle
+      r:radius
+      color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color){
-	if (x0 < 0) x0 = 0;
-	if (y0 < 0) y0 = 0;
 	if (r <= 0) return;
 	circleHelper(x0, y0, r, color, false);
 }
 
 /**************************************************************************/
 /*!
-      Draws a HW accelerated filled circle on the display
-
-      @args x[in]     The 0-based x location of the center of the circle
-      @args y[in]     The 0-based y location of the center of the circle
-      @args w[in]     The circle's radius
-      @args color[in] The RGB565 color to use when drawing the pixel
+      Draw filled circle
+	  Parameters:
+      x0:The 0-based x location of the center of the circle
+      y0:The 0-based y location of the center of the circle
+      r:radius
+      color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color){
-	if (x0 < 0) x0 = 0;
-	if (y0 < 0) y0 = 0;
 	if (r <= 0) return;
 	circleHelper(x0, y0, r, color, true);
 }
 
 /**************************************************************************/
 /*!
-      Draws a HW accelerated triangle on the display
-
-      @args x0[in]    The 0-based x location of point 0 on the triangle
-      @args y0[in]    The 0-based y location of point 0 on the triangle
-      @args x1[in]    The 0-based x location of point 1 on the triangle
-      @args y1[in]    The 0-based y location of point 1 on the triangle
-      @args x2[in]    The 0-based x location of point 2 on the triangle
-      @args y2[in]    The 0-based y location of point 2 on the triangle
-      @args color[in] The RGB565 color to use when drawing the pixel
+      Draw Triangle
+	  Parameters:
+      x0:The 0-based x location of the point 0 of the triangle
+      y0:The 0-based y location of the point 0 of the triangle
+      x1:The 0-based x location of the point 1 of the triangle
+      y1:The 0-based y location of the point 1 of the triangle
+      x2:The 0-based x location of the point 2 of the triangle
+      y2:The 0-based y location of the point 2 of the triangle
+      color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color){
@@ -991,15 +1014,15 @@ void RA8875::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_
 
 /**************************************************************************/
 /*!
-      Draws a HW accelerated filled triangle on the display
-
-      @args x0[in]    The 0-based x location of point 0 on the triangle
-      @args y0[in]    The 0-based y location of point 0 on the triangle
-      @args x1[in]    The 0-based x location of point 1 on the triangle
-      @args y1[in]    The 0-based y location of point 1 on the triangle
-      @args x2[in]    The 0-based x location of point 2 on the triangle
-      @args y2[in]    The 0-based y location of point 2 on the triangle
-      @args color[in] The RGB565 color to use when drawing the pixel
+      Draw filled Triangle
+	  Parameters:
+      x0:The 0-based x location of the point 0 of the triangle
+      y0:The 0-based y location of the point 0 of the triangle
+      x1:The 0-based x location of the point 1 of the triangle
+      y1:The 0-based y location of the point 1 of the triangle
+      x2:The 0-based x location of the point 2 of the triangle
+      y2:The 0-based y location of the point 2 of the triangle
+      color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color){
@@ -1008,13 +1031,13 @@ void RA8875::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_
 
 /**************************************************************************/
 /*!
-      Draws a HW accelerated ellipse on the display
-
-      @args xCenter[in]   The 0-based x location of the ellipse's center
-      @args yCenter[in]   The 0-based y location of the ellipse's center
-      @args longAxis[in]  The size in pixels of the ellipse's long axis
-      @args shortAxis[in] The size in pixels of the ellipse's short axis
-      @args color[in]     The RGB565 color to use when drawing the pixel
+      Draw an ellipse
+	  Parameters:
+      xCenter:   x location of the center of the ellipse
+      yCenter:   y location of the center of the ellipse
+      longAxis:  Size in pixels of the long axis
+      shortAxis: Size in pixels of the short axis
+      color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color){
@@ -1023,13 +1046,13 @@ void RA8875::drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 
 /**************************************************************************/
 /*!
-      Draws a HW accelerated filled ellipse on the display
-
-      @args xCenter[in]   The 0-based x location of the ellipse's center
-      @args yCenter[in]   The 0-based y location of the ellipse's center
-      @args longAxis[in]  The size in pixels of the ellipse's long axis
-      @args shortAxis[in] The size in pixels of the ellipse's short axis
-      @args color[in]     The RGB565 color to use when drawing the pixel
+      Draw a filled ellipse
+	  Parameters:
+      xCenter:   x location of the center of the ellipse
+      yCenter:   y location of the center of the ellipse
+      longAxis:  Size in pixels of the long axis
+      shortAxis: Size in pixels of the short axis
+      color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color){
@@ -1038,18 +1061,14 @@ void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 
 /**************************************************************************/
 /*!
-      Draws a HW accelerated curve on the display
-
-      @args xCenter[in]   The 0-based x location of the ellipse's center
-      @args yCenter[in]   The 0-based y location of the ellipse's center
-      @args longAxis[in]  The size in pixels of the ellipse's long axis
-      @args shortAxis[in] The size in pixels of the ellipse's short axis
-      @args curvePart[in] The corner to draw, where in clock-wise motion:
-                            0 = 180-270°
-                            1 = 270-0°
-                            2 = 0-90°
-                            3 = 90-180°
-      @args color[in]     The RGB565 color to use when drawing the pixel
+      Draw a curve
+      Parameters:
+      xCenter:]   x location of the ellipse center
+      yCenter:   y location of the ellipse center
+      longAxis:  Size in pixels of the long axis
+      shortAxis: Size in pixels of the short axis
+      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
+      color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color){
@@ -1058,45 +1077,65 @@ void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16
 
 /**************************************************************************/
 /*!
-      Draws a HW accelerated filled curve on the display
-
-      @args xCenter[in]   The 0-based x location of the ellipse's center
-      @args yCenter[in]   The 0-based y location of the ellipse's center
-      @args longAxis[in]  The size in pixels of the ellipse's long axis
-      @args shortAxis[in] The size in pixels of the ellipse's short axis
-      @args curvePart[in] The corner to draw, where in clock-wise motion:
-                            0 = 180-270°
-                            1 = 270-0°
-                            2 = 0-90°
-                            3 = 90-180°
-      @args color[in]     The RGB565 color to use when drawing the pixel
+      Draw a filled curve
+      Parameters:
+      xCenter:]   x location of the ellipse center
+      yCenter:   y location of the ellipse center
+      longAxis:  Size in pixels of the long axis
+      shortAxis: Size in pixels of the short axis
+      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
+      color: RGB565 color
 */
 /**************************************************************************/
 void RA8875::fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color){
 	curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, true);
 }
 
+/**************************************************************************/
+/*!
+      Draw a rounded rectangle
+	  Parameters:
+      x:   x location of the rectangle
+      y:   y location of the rectangle
+      w:  the width in pix
+      h:  the height in pix
+	  r:  the radius of the rounded corner
+      color: RGB565 color
+*/
+/**************************************************************************/
 void RA8875::drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color){
-	if (x < 0) x = 0;
-	if (y < 0) y = 0;
 	roundRectHelper(x, y, x+w, y+h, r, color, false);
 }
 
-void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color){
-	if (x < 0) x = 0;
-	if (y < 0) y = 0;
-	roundRectHelper(x, y, x+w, y+h, r, color, true);
-}
+
 /**************************************************************************/
 /*!
-      Helper function for higher level circle drawing code
+      Draw a filled rounded rectangle
+	  Parameters:
+      x:   x location of the rectangle
+      y:   y location of the rectangle
+      w:  the width in pix
+      h:  the height in pix
+	  r:  the radius of the rounded corner
+      color: RGB565 color
+*/
+/**************************************************************************/
+void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color){
+	roundRectHelper(x, y, x+w, y+h, r, color, true);
+}
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//				Helpers functions
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/**************************************************************************/
+/*!
+      helper function for circles
 */
 /**************************************************************************/
 void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled){
 	if (r == 0) return;
-	if (x0 >= width()) x0 = width() -1;
-	if (y0 >= height()) y0 = height() -1;
-	
+	//if (x0 >= _width) x0 = _width -1;
+	//if (y0 >= _height) y0 = _height -1;
+	checkLimitsHelper(x0,y0);
 	//X
 	writeReg(RA8875_DCHR0,x0);
 	writeReg(RA8875_DCHR1,x0 >> 8);
@@ -1115,16 +1154,15 @@ void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, boo
 
 /**************************************************************************/
 /*!
-  waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
-      Helper function for higher level rectangle drawing code
+		helper function for rects
 */
 /**************************************************************************/
 void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled){
-	//if ((w+x) > width()) return;
-	if (x < 0) x = 0;
+/* 	if (x < 0) x = 0;
 	if (y < 0) y = 0;
 	if (x >= _width) x = _width - 1;
-	if (y >= _height) y = _height -1;
+	if (y >= _height) y = _height -1; */
+	checkLimitsHelper(x,y);
 	if (w <= 1) w = 1;
 	if (h <= 1) h = 1;
 	lineAddressing(x,y,w,h);
@@ -1135,12 +1173,28 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 }
 
+
 /**************************************************************************/
 /*!
-      Helper function for higher level triangle drawing code
+		common helper for check value limiter
+*/
+/**************************************************************************/
+void RA8875::checkLimitsHelper(int16_t &x,int16_t &y){
+	if (x < 0) x = 0;
+	if (y < 0) y = 0;
+	if (x >= _width) x = _width - 1;
+	if (y >= _height) y = _height -1;
+	x = x;
+	y = y;
+}
+/**************************************************************************/
+/*!
+      helper function for triangles
 */
 /**************************************************************************/
 void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled){
+	checkLimitsHelper(x0,y0);
+	checkLimitsHelper(x1,y1);
 	lineAddressing(x0,y0,x1,y1);
 	//p2
 	writeReg(RA8875_DTPH0,x2);
@@ -1156,7 +1210,7 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 
 /**************************************************************************/
 /*!
-      Helper function for higher level ellipse drawing code
+      helper function for ellipse
 */
 /**************************************************************************/
 void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled){
@@ -1170,7 +1224,7 @@ void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, i
 
 /**************************************************************************/
 /*!
-      Helper function for higher level curve drawing code
+      helper function for curve
 */
 /**************************************************************************/
 void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled){
@@ -1184,10 +1238,12 @@ void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 
 /**************************************************************************/
 /*!
-
+	  helper function for rounded Rects
 */
 /**************************************************************************/
 void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled){
+	checkLimitsHelper(x,y);
+	checkLimitsHelper(w,h);
 	lineAddressing(x,y,w,h);
 	//P2
 	writeReg(RA8875_ELL_A0,r);
@@ -1203,15 +1259,15 @@ void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t
 
 /**************************************************************************/
 /*!
-
+		Graphic line addressing helper
 */
 /**************************************************************************/
 void RA8875::lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1){
-	if (x0 >= width()) x0 = width()-1;
+/* 	if (x0 >= width()) x0 = width()-1;
 	if (x1 >= width()) x1 = width()-1;
 	
 	if (y0 >= height()) y0 = height()-1;
-	if (y1 >= height()) y1 = height()-1;
+	if (y1 >= height()) y1 = height()-1; */
 	
 	//X0
 	writeReg(RA8875_DLHSR0,x0);
@@ -1228,8 +1284,8 @@ void RA8875::lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1){
 }
 
 /**************************************************************************/
-/*!
-
+/*!	
+		curve addressing
 */
 /**************************************************************************/
 void RA8875::curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1){
@@ -1248,14 +1304,21 @@ void RA8875::curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1){
 
 /**************************************************************************/
 /*!
-
+		on/off GPIO (basic for Adafruit module
 */
 /**************************************************************************/
 void RA8875::GPIOX(boolean on) {
     writeReg(RA8875_GPIOX, on);
 }
 
-
+/**************************************************************************/
+/*!
+		PWM out
+		Parameters:
+		pw:pwm selection (1,2)
+		p:0...255 rate
+*/
+/**************************************************************************/
 void RA8875::PWMout(uint8_t pw,uint8_t p) {
 	uint8_t reg;
 	if (pw > 1){
@@ -1266,10 +1329,27 @@ void RA8875::PWMout(uint8_t pw,uint8_t p) {
 	 writeReg(reg, p);
 }
 
+/**************************************************************************/
+/*!
+		Set the brightness of the backlight (if connected to pwm)
+		(basic controls pwm 1)
+		Parameters:
+		val:0...255
+*/
+/**************************************************************************/
 void RA8875::brightness(uint8_t val) {
 	PWMout(1,val);
 }
 
+/**************************************************************************/
+/*! PRIVATE
+		Setup PWM engine
+		Parameters:
+		pw:pwm selection (1,2)
+		on: turn on/off
+		clock: the clock setting
+*/
+/**************************************************************************/
 void RA8875::PWMsetup(uint8_t pw,boolean on, uint8_t clock) {
 	uint8_t reg;
 	uint8_t set;
@@ -1317,7 +1397,7 @@ void RA8875::touchEnable(boolean on) {
 }
 
 /**************************************************************************/
-/*!
+/*! (from adafruit)
       Checks if a touch event has occured
       
       @returns  True is a touch event has occured (reading it via
@@ -1330,11 +1410,15 @@ boolean RA8875::touched(void) {
 }
 
 /**************************************************************************/
-/*!
+/*! (based on adafruit)
       Reads the last touch event
-      
-      @args x[out]  Pointer to the uint16_t field to assign the raw X value
-      @args y[out]  Pointer to the uint16_t field to assign the raw Y value
+      Parameters:
+      x:  ADC value (0...1024) of x
+      y:  ADC value (0...1024) of y
+	  Based on setting TOUCHINPIXELS it can be:
+      x:  position in pix (0...width) of x
+      y:  position in pix (0...width) of y
+	  It also perform calibrations.
       
       @note Calling this function will clear the touch panel interrupt on
             the RA8875, resetting the flag used by the 'touched' function
@@ -1393,14 +1477,14 @@ boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
 		#endif
 	#endif
 
-	/* Clear TP INT Status */
+	// Clear TP INT Status
 	writeReg(RA8875_INTC2, RA8875_INTCx_TP);
 	return true;
 }
 
 /**************************************************************************/
 /*!
-      Turns the display on or off
+      turn display on/off
 */
 /**************************************************************************/
 void RA8875::displayOn(boolean on) {
@@ -1413,7 +1497,7 @@ void RA8875::displayOn(boolean on) {
 
 /**************************************************************************/
 /*!
-    Puts the display in sleep mode, or disables sleep mode if enabled
+    Sleep mode on/off (caution! in SPI this need some more code!)
 */
 /**************************************************************************/
 void RA8875::sleep(boolean sleep) {
@@ -1428,7 +1512,10 @@ void RA8875::sleep(boolean sleep) {
 
 /**************************************************************************/
 /*!
-
+		Write in a register
+		Parameters:
+		reg: the register
+		val: the data
 */
 /**************************************************************************/
 void  RA8875::writeReg(uint8_t reg, uint8_t val) {
@@ -1438,7 +1525,9 @@ void  RA8875::writeReg(uint8_t reg, uint8_t val) {
 
 /**************************************************************************/
 /*!
-
+		Returns the value inside register
+		Parameters:
+		reg: the register
 */
 /**************************************************************************/
 uint8_t  RA8875::readReg(uint8_t reg) {
@@ -1448,7 +1537,9 @@ uint8_t  RA8875::readReg(uint8_t reg) {
 
 /**************************************************************************/
 /*!
-
+		Write data
+		Parameters:
+		d: the data
 */
 /**************************************************************************/
 void  RA8875::writeData(uint8_t d) {
@@ -1458,6 +1549,13 @@ void  RA8875::writeData(uint8_t d) {
 	endSend();
 }
 
+/**************************************************************************/
+/*!
+		Write 16 bit data
+		Parameters:
+		d: the data (16 bit)
+*/
+/**************************************************************************/
 void  RA8875::writeData16(uint16_t d) {
 	startSend();
 	SPI.transfer(RA8875_DATAWRITE);
@@ -1465,8 +1563,9 @@ void  RA8875::writeData16(uint16_t d) {
 	SPI.transfer(d);
 	endSend();
 }
+
 /**************************************************************************/
-/*!
+/*!		
 
 */
 /**************************************************************************/
@@ -1490,7 +1589,9 @@ uint8_t  RA8875::readData(void) {
 
 /**************************************************************************/
 /*!
-
+		Write a command
+		Parameters:
+		d: the command
 */
 /**************************************************************************/
 void  RA8875::writeCommand(uint8_t d) {
@@ -1525,7 +1626,7 @@ uint8_t  RA8875::readStatus(void) {
 
 /**************************************************************************/
 /*!
-
+		starts SPI communication
 */
 /**************************************************************************/
 void RA8875::startSend(){
@@ -1541,7 +1642,7 @@ void RA8875::startSend(){
 
 /**************************************************************************/
 /*!
-
+		ends SPI communication
 */
 /**************************************************************************/
 void RA8875::endSend(){

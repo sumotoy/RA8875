@@ -1,0 +1,100 @@
+
+#######################################
+# Syntax Coloring Map for RA8875
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+RA8875	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+softReset	KEYWORD2
+displayOn	KEYWORD2
+sleep	KEYWORD2
+brightness	KEYWORD2
+changeMode	KEYWORD2
+setActiveWindow	KEYWORD2
+setForegroundColor	KEYWORD2
+setBackgroundColor	KEYWORD2
+setTrasparentColor	KEYWORD2
+showCursor	KEYWORD2
+setCursorBlinkRate	KEYWORD2
+setIntFontCoding	KEYWORD2
+setXY	KEYWORD2
+pushPixels	KEYWORD2
+fillRect	KEYWORD2
+drawPixel	KEYWORD2
+drawFastVLine	KEYWORD2
+drawFastHLine	KEYWORD2
+fillScreen	KEYWORD2
+drawLine	KEYWORD2
+drawRect	KEYWORD2
+fillRect	KEYWORD2
+drawCircle	KEYWORD2
+fillCircle	KEYWORD2
+drawTriangle	KEYWORD2
+fillTriangle	KEYWORD2
+drawEllipse	KEYWORD2
+fillEllipse	KEYWORD2
+drawCurve	KEYWORD2
+fillCurve	KEYWORD2
+drawRoundRect	KEYWORD2
+fillRoundRect	KEYWORD2
+touchEnable	KEYWORD2
+touched	KEYWORD2
+touchRead	KEYWORD2
+readStatus	KEYWORD2
+begin	KEYWORD2
+setCursor	KEYWORD2
+setTextColor	KEYWORD2
+setFontSize	KEYWORD2
+setFontScale	KEYWORD2
+setFontSpacing	KEYWORD2
+useExternalFontRom	KEYWORD2
+setFontFullAlign	KEYWORD2
+setFontRotate	KEYWORD2
+setFontInterline	KEYWORD2
+setGraphicCursor	KEYWORD2
+showGraphicCursor	KEYWORD2
+getCursor	KEYWORD2
+width	KEYWORD2
+height	KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+RA8875_480x272	LITERAL1
+RA8875_800x480	LITERAL1
+Adafruit_480x272	LITERAL1
+Adafruit_800x480	LITERAL1
+GRAPHIC	LITERAL1
+TEXT	LITERAL1
+INT	LITERAL1
+EXT LITERAL1
+ISO_IEC_8859_1	LITERAL1
+ISO_IEC_8859_2	LITERAL1
+ISO_IEC_8859_3	LITERAL1
+ISO_IEC_8859_4	LITERAL1
+GT21L16T1W	LITERAL1
+GT21H16T1W	LITERAL1
+GT23L16U2W	LITERAL1
+GT30H24T3Y	LITERAL1
+GT23L24T3Y	LITERAL1
+GT23L24M1Z	LITERAL1
+GT23L32S4W	LITERAL1
+GT30H32S4W	LITERAL1
+GB2312	LITERAL1
+GB12345	LITERAL1
+BIG5	LITERAL1
+UNICODE	LITERAL1
+ASCII	LITERAL1
+UNIJIS	LITERAL1
+JIS0208	LITERAL1
+LATIN	LITERAL1
+
