@@ -803,8 +803,6 @@ boolean RA8875::waitPoll(uint8_t regname, uint8_t waitflag) {
 */
 /**************************************************************************/
 void RA8875::setXY(int16_t x, int16_t y) {
-	//if (x >= _width) x = _width-1;
-	//if (y >= _height) y = _height-1;
 	checkLimitsHelper(x,y);
 	writeReg(RA8875_CURH0, x);
 	writeReg(RA8875_CURH1, x >> 8);
@@ -852,8 +850,6 @@ void RA8875::pushPixels(uint32_t num, uint16_t p) {
 */
 /**************************************************************************/
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color){
-/* 	if (x < 0) x = 0;
-	if (y < 0) y = 0; */
 	checkLimitsHelper(x,y);
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
@@ -872,9 +868,6 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color){
 */
 /**************************************************************************/
 void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color){
-
-/* 	if (x0 < 0) x0 = 0;
-	if (y0 < 0) y0 = 0; */
 	checkLimitsHelper(x0,y0);
 	if (x1 >= _width) x1 = _width-1;
 	if (y1 >= _height) y1 = _height-1;
@@ -930,10 +923,6 @@ void RA8875::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color){
 */
 /**************************************************************************/
 void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color){
-/* 	if (x < 0) x = 0;
-	if (y < 0) y = 0;
-	if (w < 1) w = 1;
-	if (h < 1) h = 1; */
 	rectHelper(x, y, x+w, y+h, color, false);
 }
 
@@ -949,8 +938,6 @@ void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 */
 /**************************************************************************/
 void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color){
-/* 	if (w < 1) w = 1;
-	if (h < 1) h = 1; */
 	rectHelper(x, y, x+w, y+h, color, true);
 }
 
@@ -1132,10 +1119,8 @@ void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 */
 /**************************************************************************/
 void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled){
-	if (r == 0) return;
-	//if (x0 >= _width) x0 = _width -1;
-	//if (y0 >= _height) y0 = _height -1;
 	checkLimitsHelper(x0,y0);
+	if (r < 1) r = 1;
 	//X
 	writeReg(RA8875_DCHR0,x0);
 	writeReg(RA8875_DCHR1,x0 >> 8);
@@ -1158,10 +1143,6 @@ void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, boo
 */
 /**************************************************************************/
 void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled){
-/* 	if (x < 0) x = 0;
-	if (y < 0) y = 0;
-	if (x >= _width) x = _width - 1;
-	if (y >= _height) y = _height -1; */
 	checkLimitsHelper(x,y);
 	if (w <= 1) w = 1;
 	if (h <= 1) h = 1;
@@ -1242,6 +1223,7 @@ void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 */
 /**************************************************************************/
 void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled){
+	if (r < 1) rectHelper(x,y,w,h,color,filled);
 	checkLimitsHelper(x,y);
 	checkLimitsHelper(w,h);
 	lineAddressing(x,y,w,h);
@@ -1263,12 +1245,6 @@ void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t
 */
 /**************************************************************************/
 void RA8875::lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1){
-/* 	if (x0 >= width()) x0 = width()-1;
-	if (x1 >= width()) x1 = width()-1;
-	
-	if (y0 >= height()) y0 = height()-1;
-	if (y1 >= height()) y1 = height()-1; */
-	
 	//X0
 	writeReg(RA8875_DLHSR0,x0);
 	writeReg(RA8875_DLHSR1,x0 >> 8);
@@ -1379,7 +1355,7 @@ void RA8875::touchEnable(boolean on) {
 	if (on) {
 		/* Enable Touch Panel (Reg 0x70) */
 		writeReg(RA8875_TPCR0, RA8875_TPCR0_ENABLE        | 
-							   RA8875_TPCR0_WAIT_4096CLK  |
+							   RA8875_TPCR0_WAIT_16384CLK  |
 							   RA8875_TPCR0_WAKEDISABLE   | 
 							   RA8875_TPCR0_ADCCLK_DIV4); // 10mhz max!
 		/* Set Auto Mode      (Reg 0x71) */

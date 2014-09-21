@@ -2,7 +2,7 @@
 	----------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver
 	----------------------------------------
-	Version:0.1(early beta)
+	Version:0.2(early beta)
 	++++++++++++++++++++++++++++++++++++++++
 RA8875 it's an amazing device, it can drive LCD/TFT till 800x480 in 2,3,4 wire
 or 8/16 bit parallel (6800/8080). It's different from other chip because most graphic
@@ -285,6 +285,7 @@ class RA8875 : public Print {
 	void    	touchEnable(boolean on);
 	boolean 	touched(void);
 	boolean 	touchRead(uint16_t *x, uint16_t *y);
+
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
