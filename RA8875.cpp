@@ -309,7 +309,7 @@ void RA8875::setIntFontCoding(enum RA8875fontCoding f) {
 		erf:ROM text Family (STANDARD, ARIAL, ROMAN, BOLD)
 */
 /**************************************************************************/
-bool RA8875::useExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc, enum RA8875extRomFamily erf){
+bool RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc, enum RA8875extRomFamily erf){
 	uint8_t temp = _SFRSETReg;//just to preserve the reg in case something wrong
 	switch(ert){ //type of rom
 		case GT21L16T1W:
@@ -385,7 +385,7 @@ bool RA8875::useExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		_fontRomCoding = erc;
 		_extFontRom = true;
 		_SFRSETReg = temp;//success, set reg
-		writeReg(RA8875_SFRSET,_SFRSETReg);
+		writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F
 		delay(4);
 		return true;
 }
@@ -413,11 +413,15 @@ void RA8875::setFont(enum RA8875fontSource s) {
 		if (_extFontRom){
 			setFontSize(X16);//datasheet ask to zero bit 6,7
 			_fontSource = s;
-			useExternalFontRom(_fontRomType,_fontRomCoding);
+			setExternalFontRom(_fontRomType,_fontRomCoding);
 			//now switch
-			//bitSet(_FNCR0Reg,5);
 			_FNCR0Reg |= (1 << 5);
-			writeReg(RA8875_FNCR0,_FNCR0Reg);
+			writeReg(RA8875_FNCR0,_FNCR0Reg);//0x21
+			writeReg(RA8875_SFCLR,0x03);//set frequency
+			setFontSize(X24,false);////X24 size
+			//writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F set the external font!
+			//delay(4);
+			writeReg(RA8875_SROC,0x28);// waveform 3,2 byte dummy Cycle
 		} else {
 			setFont(INT);
 		}
@@ -1144,8 +1148,8 @@ void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, boo
 /**************************************************************************/
 void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled){
 	checkLimitsHelper(x,y);
-	if (w <= 1) w = 1;
-	if (h <= 1) h = 1;
+	if (w < 1) w = 1;
+	if (h < 1) h = 1;
 	lineAddressing(x,y,w,h);
 	setForegroundColor(color);
 
@@ -1176,6 +1180,7 @@ void RA8875::checkLimitsHelper(int16_t &x,int16_t &y){
 void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled){
 	checkLimitsHelper(x0,y0);
 	checkLimitsHelper(x1,y1);
+	checkLimitsHelper(x2,y2);
 	lineAddressing(x0,y0,x1,y1);
 	//p2
 	writeReg(RA8875_DTPH0,x2);
@@ -1414,6 +1419,17 @@ boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
 	ty <<= 2;
 	tx |= temp & 0x03;        // get the bottom x bits
 	ty |= (temp >> 2) & 0x03; // get the bottom y bits
+/* 	uint16_t lx=(480-(((tx-50))*10/18));
+	uint16_t ly=(272-(((ty-63))*10/33));
+	Serial.println(lx,DEC);
+	Serial.print("lx:");
+	Serial.print(lx,DEC);
+	Serial.print(" - ly:");
+	Serial.print(ly,DEC);
+	Serial.print(" - olx:");
+	Serial.print(map(tx,0,1024,0,_width-1),DEC);
+	Serial.print(" - oly:");
+	Serial.println(map(ty,0,1024,0,_height-1),DEC); */
 	#if defined (INVERTETOUCH_X)
 	tx = 1024 - tx;
 	#endif

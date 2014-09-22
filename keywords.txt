@@ -54,7 +54,7 @@ setTextColor	KEYWORD2
 setFontSize	KEYWORD2
 setFontScale	KEYWORD2
 setFontSpacing	KEYWORD2
-useExternalFontRom	KEYWORD2
+setExternalFontRom	KEYWORD2
 setFontFullAlign	KEYWORD2
 setFontRotate	KEYWORD2
 setFontInterline	KEYWORD2

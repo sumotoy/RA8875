@@ -2,7 +2,7 @@
 	----------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver
 	----------------------------------------
-	Version:0.3(early beta)
+	Version:0.4(early beta)
 	++++++++++++++++++++++++++++++++++++++++
 RA8875 it's an amazing device, it can drive LCD/TFT till 800x480 in 2,3,4 wire
 or 8/16 bit parallel (6800/8080). It's different from other chip because most graphic
@@ -219,7 +219,6 @@ class RA8875 : public Print {
 //------------- Setup -------------------------
 	boolean 	begin(enum RA8875sizes s);
 //------------- Hardware related -------------------------
-	bool		useExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void    	softReset(void);
 	void    	displayOn(boolean on);
 	void    	sleep(boolean sleep);
@@ -252,6 +251,7 @@ class RA8875 : public Print {
 	void 		setFontInterline(uint8_t pix);//0...63 pix
 	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
 	//----------Font Selection and related..............................
+	bool		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
 	void 		setIntFontCoding(enum RA8875fontCoding f);
 //--------------Graphic Funcions -------------------------
@@ -285,7 +285,9 @@ class RA8875 : public Print {
 	void    	touchEnable(boolean on);
 	boolean 	touched(void);
 	boolean 	touchRead(uint16_t *x, uint16_t *y);
-
+    inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
+	//void    	writeCommand(uint8_t d);
+	//void    	writeData(uint8_t d);
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -339,10 +341,11 @@ using Print::write;
     // Low level access  commands ----------------------
 	void    	writeReg(uint8_t reg, uint8_t val);
 	uint8_t 	readReg(uint8_t reg);
+	void    	writeCommand(uint8_t d);
 	void    	writeData(uint8_t d);
 	void  		writeData16(uint16_t d);
 	uint8_t 	readData(bool stat=false);
-	void    	writeCommand(uint8_t d);
+	
 	
 	boolean 	waitPoll(uint8_t r, uint8_t f);
 	void 		startSend();
