@@ -1,7 +1,7 @@
 /*
   A collection of hardware accellerated drawings
-  to demostrate how fast is the RA8875
-*/
+ to demostrate how fast is the RA8875
+ */
 
 
 #include <SPI.h>
@@ -148,18 +148,24 @@ void randomPoints(){
 
 void testtriangles(bool fill) {
   tft.fillScreen(RA8875_BLACK);
-  uint16_t color = 0xF800;
-  tft.fillScreen(RA8875_BLACK);
-  uint16_t k,c;
-  for (k = 1; k < tft.width()-1; k++) {
-    for (c = 1; c < 40; c++) {
+  uint16_t p1x,p1y, p2x,p2y, p3x,p3y;
+  uint16_t colour;
+  for (uint16_t k = 0; k < 128; k++) {
+    for(uint16_t t = 0 ; t <= 30; t+=1) {
+      p1x=random(0,tft.width()-1);        //get a random number 0-319
+      p1y=random(0,tft.height()-1);       //get a random number 0-239
+      p2x=random(0,tft.width()-1);        //get a random number 0-319
+      p2y=random(0,tft.height()-1);       //get a random number 0-239       
+      p3x=random(0,tft.width()-1);        //get a random number 0-319
+      p3y=random(0,tft.height()-1);       //get a random number 0-239     
+      colour=random(0,65536);          //get a random number 0-65535
+      //draw the triangle
       if (fill){
-        tft.fillTriangle(random(1,tft.width()),random(1,tft.height()),k,c,k-c,k,color);
+        tft.fillTriangle(p1x, p1y, p2x, p2y, p3x, p3y, colour);
       } 
       else {
-        tft.drawTriangle(random(1,tft.width()),random(1,tft.height()),k,c,c,k,color);
+        tft.drawTriangle(p1x, p1y, p2x, p2y, p3x, p3y, colour);
       }
-      color+=100;
     }
     tft.fillScreen(RA8875_BLACK);
   }
@@ -168,5 +174,6 @@ void testtriangles(bool fill) {
 uint16_t halveColor(uint16_t rgb){
   return (((rgb & 0b1111100000000000) >> 12) << 11 | ((rgb & 0b0000011111100000) >>  6) <<  5 | ((rgb & 0b0000000000011111) >>  1));
 }
+
 
 
