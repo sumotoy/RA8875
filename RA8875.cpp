@@ -1487,7 +1487,7 @@ void RA8875::sleep(boolean sleep) {
 /************************* Low Level ***********************************/
 
 /**************************************************************************/
-/*!
+/*! PRIVATE
 		Write in a register
 		Parameters:
 		reg: the register
@@ -1500,7 +1500,7 @@ void  RA8875::writeReg(uint8_t reg, uint8_t val) {
 }
 
 /**************************************************************************/
-/*!
+/*! PRIVATE
 		Returns the value inside register
 		Parameters:
 		reg: the register
@@ -1526,7 +1526,7 @@ void  RA8875::writeData(uint8_t d) {
 }
 
 /**************************************************************************/
-/*!
+/*! 
 		Write 16 bit data
 		Parameters:
 		d: the data (16 bit)
@@ -1541,18 +1541,22 @@ void  RA8875::writeData16(uint16_t d) {
 }
 
 /**************************************************************************/
-/*!		
+/*!	PRIVATE
 
 */
 /**************************************************************************/
-uint8_t  RA8875::readData(void) {
+uint8_t  RA8875::readData(bool stat) {
 	#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
 	_spiSpeed = MAXSPISPEED/2;
 	#else
 	SPI.setClockDivider(SPI_CLOCK_DIV8);//2Mhz (3.3Mhz max)
 	#endif
 	startSend();
-	SPI.transfer(RA8875_DATAREAD);
+	if (stat){
+		SPI.transfer(RA8875_CMDREAD);
+	} else {
+		SPI.transfer(RA8875_DATAREAD);
+	}
 	uint8_t x = SPI.transfer(0x0);
 	endSend();
 	#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
@@ -1565,6 +1569,15 @@ uint8_t  RA8875::readData(void) {
 
 /**************************************************************************/
 /*!
+
+*/
+/**************************************************************************/
+uint8_t  RA8875::readStatus(void) {
+	return readData(true);
+}
+
+/**************************************************************************/
+/*! PRIVATE
 		Write a command
 		Parameters:
 		d: the command
@@ -1577,31 +1590,10 @@ void  RA8875::writeCommand(uint8_t d) {
 	endSend();
 }
 
-/**************************************************************************/
-/*!
 
-*/
-/**************************************************************************/
-uint8_t  RA8875::readStatus(void) {
-	#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
-	_spiSpeed = MAXSPISPEED/2;
-	#else
-	SPI.setClockDivider(SPI_CLOCK_DIV8);//2Mhz (3.3Mhz max)
-	#endif
-	startSend();
-	SPI.transfer(RA8875_CMDREAD);
-	uint8_t x = SPI.transfer(0x0);
-	endSend();
-	#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
-	_spiSpeed = MAXSPISPEED;
-	#else
-	SPI.setClockDivider(SPI_CLOCK_DIV4);//4Mhz (6.6Mhz Max)
-	#endif
-	return x;
-}
 
 /**************************************************************************/
-/*!
+/*! PRIVATE
 		starts SPI communication
 */
 /**************************************************************************/
@@ -1617,7 +1609,7 @@ void RA8875::startSend(){
 }
 
 /**************************************************************************/
-/*!
+/*! PRIVATE
 		ends SPI communication
 */
 /**************************************************************************/
