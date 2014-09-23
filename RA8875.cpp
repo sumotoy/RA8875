@@ -120,6 +120,7 @@ boolean RA8875::begin(enum RA8875sizes s) {
 	
 	SPI.begin();
 #if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
+	_spiSpeed = 125000;//roll back speed for init
 	if (readReg(0) != 0x75) return false;
 	_spiSpeed = MAXSPISPEED;//go back to full speed
 #else//do not use SPItransactons
@@ -127,6 +128,7 @@ boolean RA8875::begin(enum RA8875sizes s) {
 	SPI.setDataMode(SPI_MODE0);
 	if (readReg(0) != 0x75) return false;
 #endif
+	
 	initialize();
 	return true;
 }
@@ -169,11 +171,11 @@ void RA8875::initialize(void) {
 	
 	writeReg(RA8875_SYSR,RA8875_SYSR_16BPP | RA8875_SYSR_MCU8); //0x0c SYSR bit[4:3]=00 256 color bit[2:1]= 00 8bit MPU interface,8bit MCU interface and 65k color display
 	writeReg(RA8875_PLLC1,initStrings[idx][0]);//pll1
-	delay(1);
+	delay(2);
 	writeReg(RA8875_PLLC2,initStrings[idx][1]);//pll2
-	delay(1);
+	delay(2);
 	writeReg(RA8875_PCSR,initStrings[idx][2]);
-	delay(1);
+	delay(2);
 	writeReg(RA8875_HDWR,(_width / 8) - 1);
 	writeReg(RA8875_HNDFTR,initStrings[idx][3]);
 	writeReg(RA8875_HNDR,initStrings[idx][4]);
@@ -187,9 +189,9 @@ void RA8875::initialize(void) {
 	writeReg(RA8875_VSTR1,initStrings[idx][10]);
 	writeReg(RA8875_VPWR,initStrings[idx][11]);
 	setActiveWindow(0,_width-1,0,_height-1);//set the active winsow
-	writeReg(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);//clear display
+	writeReg(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);//clear all
+	delay(200); 
 	
-	delay(100); 
     //now starts the first time setting up
 	displayOn(true);//turn On Display
 	if (_size == Adafruit_480x272 || _size == Adafruit_800x480) GPIOX(true);//only for adafruit stuff 
@@ -199,6 +201,7 @@ void RA8875::initialize(void) {
 	if (_textCursorStyle == BLINK) showCursor(false,BLINK); //set default text cursor type and turn off
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
 	setFont(INT);	//set internal font use
+	
 	//now tft it's ready to go and in [Graphic mode]
 }
 
@@ -258,14 +261,12 @@ void RA8875::changeMode(enum RA8875modes m) {
 	writeCommand(RA8875_MWCR0);
 	if (m == GRAPHIC){
 		if (_currentMode == TEXT){//avoid useless consecutive calls
-			//bitClear(_MWCR0Reg,7);
 			 _MWCR0Reg &= ~(1 << 7);
 			writeData(_MWCR0Reg);
 			_currentMode = GRAPHIC;
 		}
 	} else {
 		if (_currentMode == GRAPHIC){//avoid useless consecutive calls
-			//bitSet(_MWCR0Reg,7);
 			_MWCR0Reg |= (1 << 7);
 			writeData(_MWCR0Reg);
 			_currentMode = TEXT;
@@ -303,13 +304,15 @@ void RA8875::setIntFontCoding(enum RA8875fontCoding f) {
 /**************************************************************************/
 /*!  
 		External Font Rom setup
+		This will not phisically change the register but should be called before setFont(EXT)!
+		You should use this values accordly Font ROM datasheet!
 		Parameters:
-		ert:ROM Type (GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W)
-		erc:ROM text Encoding (GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN)
-		erf:ROM text Family (STANDARD, ARIAL, ROMAN, BOLD)
+		ert:ROM Type          (GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W)
+		erc:ROM Font Encoding (GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN)
+		erf:ROM Font Family   (STANDARD, ARIAL, ROMAN, BOLD)
 */
 /**************************************************************************/
-bool RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc, enum RA8875extRomFamily erf){
+void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc, enum RA8875extRomFamily erf){
 	uint8_t temp = _SFRSETReg;//just to preserve the reg in case something wrong
 	switch(ert){ //type of rom
 		case GT21L16T1W:
@@ -321,7 +324,9 @@ bool RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		break;
 		case GT23L24T3Y:
 		case GT30H24T3Y:
+		case ER3303_1://encoding GB12345
 			temp &= 0x1F; temp |= 0x40;
+			erc = GB12345;//forced
 		break;
 		case GT23L24M1Z:
 			temp &= 0x1F; temp |= 0x60;
@@ -332,7 +337,7 @@ bool RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		break;
 		default:
 			_extFontRom = false;//wrong type, better avoid for future
-			return false;//cannot continue, exit
+			return;//cannot continue, exit
 		}
 		_fontRomType = ert;
 	switch(erc){	//check rom font coding
@@ -362,7 +367,7 @@ bool RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		break;
 		default:
 			_extFontRom = false;//wrong coding, better avoid for future
-			return false;//cannot continue, exit
+			return;//cannot continue, exit
 		}
 		_fontFamily = erf;
 		switch(erf){	//check rom font family
@@ -379,15 +384,14 @@ bool RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 				temp |= ((1<<1) | (1<<0)); // set bits 1 and 0
 			break;
 			default:
-				_fontFamily = STANDARD;
-				temp &= 0xFC;
+				_fontFamily = STANDARD; temp &= 0xFC;
 		}
 		_fontRomCoding = erc;
 		_extFontRom = true;
 		_SFRSETReg = temp;//success, set reg
-		writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F
-		delay(4);
-		return true;
+		//writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F
+		//delay(4);
+		//return true;
 }
 
 /**************************************************************************/
@@ -402,8 +406,9 @@ void RA8875::setFont(enum RA8875fontSource s) {
 	if (s == INT){
 		//check the font coding
 		if (_extFontRom) {
-			_SFRSETReg = 0b00000000;
-			writeReg(RA8875_SFRSET,_SFRSETReg);
+			//_SFRSETReg = 0b00000000;
+			setFontSize(X16,false);
+			writeReg(RA8875_SFRSET,0b00000000);//_SFRSETReg
 		}
 		_FNCR0Reg &= ~((1<<7) | (1<<5));// Clear bits 7 and 5
 		writeReg(RA8875_FNCR0,_FNCR0Reg);
@@ -411,17 +416,18 @@ void RA8875::setFont(enum RA8875fontSource s) {
 		delay(1);
 	} else {
 		if (_extFontRom){
-			setFontSize(X16);//datasheet ask to zero bit 6,7
 			_fontSource = s;
-			setExternalFontRom(_fontRomType,_fontRomCoding);
 			//now switch
 			_FNCR0Reg |= (1 << 5);
 			writeReg(RA8875_FNCR0,_FNCR0Reg);//0x21
-			writeReg(RA8875_SFCLR,0x03);//set frequency
+			delay(1);
+			writeReg(RA8875_SFCLR,0x02);//Serial Flash/ROM CLK frequency/2
 			setFontSize(X24,false);////X24 size
-			//writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F set the external font!
-			//delay(4);
-			writeReg(RA8875_SROC,0x28);// waveform 3,2 byte dummy Cycle
+			//setExternalFontRom(_fontRomType,_fontRomCoding);
+			writeReg(RA8875_SFRSET,_SFRSETReg);//at this point should be already set
+			delay(4);
+			writeReg(RA8875_SROC,0x28);// 0x28 rom 0,24bit adrs,wave 3,1 byte dummy,font mode, single mode
+			delay(4);
 		} else {
 			setFont(INT);
 		}
@@ -1281,6 +1287,7 @@ void RA8875::curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1){
 	writeReg(RA8875_ELL_B0,y1);
 	writeReg(RA8875_ELL_B1,y1 >> 8);
 }
+
 /************************* Mid Level ***********************************/
 
 /**************************************************************************/

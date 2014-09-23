@@ -2,7 +2,7 @@
 	----------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver
 	----------------------------------------
-	Version:0.4(early beta)
+	Version:0.43(early beta)
 	++++++++++++++++++++++++++++++++++++++++
 RA8875 it's an amazing device, it can drive LCD/TFT till 800x480 in 2,3,4 wire
 or 8/16 bit parallel (6800/8080). It's different from other chip because most graphic
@@ -190,7 +190,7 @@ enum RA8875tcursor { NORMAL,BLINK };
 enum RA8875tsize { X16,X24,X32 };
 enum RA8875fontSource { INT, EXT };
 enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
-enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W };
+enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W,ER3303_1 };
 enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
 // Touch screen cal structs
@@ -251,7 +251,7 @@ class RA8875 : public Print {
 	void 		setFontInterline(uint8_t pix);//0...63 pix
 	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
 	//----------Font Selection and related..............................
-	bool		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
+	void		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
 	void 		setIntFontCoding(enum RA8875fontCoding f);
 //--------------Graphic Funcions -------------------------
@@ -278,6 +278,8 @@ class RA8875 : public Print {
 	void    	fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
 	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
+//-------------- DMA -------------------------------
+	//void 		showFlashPict(uint8_t picnum);
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
@@ -285,6 +287,7 @@ class RA8875 : public Print {
 	void    	touchEnable(boolean on);
 	boolean 	touched(void);
 	boolean 	touchRead(uint16_t *x, uint16_t *y);
+	//thanks to Adafruit for this!
     inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
 	//void    	writeCommand(uint8_t d);
 	//void    	writeData(uint8_t d);
