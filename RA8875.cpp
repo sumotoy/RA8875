@@ -867,17 +867,20 @@ void RA8875::pushPixels(uint32_t num, uint16_t p) {
 }
 
 /**************************************************************************/
-/*!
+/*!		
+		Define a window for perform scroll
+		Parameters:
+		XL: x window start left
+		XR: x window end right
+		YT: y window start top
+		YB: y window end bottom
 
 */
 /**************************************************************************/
 void RA8875::setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB){
 	checkLimitsHelper(XL,YT);
 	checkLimitsHelper(XR,YB);
-	_scrollXL = XL;
-	_scrollXR = XR;
-	_scrollYT = YT;
-	_scrollYB = YB;
+	_scrollXL = XL; _scrollXR = XR; _scrollYT = YT; _scrollYB = YB;
     writeReg(RA8875_HSSW0,_scrollXL);
     writeReg(RA8875_HSSW1,_scrollXL >> 8);
   
@@ -897,13 +900,50 @@ void RA8875::setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB){
 */
 /**************************************************************************/
 void RA8875::scroll(uint16_t x,uint16_t y){ 
-	if (y > _scrollYB) y = _scrollYB;
-    writeReg(RA8875_HOFS0,x); 
-    writeReg(RA8875_HOFS1,x >> 8);
+	if (y > _scrollYB) y = _scrollYB;//mmmm... not sure
+	if (_scrollXL == 0 && _scrollXR == 0 && _scrollYT == 0 && _scrollYB == 0){
+		//do nothing, scroll window inactive
+	} else {
+		writeReg(RA8875_HOFS0,x); 
+		writeReg(RA8875_HOFS1,x >> 8);
  
-    writeReg(RA8875_VOFS0,y);
-    writeReg(RA8875_VOFS1,y >> 8);
+		writeReg(RA8875_VOFS0,y);
+		writeReg(RA8875_VOFS1,y >> 8);
+	}
 }	 
+
+void RA8875::DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR){
+
+  	writeReg(RA8875_DTNR0,BWR);
+  	writeReg(RA8875_BWR1,BWR >> 8);
+
+  	writeReg(RA8875_DTNR1,BHR);
+  	writeReg(RA8875_BHR1,BHR >> 8);
+
+  	writeReg(RA8875_DTNR2,SPWR);
+  	writeReg(RA8875_SPWR1,SPWR >> 8); 
+}
+
+void RA8875::DMA_startAddress(unsigned long adrs){ 
+  	writeReg(RA8875_SSAR0,adrs);
+  	writeReg(RA8875_SSAR1,adrs >> 8);
+	writeReg(RA8875_SSAR2,adrs >> 16);
+  	//writeReg(0xB3,adrs >> 24);// not more in datasheet!
+}
+
+void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum){  
+	checkLimitsHelper(x,y);
+	checkLimitsHelper(w,h);
+	writeReg(RA8875_SFCLR,0X00);
+	writeReg(RA8875_SROC,0X87);
+	writeReg(RA8875_DMACR,0X02);
+	//setActiveWindow(0,_width-1,0,_height-1); 
+	setXY(x,y);
+	DMA_startAddress(261120*(picnum-1));//DMA Start address setting
+	DMA_blockModeSize(w,h,w);   
+	writeReg(RA8875_DMACR,0X03);//FLASH setting
+	waitBusy(0x01);
+} 
 
 /**************************************************************************/
 /*!

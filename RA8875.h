@@ -295,7 +295,8 @@ class RA8875 : public Print {
 	void 		setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);
 	void 		scroll(uint16_t x,uint16_t y);
 //-------------- DMA -------------------------------
-	//void 		showFlashPict(uint8_t picnum);
+	void 		drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum);
+
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
@@ -357,6 +358,8 @@ using Print::write;
 	void 	lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	void 	curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	void 	roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);
+	void 	DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR);
+	void 	DMA_startAddress(unsigned long adrs);
 	//---------------------------------------------------------
     // Low level access  commands ----------------------
 	void    	writeReg(uint8_t reg, uint8_t val);
