@@ -34,7 +34,7 @@ RA8875::RA8875(uint8_t CS) {
 	Adafruit_800x480 (5" and 7" Adafruit displays)
 */
 /**************************************************************************/
-boolean RA8875::begin(enum RA8875sizes s) {
+void RA8875::begin(enum RA8875sizes s) {
 	_size = s;
 		_width = 480;
 		_height = 272;
@@ -62,6 +62,10 @@ boolean RA8875::begin(enum RA8875sizes s) {
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
 	_textCursorStyle = BLINK;
+	_scrollXL = 0;
+	_scrollXR = 0;
+	_scrollYT = 0;
+	_scrollYB = 0;
 /*	Memory Write Control Register 0
 	7: 0(graphic mode), 1(textx mode)
 	6: 0(font-memory cursor not visible), 1(visible)
@@ -126,7 +130,6 @@ boolean RA8875::begin(enum RA8875sizes s) {
 #endif
 	
 	initialize();
-	return true;
 }
 
 /************************* Initialization *********************************/
@@ -185,7 +188,7 @@ void RA8875::initialize(void) {
 	writeReg(RA8875_VSTR1,initStrings[idx][10]);
 	writeReg(RA8875_VPWR,initStrings[idx][11]);
 	setActiveWindow(0,_width-1,0,_height-1);//set the active winsow
-	writeReg(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);//clear all
+	clearMemory(true);
 	delay(200); 
 	
     //now starts the first time setting up
@@ -200,6 +203,23 @@ void RA8875::initialize(void) {
 	
 	//now tft it's ready to go and in [Graphic mode]
 }
+
+/**************************************************************************/
+/*!		
+		Clear memory
+	    Parameters:
+		full: true(clear all memory), false(clear active window only)
+*/
+/**************************************************************************/
+void RA8875::clearMemory(boolean full){
+	uint8_t temp = 0b00000000;
+	if (!full) temp |= (1 << 6);
+	temp |= (1 << 7);
+	writeReg(RA8875_MCLR,temp);
+	_cursorX = _cursorY = 0;
+	waitBusy(0x80);
+}
+
 
 /**************************************************************************/
 /*!		
@@ -637,7 +657,6 @@ void RA8875::setFontSpacing(uint8_t spc){//ok
 /**************************************************************************/
 void RA8875::textWrite(const char* buffer, uint16_t len) {
 	bool goBack = false;
-	uint8_t temp;
 	uint8_t start = 0;
 	if (_currentMode == GRAPHIC){
 		changeMode(TEXT);
@@ -663,10 +682,7 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 		} else {
 			writeData(buffer[i]);
 			// wait for stuff...
-			do {
-				temp = readStatus();
-			} while ((temp & 0x80) == 0x80);
-			// end wait for stuff
+			waitBusy(0x80);
 		}
 #if defined(__AVR__)
 		if (_textScale > 1) delay(1);
@@ -799,6 +815,21 @@ boolean RA8875::waitPoll(uint8_t regname, uint8_t waitflag) {
 	return false; // MEMEFIX: yeah i know, unreached! - add timeout?
 }
 
+/**************************************************************************/
+/*!
+	Just a wait routine until job it's done
+	Parameters:
+	res:0x80(for most operations),0x40(BTE wait), 0x01(DMA wait)
+*/
+/**************************************************************************/
+void RA8875::waitBusy(uint8_t res) {
+	uint8_t w; 	
+	do {
+	if (res == 0x01) writeCommand(RA8875_DMACR);//dma
+	w = readStatus();
+	} while ((w & res) == res);
+}
+
 
 /**************************************************************************/
 /*!		
@@ -834,6 +865,45 @@ void RA8875::pushPixels(uint32_t num, uint16_t p) {
 	}
 	endSend();
 }
+
+/**************************************************************************/
+/*!
+
+*/
+/**************************************************************************/
+void RA8875::setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB){
+	checkLimitsHelper(XL,YT);
+	checkLimitsHelper(XR,YB);
+	_scrollXL = XL;
+	_scrollXR = XR;
+	_scrollYT = YT;
+	_scrollYB = YB;
+    writeReg(RA8875_HSSW0,_scrollXL);
+    writeReg(RA8875_HSSW1,_scrollXL >> 8);
+  
+    writeReg(RA8875_HESW0,_scrollXR);
+    writeReg(RA8875_HESW1,_scrollXR >> 8);   
+    
+    writeReg(RA8875_VSSW0,_scrollYT);
+    writeReg(RA8875_VSSW1,_scrollYT >> 8);   
+ 
+    writeReg(RA8875_VESW0,_scrollYB);
+    writeReg(RA8875_VESW1,_scrollYB >> 8);
+}
+
+/**************************************************************************/
+/*!
+
+*/
+/**************************************************************************/
+void RA8875::scroll(uint16_t x,uint16_t y){ 
+	if (y > _scrollYB) y = _scrollYB;
+    writeReg(RA8875_HOFS0,x); 
+    writeReg(RA8875_HOFS1,x >> 8);
+ 
+    writeReg(RA8875_VOFS0,y);
+    writeReg(RA8875_VOFS1,y >> 8);
+}	 
 
 /**************************************************************************/
 /*!

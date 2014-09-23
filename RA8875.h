@@ -201,7 +201,7 @@ enum RA8875tcursor { NORMAL,BLINK };
 enum RA8875tsize { X16,X24,X32 };
 enum RA8875fontSource { INT, EXT };
 enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
-enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W,ER3303_1 };
+enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, ER3303_1 };
 enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
 
@@ -229,7 +229,7 @@ class RA8875 : public Print {
 	RA8875(uint8_t cs, uint8_t rst);
 	RA8875(uint8_t cs);
 //------------- Setup -------------------------
-	boolean 	begin(enum RA8875sizes s);
+	void 		begin(enum RA8875sizes s);
 //------------- Hardware related -------------------------
 	void    	softReset(void);
 	void    	displayOn(boolean on);
@@ -237,6 +237,7 @@ class RA8875 : public Print {
 	void 		brightness(uint8_t val);//ok
 	void 		changeMode(enum RA8875modes m);//GRAPHIC,TEXT
 	uint8_t 	readStatus(void);
+	void		clearMemory(boolean full);
 //--------------area & color -------------------------
 	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);
 	uint16_t 	width(void);
@@ -290,6 +291,9 @@ class RA8875 : public Print {
 	void    	fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
 	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
+//--------------- SCROLL ----------------------------------------
+	void 		setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);
+	void 		scroll(uint16_t x,uint16_t y);
 //-------------- DMA -------------------------------
 	//void 		showFlashPict(uint8_t picnum);
 //--------------GPIO & PWM -------------------------
@@ -335,6 +339,7 @@ using Print::write;
 	enum RA8875fontSource 	_fontSource;
 	enum RA8875tcursor		_textCursorStyle;
 	
+	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
 	
 	volatile uint32_t		_spiSpeed;//for SPI transactions
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
@@ -363,6 +368,7 @@ using Print::write;
 	
 	
 	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
+	void 		waitBusy(uint8_t res);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 	void 		startSend();
 	void 		endSend();
 	// Register containers -----------------------------------------

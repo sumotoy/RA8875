@@ -491,11 +491,6 @@ If pattern Format = 16x16 then Pattern Set [1:0] is valid */
 1: Clear the active window
 ----- Bit 5,4,3,2,1,0 (na)  */
 #define RA8875_MCLR             	  0x8E//Memory Clear Control Register
-	#define RA8875_MCLR_START       0x80
-	#define RA8875_MCLR_STOP        0x00
-	#define RA8875_MCLR_READSTATUS  0x80
-	#define RA8875_MCLR_FULL        0x00
-	#define RA8875_MCLR_ACTIVE      0x40
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            Drawing Control Registers
