@@ -1,6 +1,13 @@
 #include <SPI.h>
 #include <RA8875.h>
 
+/*
+You are using 4 wire SPI here, so:
+ MOSI:11
+ MISO:12
+ SCK:13
+ the rest of pin below:
+ */
 #define RA8875_CS 10
 #define RA8875_RESET 9
 
@@ -11,10 +18,8 @@ float angle;
 
 void setup()
 {
-  if (!tft.begin(RA8875_480x272)) {
-    Serial.println("RA8875 Not Found!");
-    while (1);
-  }
+  tft.begin(RA8875_480x272);
+
 }
 
 // Translate a hue "angle" -120 to 120 degrees (ie -2PI/3 to 2PI/3) to

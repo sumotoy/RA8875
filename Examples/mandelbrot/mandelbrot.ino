@@ -10,6 +10,13 @@
 #include <SPI.h>
 #include <RA8875.h>
 
+/*
+You are using 4 wire SPI here, so:
+ MOSI:11
+ MISO:12
+ SCK:13
+ the rest of pin below:
+ */
 #define RA8875_INT 2
 #define RA8875_CS 10
 #define RA8875_RESET 9
@@ -28,12 +35,8 @@ void setup()
   Serial.println("RA8875 start");
 
   /* Initialise the display using 'RA8875_480x272' or 'RA8875_800x480' */
-  if (!tft.begin(RA8875_480x272)) {
-    Serial.println("RA8875 Not Found!");
-    while (1);
-  }
+  tft.begin(RA8875_480x272);
 
-  Serial.println("Found RA8875");
   cx = -0.086f;
   cy = 0.85f;
 }

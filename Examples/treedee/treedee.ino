@@ -5,6 +5,13 @@
 #include <SPI.h>
 #include <RA8875.h>
 
+/*
+You are using 4 wire SPI here, so:
+ MOSI:11
+ MISO:12
+ SCK:13
+ the rest of pin below:
+ */
 #define RA8875_CS 10
 #define RA8875_RESET 9
 
@@ -42,11 +49,8 @@ void setup() {
   Serial.begin(9600);
   Serial.println("RA8875 start");
 
+  tft.begin(RA8875_480x272);
 
-  if (!tft.begin(RA8875_480x272)) {
-    Serial.println("RA8875 Not Found!");
-    while (1);
-  }
 }
 
 uint16_t ccolor = RA8875_GREEN;

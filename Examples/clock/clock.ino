@@ -29,12 +29,8 @@ uint32_t targetTime = 0;// for next 1 second timeout
 uint8_t hh,mm,ss;  //containers for current time
 
 void setup(void) {
-  /* Initialise the display using 'RA8875_480x272' or 'RA8875_800x480' */
-  if (!tft.begin(RA8875_480x272)) {
-    Serial.println("RA8875 Not Found!");
-    while (1);
-  }
-  tft.fillScreen(RA8875_BLACK);
+  tft.begin(RA8875_480x272);
+
   tft.setTextColor(RA8875_WHITE, RA8875_BLACK);
   ccenterx = tft.width()/2;
   ccentery = tft.height()/2;

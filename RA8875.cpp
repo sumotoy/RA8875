@@ -113,20 +113,16 @@ boolean RA8875::begin(enum RA8875sizes s) {
 	if (_rst < 255){
 		pinMode(_rst, OUTPUT); 
 		digitalWrite(_rst, LOW);
-		delay(100);
+		delay(300);
 		digitalWrite(_rst, HIGH);
-		delay(100);
 	}
 	
 	SPI.begin();
 #if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
-	_spiSpeed = 125000;//roll back speed for init
-	if (readReg(0) != 0x75) return false;
 	_spiSpeed = MAXSPISPEED;//go back to full speed
 #else//do not use SPItransactons
 	SPI.setClockDivider(SPI_CLOCK_DIV4);//4Mhz
 	SPI.setDataMode(SPI_MODE0);
-	if (readReg(0) != 0x75) return false;
 #endif
 	
 	initialize();

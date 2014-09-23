@@ -23,6 +23,13 @@ Each font ROM has it's encoding so follow font rom datasheet!
 #include <SD.h>
 #endif
 
+/*
+You are using 4 wire SPI here, so:
+ MOSI:11
+ MISO:12
+ SCK:13
+ the rest of pin below:
+ */
 #define RA8875_INT   2
 #define RA8875_CS    10
 #define RA8875_RESET 9
@@ -33,19 +40,17 @@ uint16_t tx, ty;
 
 void setup() 
 {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   //while (!Serial) {;}
-  //Serial.println("RA8875 start");
+  Serial.println("RA8875 start");
 
  
-  if (!tft.begin(RA8875_480x272)) {
-    //Serial.println("RA8875 Not Found!");
-    while (1);
-  }
+  tft.begin(RA8875_480x272);
+
 #if defined(USEEXTSDCARD)
   //begin SD
   if (!SD.begin(SDCSPIN)) {
-    //Serial.println("SD failed!");
+    Serial.println("SD failed!");
     while(1);
   }
 #endif

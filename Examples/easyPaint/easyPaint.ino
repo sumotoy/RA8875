@@ -30,11 +30,7 @@ void setup()
   //while (!Serial) {;}
   Serial.println("RA8875 start");
 
-  if (!tft.begin(RA8875_480x272)) {
-    Serial.println("RA8875 Not ready!?!?!");
-    while (1);
-  }
-  Serial.println("RA8875 ready");
+  itft.begin(RA8875_480x272);
 
   pinMode(RA8875_INT, INPUT);
   digitalWrite(RA8875_INT, HIGH);

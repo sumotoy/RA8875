@@ -26,11 +26,7 @@ void setup()
   //while (!Serial) {;}
   Serial.println("RA8875 start");
 
-  if (!tft.begin(RA8875_480x272)) {
-    Serial.println("RA8875 not ready!");
-    while (1);
-  }
-  Serial.println("RA8875 ready");
+  tft.begin(RA8875_480x272);
 
 }
 
