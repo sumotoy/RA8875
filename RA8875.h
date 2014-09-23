@@ -1,27 +1,26 @@
 /*
-	----------------------------------------
-	RA8875 LCD/TFT Graphic Controller Driver
-	----------------------------------------
-	Version:0.43(early beta)
-	++++++++++++++++++++++++++++++++++++++++
-RA8875 it's an amazing device, it can drive LCD/TFT till 800x480 in 2,3,4 wire
-or 8/16 bit parallel (6800/8080). It's different from other chip because most graphic
-functions are hardware accellerated so you can use it with slow MCU with impressive
-results. In addition the chip controls directly a resistive Touch Screen and can have an external
-keypad, also optional external fonts and external flash chip can be installed and directly controlled.
-It also have 2 PWM generators and 2 GPIO (one PWM can be used to control the backligh of the display)
-and can use DMA and BTE (Block Transfer Engine), can handle directly Text by using internal (or external)
-font library multiple scroll,patterns, custom pointers and much more. It's a really full loaded device!
-Basic use it's really easy to implement but go inside all features it's a small nightmare.
-In contrast it has some issue such as the SLOW SPI speed, some slow down when uploading big images
-and since it use internal hardware accellerated routines and commands are short it's possible than MCU
-it's faster than chip so you have to check if the job it's done before send another command.
-RAiO has a massive datasheet for it and I got an application paper from the company that was used
-by Adafruit for his version of this driver.
-This is why I managed to create another library, the Adafruit has several issues and builded over
-the RAiO application note that it's just a basic example.
+	--------------------------------------------------
+	RA8875 LCD/TFT Graphic Controller Driver Library
+	--------------------------------------------------
+	Version:0.43(early beta) tested only w Teensy3.1
+	++++++++++++++++++++++++++++++++++++++++++++++++++
+	Written by: Max MC Costa for s.u.m.o.t.o.y
+	++++++++++++++++++++++++++++++++++++++++++++++++++
+An attemp to create a full featured library support for RA8875 chip from RAiO
+that is alternative to the buggy and incomplete Adafruit_RA8875 (but thanks Ada 
+and PaintYourDragon, great work aniway).
 
+---------------------------
+About Copyrights...
+---------------------------
+Even if similar to Adafruit_RA8875 in some parts this library was builded originated
+(as the Adafruit one) from the application note and datasheet from RAiO, however
+I spent quite a lot of time to improve and bring to life all features so if you clone,
+copy or modify please leave all my original notes intact.
+
+------------------------------------------------------
 Some Features of the chip
+------------------------------------------------------
 
 	- Hardware accellerated graphic functions
 	- Build-in resistive Touch Screen controller
@@ -29,20 +28,24 @@ Some Features of the chip
 	- BTE
 	- Build-In keypad controller
 	- Internal Font library
-	- External Font Chip directly drive (Genicomp)
-	- External Directly drive Flash chip
-	- Mixed graphic / Text environment
-	- Many communication protocols
+	- Support fot external ROM Font Chip (Genicomp)
+	- Support for external Flash Ram chip
+	- Mixed Graphic/Text capable
+	- Many communication protocols supported
 	- Interrupts and Wait pins
 	- Internal memory
-	- Patterns
+	- User Patterns
+	- User graphic Cursors
+	- User defined Font Chars
 	- Multiple Scrolling
 	- Using relative big size screens with tiny MCU
-	- Advanced sleep mode with multiple wake-ups
+	- Advanced sleep mode with multiple way to wake-up
 	_ 2 PWM
 	- 2 GPIO
-	
+
+---------------------------
 The goals of this library:
+---------------------------
 
 	- Compatible with most RA8875 based TFT's and even Adafruit piggyBack
 	- All resolution supported
@@ -50,33 +53,41 @@ The goals of this library:
 	- All communication protocol supported
 
 NOTES:
-I'm normally use the excellent Adaruit_GFX library for all my tft,oled stuff but this time it's
-totally useless here since this chip use it's graphic functions so no other library it's needed apart SPI.
+I'm normally use the excellent Adafruit_GFX library for all my tft,oled stuff but this time NO
+ since this chip use it's graphic accellerated functions, I was really surprised when I see that
+the Adafruit version use it! Simply a waste of memory/resources!
 The SPI code uses a new feature called SPI Transitions that it's brand new and not official, it's 
-included with Teensy3 1.0.5R2 and hopefully will be included by Arduino as well so check for it!
+included with Teensy3 1.0.5R2 and hopefully will be included by Arduino 1.5.8 as well so check for it!
 Using SPI Transitions will force you to check if the other libraries that use SPI in your project (if you have)
 are compatible, fortunately it's easy stuff to do but better say in advance. If you use a non SPI transitions
 library the code will automatically compile with standard one but speed will suffer so it's highly raccomanded.
 
-Now an early beta, only SPI supported, it's has been tested ONLY with Teensy3 and Teensy3.1
-
+-----------------------------------
 Wiring
-
-chip		Teensy
--------------------------
+-----------------------------------
+chip		Teensy/Uno
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 CLK:		pin 13
 MOSI:		pin 11
 MISO:		pin 12
-SS:			pin 10 (selectable)
+CS:			pin 10 (selectable)
 INT:		pin 3  (selectable)
 RESET:		pin 9  (selectable and optional)
-In some modules you can leave unconnected but check if it's needed
+*In some modules you can leave unconnected but check if it's needed!
+
+*if you use an optional SD card here's connections...
+SD CLK:		pin 13 shared
+SD MOSI:	pin 11 shared
+SD MISO:	pin 12 shared
+SD CS:		pin 4  (selectable)
+SD CARD ID: pin xx (selectable and optional)
+
 
 -------------SUPPORTED EXTERNAL FONT CHIP
 East Rising
 	ER3300-1
 	ER3302-1
-	ER3303-1 <--- 8x16, 16,24 Arial
+	ER3303-1 <--- tested
 	ER3304-1
 	ER3301-1
 	ER3303-1
@@ -193,6 +204,7 @@ enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_
 enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W,ER3303_1 };
 enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
+
 // Touch screen cal structs
 typedef struct Point 
 {
@@ -325,13 +337,13 @@ using Print::write;
 	
 	
 	volatile uint32_t		_spiSpeed;//for SPI transactions
-	uint16_t				_cursorX, _cursorY;
+	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	//		functions --------------------------
 	void 	initialize(void);
-	void    textWrite(const char* buffer, uint16_t len=0);
+	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
 	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
 	// 		helpers-----------------------------
-	void 	checkLimitsHelper(int16_t &x,int16_t &y);
+	void 	checkLimitsHelper(int16_t &x,int16_t &y);//RA8875 it's prone to freeze with values out of range
 	void 	circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
 	void 	rectHelper  (int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
 	void 	triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
@@ -350,7 +362,7 @@ using Print::write;
 	uint8_t 	readData(bool stat=false);
 	
 	
-	boolean 	waitPoll(uint8_t r, uint8_t f);
+	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
 	void 		startSend();
 	void 		endSend();
 	// Register containers -----------------------------------------
