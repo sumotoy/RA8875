@@ -896,6 +896,7 @@ void RA8875::setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB){
 
 /**************************************************************************/
 /*!
+		Perform the scroll
 
 */
 /**************************************************************************/
@@ -912,8 +913,12 @@ void RA8875::scroll(uint16_t x,uint16_t y){
 	}
 }	 
 
-void RA8875::DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR){
+/**************************************************************************/
+/*!
 
+*/
+/**************************************************************************/
+void RA8875::DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR){
   	writeReg(RA8875_DTNR0,BWR);
   	writeReg(RA8875_BWR1,BWR >> 8);
 
@@ -924,6 +929,11 @@ void RA8875::DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR){
   	writeReg(RA8875_SPWR1,SPWR >> 8); 
 }
 
+/**************************************************************************/
+/*!
+
+*/
+/**************************************************************************/
 void RA8875::DMA_startAddress(unsigned long adrs){ 
   	writeReg(RA8875_SSAR0,adrs);
   	writeReg(RA8875_SSAR1,adrs >> 8);
@@ -931,17 +941,25 @@ void RA8875::DMA_startAddress(unsigned long adrs){
   	//writeReg(0xB3,adrs >> 24);// not more in datasheet!
 }
 
+/**************************************************************************/
+/*! (STILL DEVELOPING)
+		Display an image stored in Flash RAM
+		Note: you should have the optional FLASH Chip connected to RA8875!
+		Note: You should store some image in that chip!
+
+*/
+/**************************************************************************/
 void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum){  
 	checkLimitsHelper(x,y);
 	checkLimitsHelper(w,h);
-	writeReg(RA8875_SFCLR,0X00);
-	writeReg(RA8875_SROC,0X87);
-	writeReg(RA8875_DMACR,0X02);
+	writeReg(RA8875_SFCLR,0x00);
+	writeReg(RA8875_SROC,0x87);
+	writeReg(RA8875_DMACR,0x02);
 	//setActiveWindow(0,_width-1,0,_height-1); 
 	setXY(x,y);
-	DMA_startAddress(261120*(picnum-1));//DMA Start address setting
+	DMA_startAddress(261120 * (picnum-1));
 	DMA_blockModeSize(w,h,w);   
-	writeReg(RA8875_DMACR,0X03);//FLASH setting
+	writeReg(RA8875_DMACR,0x03);
 	waitBusy(0x01);
 } 
 
