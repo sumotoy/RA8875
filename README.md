@@ -1,6 +1,8 @@
 RA8875 library
 ==============
 
+[![video test](http://i.ytimg.com/vi/WbFOsxjFCL8/mqdefault.jpg)](http://www.youtube.com/embed/WbFOsxjFCL8)
+
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x and Arduino's (and I hope for other MCU's).
 This is the first attemp to create a library that use all the features of this chip and I'm tring to optimize as much I can.
 Actually it's in alpha stage, working but only SPI (4 wires), please read the notes in .h file.
