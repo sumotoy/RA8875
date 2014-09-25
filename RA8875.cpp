@@ -36,17 +36,34 @@ RA8875::RA8875(uint8_t CS) {
 /**************************************************************************/
 void RA8875::begin(enum RA8875sizes s) {
 	_size = s;
-	uint8_t initIndex = 1;//this is the more popular setting
-		_width = 480;
-		_height = 272;
-	if (_size == RA8875_480x272 || _size == Adafruit_480x272) {
+	uint8_t initIndex;
+
+	if (_size == RA8875_320x240) {//still not supported! Wait next version
+		_width = 320;
+		_height = 240;
+		initIndex = 0;
+		_maxLayers = 2;
+	} else if (_size == RA8875_480x272 || _size == Adafruit_480x272) {
 		_width = 480;
 		_height = 272;
 		initIndex = 1;
+		_maxLayers = 2;
+	} else if (_size == RA8875_640x480) {//still not supported! Wait next version
+		_width = 640;
+		_height = 480;
+		initIndex = 2;
+		_maxLayers = 1;
 	} else if (_size == RA8875_800x480 || _size == Adafruit_800x480) {
 		_width = 800;
 		_height = 480;
 		initIndex = 3;
+		_maxLayers = 1;
+	} else {
+		_width = 480;
+		_height = 272;
+		initIndex = 1;
+		_maxLayers = 2;
+		_size = RA8875_480x272;
 	}
 	_currentMode = GRAPHIC;
 	_spiSpeed = MAXSPISPEED;
@@ -147,33 +164,34 @@ void RA8875::begin(enum RA8875sizes s) {
 void RA8875::initialize(uint8_t initIndex) {
 
 	const uint8_t initStrings[4][12] = {
-	{0x0A,0x02,0x03,0x00,0x05,0x04,0x03,0x05,0x00,0x0E,0x00,0x02},
-	{0x0A,0x02,0x82,0x00,0x01,0x00,0x05,0x02,0x00,0x07,0x00,0x09},
-	{0x0B,0x02,0x01,0x05,0x0F,0x01,0x00,0x0A,0x00,0x0E,0x00,0x01},
-	{0x0B,0x02,0x81,0x03,0x03,0x02,0x00,0x14,0x00,0x06,0x00,0x01}
+	{0x0A,0x02,0x03,0x00,0x05,0x04,0x03,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (to be fixed)
+	{0x0A,0x02,0x82,0x00,0x01,0x00,0x05,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272
+	{0x0B,0x02,0x01,0x05,0x0F,0x01,0x00,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480 (to be fixed)
+	{0x0B,0x02,0x81,0x03,0x03,0x02,0x00,0x14,0x00,0x06,0x00,0x01}// 3 -> 800x480 (to be fixed?)
 	};
-	
-	writeReg(RA8875_SYSR,RA8875_SYSR_16BPP | RA8875_SYSR_MCU8); //0x0c SYSR bit[4:3]=00 256 color bit[2:1]= 00 8bit MPU interface,8bit MCU interface and 65k color display
-	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);//pll1
+	//we are working ALWAYS at 65K color space!!!!
+	writeReg(RA8875_SYSR,RA8875_SYSR_16BPP | RA8875_SYSR_MCU8); //Color space and 8/16 bit selection
+	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);////PLL Control Register 1
 	delay(2);
-	writeReg(RA8875_PLLC2,initStrings[initIndex][1]);//pll2
+	writeReg(RA8875_PLLC2,initStrings[initIndex][1]);////PLL Control Register 2
 	delay(2);
-	writeReg(RA8875_PCSR,initStrings[initIndex][2]);
+	writeReg(RA8875_PCSR,initStrings[initIndex][2]);//Pixel Clock Setting Register
 	delay(2);
-	writeReg(RA8875_HDWR,(_width / 8) - 1);
-	writeReg(RA8875_HNDFTR,initStrings[initIndex][3]);
-	writeReg(RA8875_HNDR,initStrings[initIndex][4]);
-	writeReg(RA8875_HSTR,initStrings[initIndex][5]);
-	writeReg(RA8875_HPWR,initStrings[initIndex][6]);
-	writeReg(RA8875_VDHR0,(uint16_t)(_height - 1) & 0xFF);
-	writeReg(RA8875_VDHR1,(uint16_t)(_height - 1) >> 8);
-	writeReg(RA8875_VNDR0,initStrings[initIndex][7]);
-	writeReg(RA8875_VNDR1,initStrings[initIndex][8]);
-	writeReg(RA8875_VSTR0,initStrings[initIndex][9]);
-	writeReg(RA8875_VSTR1,initStrings[initIndex][10]);
-	writeReg(RA8875_VPWR,initStrings[initIndex][11]);
+	writeReg(RA8875_HDWR,(_width / 8) - 1);//LCD Horizontal Display Width Register
+	writeReg(RA8875_HNDFTR,initStrings[initIndex][3]);//Horizontal Non-Display Period Fine Tuning Option Register
+	writeReg(RA8875_HNDR,initStrings[initIndex][4]);////LCD Horizontal Non-Display Period Register
+	writeReg(RA8875_HSTR,initStrings[initIndex][5]);////HSYNC Start Position Register
+	writeReg(RA8875_HPWR,initStrings[initIndex][6]);////HSYNC Pulse Width Register
+	writeReg(RA8875_VDHR0,(uint16_t)(_height - 1) & 0xFF);////LCD Vertical Display Height Register0
+	writeReg(RA8875_VDHR1,(uint16_t)(_height - 1) >> 8);////LCD Vertical Display Height Register1
+	writeReg(RA8875_VNDR0,initStrings[initIndex][7]);////LCD Vertical Non-Display Period Register 0
+	writeReg(RA8875_VNDR1,initStrings[initIndex][8]);////LCD Vertical Non-Display Period Register 1
+	writeReg(RA8875_VSTR0,initStrings[initIndex][9]);////VSYNC Start Position Register 0
+	writeReg(RA8875_VSTR1,initStrings[initIndex][10]);////VSYNC Start Position Register 1
+	writeReg(RA8875_VPWR,initStrings[initIndex][11]);////VSYNC Pulse Width Register
 	setActiveWindow(0,_width-1,0,_height-1);//set the active winsow
-	clearMemory(true);
+	clearMemory(true);//clear FULL memory
+	//end of hardware initialization
 	delay(200); 
 	
     //now starts the first time setting up
@@ -961,6 +979,45 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 
 */
 /**************************************************************************/
+void RA8875::BTE_Size(uint16_t w, uint16_t h){
+    writeReg(RA8875_BEWR0,w);//BET area width literacy  
+    writeReg(RA8875_BEWR1,w >> 8);//BET area width literacy	   
+    writeReg(RA8875_BEHR0,h);//BET area height literacy
+    writeReg(RA8875_BEHR1,h >> 8);//BET area height literacy	   
+}	
+
+/**************************************************************************/
+/*!
+
+*/
+/**************************************************************************/
+void RA8875::BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY){
+	uint8_t temp0,temp1;
+    writeReg(RA8875_HSBE0,SX);//BTE horizontal position of read/write data
+    writeReg(RA8875_HSBE1,SX >> 8);//BTE horizontal position of read/write data   
+
+    writeReg(RA8875_HDBE0,DX);//BET written to the target horizontal position
+    writeReg(RA8875_HDBE1,DX >> 8);//BET written to the target horizontal position	   
+    
+    writeReg(RA8875_VSBE0,SY);//BTE vertical position of read/write data
+	temp0 = SY >> 8;   
+	temp1 = readReg(RA8875_VSBE1);
+	temp1 &= 0x80;
+    temp0 = temp0 | temp1; 
+	writeReg(RA8875_VSBE1,temp0);//BTE vertical position of read/write data  
+  
+    writeReg(RA8875_VDBE0,DY);//BET written to the target  vertical  position
+	temp0 = DY >> 8;   
+	temp1 = readReg(RA8875_VDBE1);
+	temp1 &= 0x80;
+	temp0 = temp0 | temp1;	
+	writeReg(RA8875_VDBE1,temp0);//BET written to the target  vertical  position 
+}		
+/**************************************************************************/
+/*!
+
+*/
+/**************************************************************************/
 /* void RA8875::fillRect(void) {
 	writeCommand(RA8875_DCR);
 	writeData(RA8875_DCR_LINESQUTRI_STOP | RA8875_DCR_DRAWSQUARE);
@@ -1648,7 +1705,7 @@ void  RA8875::writeReg(uint8_t reg, uint8_t val) {
 /**************************************************************************/
 uint8_t  RA8875::readReg(uint8_t reg) {
 	writeCommand(reg);
-	return readData();
+	return readData(false);
 }
 
 /**************************************************************************/

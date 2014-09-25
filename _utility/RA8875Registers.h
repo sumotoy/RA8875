@@ -109,8 +109,8 @@ note: HSYNC Start Position(pixels) = (HSTR + 1) * 8 */
 ----- Bit 4,0 (HSYNC Pulse Width(HPW))
 note: HSYNC Pulse Width(pixels) = (HPW + 1) * 8 */
 #define RA8875_HPWR             	  0x18//HSYNC Pulse Width Register
-#define RA8875_VDHR0            	  0x19//LCD Vertical Display Height Register
-#define RA8875_VDHR1            	  0x1A//LCD Vertical Display Height Register0
+#define RA8875_VDHR0            	  0x19//LCD Vertical Display Height Register 0
+#define RA8875_VDHR1            	  0x1A//LCD Vertical Display Height Register 1
 #define RA8875_VNDR0            	  0x1B//LCD Vertical Non-Display Period Register 0
 #define RA8875_VNDR1            	  0x1C//LCD Vertical Non-Display Period Register 1
 #define RA8875_VSTR0            	  0x1D//VSYNC Start Position Register 0

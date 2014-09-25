@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.45(early beta) tested only w Teensy3.1
+	Version:0.46(early beta) tested only w Teensy3.1
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -195,7 +195,7 @@ The default one it's the most common one and should work in most situations */
 #define RA8875_WHITE            0xFFFF
 
 
-enum RA8875sizes { RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_800x480 };
+enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_800x480,RA8875_640x480 };
 enum RA8875modes { GRAPHIC,TEXT };
 enum RA8875tcursor { NORMAL,BLINK };
 enum RA8875tsize { X16,X24,X32 };
@@ -296,7 +296,9 @@ class RA8875 : public Print {
 	void 		scroll(uint16_t x,uint16_t y);
 //-------------- DMA -------------------------------
 	void 		drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum);
-
+//-------------- BTE --------------------------------------------
+	void 		BTE_Size(uint16_t w, uint16_t h);
+	void	 	BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
@@ -339,6 +341,8 @@ using Print::write;
 	enum RA8875sizes 		_size;
 	enum RA8875fontSource 	_fontSource;
 	enum RA8875tcursor		_textCursorStyle;
+	
+	uint8_t					_maxLayers;
 	
 	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
 	
