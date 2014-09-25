@@ -30,6 +30,11 @@ This alpha version uses the new SPI Transaction library from Paul Stoffregen tha
 The beta release will use a main section for all chip stuff and several other libs for the protocols (as my LiquidCrystalNew).
 I should have a stable and workable version in a couple of days with many examples included...
 
+# PLEASE, READ THIS
+Until I reached a stable beta (around version 0.9) it's normal that something doesn't go in the right way!
+At this time I'm also redesign the entire library so many functions change name, parameters or disappear, it's not
+safe to use in an project!!!! If you help me testing it's always a great idea, I'm actually working with Teensy3 and buyDisplay version of the TFT (not the adafruit) but plan to switch between MCU's around version 0.8 when function names and overall structure will be fixed.
+
 
 About RA8875 chip
 This is amazing device, if you read the capabilities you will shocked but all come at a price...
