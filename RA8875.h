@@ -153,7 +153,7 @@ To perform the touch screen calibration, load libTouchSCalibration.ino and open 
 #define TOUCSRCAL_YLOW	153//147
 #define TOUCSRCAL_XHIGH	924//945
 #define TOUCSRCAL_YHIGH	917//934
-/* Max Speed it's used only in SPI Transaction mode,
+/* Max Speed it's ONLY used in SPI Transaction mode,
 it ensure the max and correct speed for accessing RA8875 in Read/Write...
 Datasheet it's clear:
 
@@ -345,7 +345,7 @@ using Print::write;
 	volatile uint32_t		_spiSpeed;//for SPI transactions
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	//		functions --------------------------
-	void 	initialize(void);
+	void 	initialize(uint8_t initIndex);
 	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
 	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
 	// 		helpers-----------------------------

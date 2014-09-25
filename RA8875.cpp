@@ -36,15 +36,17 @@ RA8875::RA8875(uint8_t CS) {
 /**************************************************************************/
 void RA8875::begin(enum RA8875sizes s) {
 	_size = s;
+	uint8_t initIndex = 1;//this is the more popular setting
 		_width = 480;
 		_height = 272;
-	if (_size == RA8875_480x272) {
+	if (_size == RA8875_480x272 || _size == Adafruit_480x272) {
 		_width = 480;
 		_height = 272;
-	} 
-	if (_size == RA8875_800x480) {
+		initIndex = 1;
+	} else if (_size == RA8875_800x480 || _size == Adafruit_800x480) {
 		_width = 800;
 		_height = 480;
+		initIndex = 3;
 	}
 	_currentMode = GRAPHIC;
 	_spiSpeed = MAXSPISPEED;
@@ -129,22 +131,12 @@ void RA8875::begin(enum RA8875sizes s) {
 	SPI.setDataMode(SPI_MODE0);
 #endif
 	
-	initialize();
+	initialize(initIndex);
 }
 
 /************************* Initialization *********************************/
 
-/**************************************************************************/
-/*!
-      Software Reset
-*/
-/**************************************************************************/
-void RA8875::softReset(void) {
-	writeCommand(RA8875_PWRR);
-	writeData(RA8875_PWRR_SOFTRESET);
-	writeData(RA8875_PWRR_NORMAL);
-	delay(1);
-}
+
 
 /**************************************************************************/
 /*!
@@ -152,15 +144,8 @@ void RA8875::softReset(void) {
       Hardware initialization of RA8875 and turn on
 */
 /**************************************************************************/
-void RA8875::initialize(void) {
-//set system basics
-	uint8_t idx = 0;
-	if (_size == RA8875_480x272 || _size == Adafruit_480x272) {
-		idx = 1;
-	} else if (_size == RA8875_800x480 || _size == Adafruit_800x480) {
-		idx = 3;
-	}
-	
+void RA8875::initialize(uint8_t initIndex) {
+
 	const uint8_t initStrings[4][12] = {
 	{0x0A,0x02,0x03,0x00,0x05,0x04,0x03,0x05,0x00,0x0E,0x00,0x02},
 	{0x0A,0x02,0x82,0x00,0x01,0x00,0x05,0x02,0x00,0x07,0x00,0x09},
@@ -169,24 +154,24 @@ void RA8875::initialize(void) {
 	};
 	
 	writeReg(RA8875_SYSR,RA8875_SYSR_16BPP | RA8875_SYSR_MCU8); //0x0c SYSR bit[4:3]=00 256 color bit[2:1]= 00 8bit MPU interface,8bit MCU interface and 65k color display
-	writeReg(RA8875_PLLC1,initStrings[idx][0]);//pll1
+	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);//pll1
 	delay(2);
-	writeReg(RA8875_PLLC2,initStrings[idx][1]);//pll2
+	writeReg(RA8875_PLLC2,initStrings[initIndex][1]);//pll2
 	delay(2);
-	writeReg(RA8875_PCSR,initStrings[idx][2]);
+	writeReg(RA8875_PCSR,initStrings[initIndex][2]);
 	delay(2);
 	writeReg(RA8875_HDWR,(_width / 8) - 1);
-	writeReg(RA8875_HNDFTR,initStrings[idx][3]);
-	writeReg(RA8875_HNDR,initStrings[idx][4]);
-	writeReg(RA8875_HSTR,initStrings[idx][5]);
-	writeReg(RA8875_HPWR,initStrings[idx][6]);
+	writeReg(RA8875_HNDFTR,initStrings[initIndex][3]);
+	writeReg(RA8875_HNDR,initStrings[initIndex][4]);
+	writeReg(RA8875_HSTR,initStrings[initIndex][5]);
+	writeReg(RA8875_HPWR,initStrings[initIndex][6]);
 	writeReg(RA8875_VDHR0,(uint16_t)(_height - 1) & 0xFF);
 	writeReg(RA8875_VDHR1,(uint16_t)(_height - 1) >> 8);
-	writeReg(RA8875_VNDR0,initStrings[idx][7]);
-	writeReg(RA8875_VNDR1,initStrings[idx][8]);
-	writeReg(RA8875_VSTR0,initStrings[idx][9]);
-	writeReg(RA8875_VSTR1,initStrings[idx][10]);
-	writeReg(RA8875_VPWR,initStrings[idx][11]);
+	writeReg(RA8875_VNDR0,initStrings[initIndex][7]);
+	writeReg(RA8875_VNDR1,initStrings[initIndex][8]);
+	writeReg(RA8875_VSTR0,initStrings[initIndex][9]);
+	writeReg(RA8875_VSTR1,initStrings[initIndex][10]);
+	writeReg(RA8875_VPWR,initStrings[initIndex][11]);
 	setActiveWindow(0,_width-1,0,_height-1);//set the active winsow
 	clearMemory(true);
 	delay(200); 
@@ -202,6 +187,18 @@ void RA8875::initialize(void) {
 	setFont(INT);	//set internal font use
 	
 	//now tft it's ready to go and in [Graphic mode]
+}
+
+/**************************************************************************/
+/*!
+      Software Reset
+*/
+/**************************************************************************/
+void RA8875::softReset(void) {
+	writeCommand(RA8875_PWRR);
+	writeData(RA8875_PWRR_SOFTRESET);
+	writeData(RA8875_PWRR_NORMAL);
+	delay(10);
 }
 
 /**************************************************************************/
@@ -342,7 +339,7 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		case GT30H24T3Y:
 		case ER3303_1://encoding GB12345
 			temp &= 0x1F; temp |= 0x40;
-			erc = GB12345;//forced
+			//erc = GB12345;//forced
 		break;
 		case GT23L24M1Z:
 			temp &= 0x1F; temp |= 0x60;
@@ -407,7 +404,6 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		_SFRSETReg = temp;//success, set reg
 		//writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F
 		//delay(4);
-		//return true;
 }
 
 /**************************************************************************/
@@ -422,7 +418,6 @@ void RA8875::setFont(enum RA8875fontSource s) {
 	if (s == INT){
 		//check the font coding
 		if (_extFontRom) {
-			//_SFRSETReg = 0b00000000;
 			setFontSize(X16,false);
 			writeReg(RA8875_SFRSET,0b00000000);//_SFRSETReg
 		}
@@ -439,7 +434,6 @@ void RA8875::setFont(enum RA8875fontSource s) {
 			delay(1);
 			writeReg(RA8875_SFCLR,0x02);//Serial Flash/ROM CLK frequency/2
 			setFontSize(X24,false);////X24 size
-			//setExternalFontRom(_fontRomType,_fontRomCoding);
 			writeReg(RA8875_SFRSET,_SFRSETReg);//at this point should be already set
 			delay(4);
 			writeReg(RA8875_SROC,0x28);// 0x28 rom 0,24bit adrs,wave 3,1 byte dummy,font mode, single mode
@@ -681,7 +675,6 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 			//_cursor_x  = 0;
 		} else {
 			writeData(buffer[i]);
-			// wait for stuff...
 			waitBusy(0x80);
 		}
 #if defined(__AVR__)
@@ -1120,12 +1113,12 @@ void RA8875::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color){
 /*!
       Draw Triangle
 	  Parameters:
-      x0:The 0-based x location of the point 0 of the triangle
-      y0:The 0-based y location of the point 0 of the triangle
-      x1:The 0-based x location of the point 1 of the triangle
-      y1:The 0-based y location of the point 1 of the triangle
-      x2:The 0-based x location of the point 2 of the triangle
-      y2:The 0-based y location of the point 2 of the triangle
+      x0:The 0-based x location of the point 0 of the triangle LEFT
+      y0:The 0-based y location of the point 0 of the triangle LEFT
+      x1:The 0-based x location of the point 1 of the triangle TOP
+      y1:The 0-based y location of the point 1 of the triangle TOP
+      x2:The 0-based x location of the point 2 of the triangle RIGHT
+      y2:The 0-based y location of the point 2 of the triangle RIGHT
       color: RGB565 color
 */
 /**************************************************************************/
