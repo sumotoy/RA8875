@@ -65,6 +65,7 @@ void RA8875::begin(enum RA8875sizes s) {
 		_maxLayers = 2;
 		_size = RA8875_480x272;
 	}
+	_currentLayer = 0;
 	_currentMode = GRAPHIC;
 	_spiSpeed = MAXSPISPEED;
 	_cursorX = 0;
@@ -85,6 +86,14 @@ void RA8875::begin(enum RA8875sizes s) {
 	_scrollXR = 0;
 	_scrollYT = 0;
 	_scrollYB = 0;
+	_useMultiLayers = false;//starts with one layer only
+/* Display Configuration Register	  [0x20]
+	  7: (Layer Setting Control) 0:one Layer, 1:two Layers
+	  6,5,4: (na)
+	  3: (Horizontal Scan Direction) 0: SEG0 to SEG(n-1), 1: SEG(n-1) to SEG0
+	  2: (Vertical Scan direction) 0: COM0 to COM(n-1), 1: COM(n-1) to COM0
+	  1,0: (na) */
+	_DPCRReg = 0b00000000;
 /*	Memory Write Control Register 0
 	7: 0(graphic mode), 1(textx mode)
 	6: 0(font-memory cursor not visible), 1(visible)
@@ -797,6 +806,12 @@ void RA8875::setGraphicCursor(uint8_t cur) {
 	temp &= ~(0x70);//clear bit 6,5,4
 	temp |= cur << 4;
 	temp |= cur;
+	if (_useMultiLayers){
+		_currentLayer == 1 ? temp |= (1 << 0) : temp &= ~(1 << 0);
+		Serial.println("bit!");
+	} else {
+		temp &= ~(1 << 0);//
+	}
 	writeData(temp);
 }
 
@@ -810,6 +825,11 @@ void RA8875::setGraphicCursor(uint8_t cur) {
 void RA8875::showGraphicCursor(boolean cur) {
 	uint8_t temp = readReg(RA8875_MWCR1);
 	cur == true ? temp |= (1 << 7) : temp &= ~(1 << 7);
+	if (_useMultiLayers){
+		_currentLayer == 1 ? temp |= (1 << 0) : temp &= ~(1 << 0);
+	} else {
+		temp &= ~(1 << 0);//
+	}
 	writeData(temp);
 }
 
@@ -1600,17 +1620,6 @@ boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
 	ty <<= 2;
 	tx |= temp & 0x03;        // get the bottom x bits
 	ty |= (temp >> 2) & 0x03; // get the bottom y bits
-/* 	uint16_t lx=(480-(((tx-50))*10/18));
-	uint16_t ly=(272-(((ty-63))*10/33));
-	Serial.println(lx,DEC);
-	Serial.print("lx:");
-	Serial.print(lx,DEC);
-	Serial.print(" - ly:");
-	Serial.print(ly,DEC);
-	Serial.print(" - olx:");
-	Serial.print(map(tx,0,1024,0,_width-1),DEC);
-	Serial.print(" - oly:");
-	Serial.println(map(ty,0,1024,0,_height-1),DEC); */
 	#if defined (INVERTETOUCH_X)
 	tx = 1024 - tx;
 	#endif
@@ -1657,15 +1666,192 @@ boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
 
 /**************************************************************************/
 /*!
+		Instruct the RA8875 chip to use 2 layers (if it's possible)
+		Return false if not possible, true if possible
+		Parameters:
+		on:enable multiple layers (2)
+      
+*/
+/**************************************************************************/
+boolean RA8875::useLayers(boolean on) {
+	bool clearBuffer = false;
+	if (_maxLayers > 1){
+		if (on){
+			_useMultiLayers = true;
+			_DPCRReg |= (1 << 7);
+			clearBuffer = true;
+		} else {
+			_useMultiLayers = false;
+			_DPCRReg &= ~(1 << 7);
+		}
+		writeReg(RA8875_DPCR,_DPCRReg);
+		if (clearBuffer) { 
+			//for some reason if you switch to multilayer the layer 2 has garbage
+			//better clear
+			setActiveLayer(2);//switch to layer 2
+			clearMemory(false);//clear memory of layer 2
+			setActiveLayer(1);//go back to layer 1
+		}
+		return true;//it's possible with current conf
+	}
+	_useMultiLayers = false;
+	return false;//not possible with current conf
+}
+
+/**************************************************************************/
+/*!
+		Change the current Active Layer (used in several functions)
+		It will work only if useLayer set to true and applicable!
+		Parameters:
+		layer:1..2
+      
+*/
+/**************************************************************************/
+void RA8875::setActiveLayer(uint8_t layer) {
+	if (_useMultiLayers){
+		uint8_t temp = readReg(RA8875_MWCR1);
+		if (layer < 2){
+			_currentLayer = 0;
+			temp &= ~(1 << 0);
+		} else {
+			_currentLayer = 1;
+			temp |= (1 << 0);
+		}
+		writeData(temp);
+	}
+}
+
+/**************************************************************************/
+/*!
+
+      
+*/
+/**************************************************************************/
+void RA8875::layerEffect(enum RA8875boolean efx){
+	uint8_t	reg = 0b00000000;
+	reg &= ~(0x07);//clear bit 2,1,0
+	switch(efx){//                       bit 2,1,0 of LTPR0
+		case LAYER1: //only layer 1 visible  [000]
+			//do nothing
+		break;
+		case LAYER2: //only layer 2 visible  [001]
+			reg |= (1 << 0);
+		break;
+		case TRANSPARENT: //transparent mode [011]
+			reg |= (1 << 0); reg |= (1 << 1);
+		break;
+		case LIGHTEN: //lighten-overlay mode [010]
+			reg |= (1 << 1);
+		break;
+		case OR: //boolean OR mode           [100]
+			reg |= (1 << 2);
+		break;
+		case AND: //boolean AND mode         [101]
+			reg |= (1 << 0); reg |= (1 << 2);
+		break;
+		case FLOATING: //floating windows    [110]
+			reg |= (1 << 1); reg |= (1 << 2);
+		break;
+		default:
+			//do nothing
+		break;
+	}
+	if (_useMultiLayers){
+		writeReg(RA8875_LTPR0,reg);
+	}
+}
+
+/**************************************************************************/
+/*!
+
+      
+*/
+/**************************************************************************/
+void RA8875::layerTransparency(uint8_t layer1,uint8_t layer2){
+	if (layer1 > 8) layer1 = 8;
+	if (layer2 > 8) layer2 = 8;
+	
+	uint8_t res = 0b00000000;//RA8875_LTPR1
+	
+	switch (layer1){
+		case 0: //disable layer
+			bitSet(res,3);
+		break;
+		case 1: //1/8
+			bitSet(res,0); bitSet(res,1); bitSet(res,2);
+		break;
+		case 2: //1/4
+			bitSet(res,1); bitSet(res,2);
+		break;
+		case 3: //3/8
+			bitSet(res,0); bitSet(res,2);
+		break;
+		case 4: //1/2
+			bitSet(res,2);
+		break;
+		case 5: //5/8
+			bitSet(res,0); bitSet(res,1);
+		break;
+		case 6: //3/4
+			bitSet(res,1);
+		break;
+		case 7: //7/8
+			bitSet(res,0);
+		break;
+	}
+	
+	switch (layer2){
+		case 0: //disable layer
+			bitSet(res,7);
+		break;
+		case 1: //1/8
+			bitSet(res,4); bitSet(res,5); bitSet(res,6);
+		break;
+		case 2: //1/4
+			bitSet(res,5); bitSet(res,6);
+		break;
+		case 3: //3/8
+			bitSet(res,4); bitSet(res,6);
+		break;
+		case 4: //1/2
+			bitSet(res,6);
+		break;
+		case 5: //5/8
+			bitSet(res,4); bitSet(res,5);
+		break;
+		case 6: //3/4
+			bitSet(res,5);
+		break;
+		case 7: //7/8
+			bitSet(res,4);
+		break;
+	}
+	if (_useMultiLayers){
+		writeReg(RA8875_LTPR1,res);
+	}
+}
+
+/**************************************************************************/
+/*!
+      Change the beam scan direction on display
+	  Parameters:
+	  invertH:true(inverted),false(normal) horizontal
+	  invertV:true(inverted),false(normal) vertical
+*/
+/**************************************************************************/
+void RA8875::scanDirection(boolean invertH,boolean invertV){
+	invertH == true ? _DPCRReg |= (1 << 3) : _DPCRReg &= ~(1 << 3);
+	invertV == true ? _DPCRReg |= (1 << 2) : _DPCRReg &= ~(1 << 2);
+	writeReg(RA8875_DPCR,_DPCRReg);
+}
+
+/**************************************************************************/
+/*!
       turn display on/off
 */
 /**************************************************************************/
 void RA8875::displayOn(boolean on) {
-	if (on) {
-		writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON);
-	} else {
-		writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
-	}
+	on == true ? writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON) : writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
 }
 
 /**************************************************************************/
@@ -1674,11 +1860,7 @@ void RA8875::displayOn(boolean on) {
 */
 /**************************************************************************/
 void RA8875::sleep(boolean sleep) {
-	if (sleep) {
-		writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF | RA8875_PWRR_SLEEP);
-	} else {
-		writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF);
-	}
+	sleep == true ? writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF | RA8875_PWRR_SLEEP) : writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF);
 }
 
 /************************* Low Level ***********************************/

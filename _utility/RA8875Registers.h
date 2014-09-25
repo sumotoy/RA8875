@@ -119,6 +119,16 @@ note: HSYNC Pulse Width(pixels) = (HPW + 1) * 8 */
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                           LCD Display Control Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/* Display Configuration Register	  [0x20]
+----- Bit 7 (Layer Setting Control)
+0:one Layer, 1:two Layers
+----- Bit 6,5,4 (na)
+----- Bit 3 (Horizontal Scan Direction, for n = SEG number)
+0: SEG0 to SEG(n-1), 1: SEG(n-1) to SEG0
+----- Bit 2 (Vertical Scan direction, for n = COM number)
+0: COM0 to COM(n-1), 1: COM(n-1) to COM0
+----- Bit 1,0 (na) */
+#define RA8875_DPCR				  	  0x20//Display Configuration Register
 /* Font Control Register 0			  [0x21]
 ----- Bit 7 (CGRAM/CGROM Font Selection Bit in Text Mode)
 0:CGROM font, 1:CGRAM font

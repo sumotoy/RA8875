@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.46(early beta) tested only w Teensy3.1
+	Version:0.48(early beta) tested only w Teensy3.1
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -204,6 +204,7 @@ enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_
 enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, ER3303_1 };
 enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
+enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
 
 // Touch screen cal structs
 typedef struct Point 
@@ -238,6 +239,7 @@ class RA8875 : public Print {
 	void 		changeMode(enum RA8875modes m);//GRAPHIC,TEXT
 	uint8_t 	readStatus(void);
 	void		clearMemory(boolean full);
+	void 		scanDirection(boolean invertH,boolean invertV);
 //--------------area & color -------------------------
 	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);
 	uint16_t 	width(void);
@@ -299,6 +301,11 @@ class RA8875 : public Print {
 //-------------- BTE --------------------------------------------
 	void 		BTE_Size(uint16_t w, uint16_t h);
 	void	 	BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
+//-------------- LAYERS -----------------------------------------
+	boolean 	useLayers(boolean on);
+	void		setActiveLayer(uint8_t layer);
+	void 		layerEffect(enum RA8875boolean efx);
+	void 		layerTransparency(uint8_t layer1,uint8_t layer2);
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
@@ -343,6 +350,8 @@ using Print::write;
 	enum RA8875tcursor		_textCursorStyle;
 	
 	uint8_t					_maxLayers;
+	bool					_useMultiLayers;
+	uint8_t					_currentLayer;
 	
 	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
 	
@@ -380,10 +389,12 @@ using Print::write;
 	void 		endSend();
 	// Register containers -----------------------------------------
 	uint8_t		_MWCR0Reg;//keep track of the register 		  [0x40]
+	uint8_t		_DPCRReg;  ////Display Configuration		  [0x20]
 	uint8_t		_FNCR0Reg;//Font Control Register 0 		  [0x21]
 	uint8_t		_FNCR1Reg;//Font Control Register1 			  [0x22]
 	uint8_t		_FWTSETReg;//Font Write Type Setting Register [0x2E]
 	uint8_t		_SFRSETReg;//Serial Font ROM Setting 		  [0x2F]
+
 };
 
 #endif
