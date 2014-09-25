@@ -2,7 +2,7 @@ RA8875 library
 ==============
 
 [![video test](http://i.ytimg.com/vi/WbFOsxjFCL8/mqdefault.jpg)](http://www.youtube.com/embed/WbFOsxjFCL8)
-<br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.
+<br>Here's a video test that proof the 0.48 version, Teensy3.1 and chinese board for tft.
 
 ##### Current Version: 0.45 (early beta, reload all library until 0.8 between versions!!!)
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x and Arduino's (and I hope for other MCU's).
@@ -24,6 +24,8 @@ Thanks for your attention....
 ####  The goals...
   
   - All features supported
+  - Layer support
+  - Scalable complexity, start with basics but you can go trough...
   - All communication protocols supported
   - Support for the many external ROM Font chip
   - Support for the external SPI FLASH
