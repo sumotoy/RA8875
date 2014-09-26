@@ -8,6 +8,7 @@ RA8875 library
 ###### Upcoming beta 0.6 release
 A major release upcoming these days, have to fix a silly but important bug on drawPixel color weirdness then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
 
+##### description
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x and Arduino's (and I hope for other MCU's).
 This is the first attemp to create a library that use all the features of this chip and I'm tring to optimize as much I can.
 Actually it's in early beta stage, working, but only SPI (4 wires), please read the notes in .h file.
