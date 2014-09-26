@@ -4,7 +4,10 @@ RA8875 library
 [![video test](http://i.ytimg.com/vi/WbFOsxjFCL8/mqdefault.jpg)](http://www.youtube.com/embed/WbFOsxjFCL8)
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.
 
-##### Current Version: 0.48 (early beta, reload all library until 0.8 between versions!!!)
+##### Current Version: 0.48 (early beta, reload all library until 0.8 between versions!!!)<br>
+###### Upcoming beta 0.6 release
+A major release upcoming these days, have to fix a silly but important bug on drawPixel color weirdness then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
+
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x and Arduino's (and I hope for other MCU's).
 This is the first attemp to create a library that use all the features of this chip and I'm tring to optimize as much I can.
 Actually it's in early beta stage, working, but only SPI (4 wires), please read the notes in .h file.
