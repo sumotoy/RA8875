@@ -162,8 +162,6 @@ void RA8875::begin(enum RA8875sizes s) {
 
 /************************* Initialization *********************************/
 
-
-
 /**************************************************************************/
 /*!
 	PRIVATE
@@ -172,37 +170,39 @@ void RA8875::begin(enum RA8875sizes s) {
 /**************************************************************************/
 void RA8875::initialize(uint8_t initIndex) {
 
-	const uint8_t initStrings[4][12] = {
-	{0x0A,0x02,0x03,0x00,0x05,0x04,0x03,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (to be fixed)
-	{0x0A,0x02,0x82,0x00,0x01,0x00,0x05,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272
-	{0x0B,0x02,0x01,0x05,0x0F,0x01,0x00,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480 (to be fixed)
-	{0x0B,0x02,0x81,0x03,0x03,0x02,0x00,0x14,0x00,0x06,0x00,0x01}// 3 -> 800x480 (to be fixed?)
+	const uint8_t initStrings[4][15] = {
+	{0x0A,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (to be fixed)
+	{0x10,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272
+	{0x0B,0x02,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x10,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480 (to be fixed)
+	{0x0B,0x02,0x81,0x63,0x03,0x03,0x02,0x00,0xDF,0x10,0x14,0x00,0x06,0x00,0x01}// 3 -> 800x480 (to be fixed?)
 	};
-	//we are working ALWAYS at 65K color space!!!!
-	writeReg(RA8875_SYSR,RA8875_SYSR_16BPP | RA8875_SYSR_MCU8); //Color space and 8/16 bit selection
+
 	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);////PLL Control Register 1
-	delay(2);
+	delay(1);
 	writeReg(RA8875_PLLC2,initStrings[initIndex][1]);////PLL Control Register 2
-	delay(2);
+	delay(1);
+	
 	writeReg(RA8875_PCSR,initStrings[initIndex][2]);//Pixel Clock Setting Register
-	delay(2);
-	writeReg(RA8875_HDWR,(_width / 8) - 1);//LCD Horizontal Display Width Register
-	writeReg(RA8875_HNDFTR,initStrings[initIndex][3]);//Horizontal Non-Display Period Fine Tuning Option Register
-	writeReg(RA8875_HNDR,initStrings[initIndex][4]);////LCD Horizontal Non-Display Period Register
-	writeReg(RA8875_HSTR,initStrings[initIndex][5]);////HSYNC Start Position Register
-	writeReg(RA8875_HPWR,initStrings[initIndex][6]);////HSYNC Pulse Width Register
-	writeReg(RA8875_VDHR0,(uint16_t)(_height - 1) & 0xFF);////LCD Vertical Display Height Register0
-	writeReg(RA8875_VDHR1,(uint16_t)(_height - 1) >> 8);////LCD Vertical Display Height Register1
-	writeReg(RA8875_VNDR0,initStrings[initIndex][7]);////LCD Vertical Non-Display Period Register 0
-	writeReg(RA8875_VNDR1,initStrings[initIndex][8]);////LCD Vertical Non-Display Period Register 1
-	writeReg(RA8875_VSTR0,initStrings[initIndex][9]);////VSYNC Start Position Register 0
-	writeReg(RA8875_VSTR1,initStrings[initIndex][10]);////VSYNC Start Position Register 1
-	writeReg(RA8875_VPWR,initStrings[initIndex][11]);////VSYNC Pulse Width Register
-	setActiveWindow(0,_width-1,0,_height-1);//set the active winsow
+	delay(1);
+	writeReg(RA8875_SYSR,0x0C);//we are working ALWAYS at 65K color space!!!!
+	writeReg(RA8875_HDWR,initStrings[initIndex][3]);//LCD Horizontal Display Width Register
+	writeReg(RA8875_HNDFTR,initStrings[initIndex][4]);//Horizontal Non-Display Period Fine Tuning Option Register
+	writeReg(RA8875_HNDR,initStrings[initIndex][5]);////LCD Horizontal Non-Display Period Register
+	writeReg(RA8875_HSTR,initStrings[initIndex][6]);////HSYNC Start Position Register
+	writeReg(RA8875_HPWR,initStrings[initIndex][7]);////HSYNC Pulse Width Register
+	writeReg(RA8875_VDHR0,initStrings[initIndex][8]);////LCD Vertical Display Height Register0
+	writeReg(RA8875_VDHR1,initStrings[initIndex][9]);////LCD Vertical Display Height Register1
+	writeReg(RA8875_VNDR0,initStrings[initIndex][10]);////LCD Vertical Non-Display Period Register 0
+	writeReg(RA8875_VNDR1,initStrings[initIndex][11]);////LCD Vertical Non-Display Period Register 1
+	writeReg(RA8875_VSTR0,initStrings[initIndex][12]);////VSYNC Start Position Register 0
+	writeReg(RA8875_VSTR1,initStrings[initIndex][13]);////VSYNC Start Position Register 1
+	writeReg(RA8875_VPWR,initStrings[initIndex][14]);////VSYNC Pulse Width Register
+	setActiveWindow(0,(_width-1),0,(_height-1));//set the active winsow
 	clearMemory(true);//clear FULL memory
 	//end of hardware initialization
-	delay(200); 
-	
+	delay(10); 
+
+	//bug();
     //now starts the first time setting up
 	displayOn(true);//turn On Display
 	if (_size == Adafruit_480x272 || _size == Adafruit_800x480) GPIOX(true);//only for adafruit stuff 
@@ -212,7 +212,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	if (_textCursorStyle == BLINK) showCursor(false,BLINK); //set default text cursor type and turn off
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
 	setFont(INT);	//set internal font use
-	
+
 	//now tft it's ready to go and in [Graphic mode]
 }
 
@@ -238,9 +238,9 @@ void RA8875::softReset(void) {
 void RA8875::clearMemory(boolean full){
 	uint8_t temp = 0b00000000;
 	if (!full) temp |= (1 << 6);
-	temp |= (1 << 7);
+	temp |= (1 << 7);//enable start bit
 	writeReg(RA8875_MCLR,temp);
-	_cursorX = _cursorY = 0;
+	//_cursorX = _cursorY = 0;
 	waitBusy(0x80);
 }
 
@@ -302,14 +302,14 @@ void RA8875::changeMode(enum RA8875modes m) {
 	if (m == GRAPHIC){
 		if (_currentMode == TEXT){//avoid useless consecutive calls
 			 _MWCR0Reg &= ~(1 << 7);
+			 _currentMode = GRAPHIC;
 			writeData(_MWCR0Reg);
-			_currentMode = GRAPHIC;
 		}
 	} else {
 		if (_currentMode == GRAPHIC){//avoid useless consecutive calls
 			_MWCR0Reg |= (1 << 7);
-			writeData(_MWCR0Reg);
 			_currentMode = TEXT;
+			writeData(_MWCR0Reg);
 		}
 	}
 }
@@ -323,21 +323,25 @@ void RA8875::changeMode(enum RA8875modes m) {
 */
 /**************************************************************************/
 void RA8875::setIntFontCoding(enum RA8875fontCoding f) {
-	_FNCR0Reg &= ~((1<<1) | (1<<0));// Clear bits 1 and 0
+	uint8_t temp = _FNCR0Reg;
+	temp &= ~((1<<1) | (1<<0));// Clear bits 1 and 0
 	switch (f){
 		case ISO_IEC_8859_1:
 			 //do nothing
 		break;
 		case ISO_IEC_8859_2:
-			_FNCR0Reg |= (1 << 0);
+			temp |= (1 << 0);
 		break;
 		case ISO_IEC_8859_3:
-			_FNCR0Reg |= (1 << 1);
+			temp |= (1 << 1);
 		break;
 		case ISO_IEC_8859_4:
-			_FNCR0Reg |= ((1<<1) | (1<<0));// Set bits 1 and 0
+			temp |= ((1<<1) | (1<<0));// Set bits 1 and 0
 		break;
+		default:
+		return;
 	}
+	_FNCR0Reg = temp;
 	writeReg(RA8875_FNCR0,_FNCR0Reg);
 }
 
@@ -409,28 +413,45 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 			_extFontRom = false;//wrong coding, better avoid for future
 			return;//cannot continue, exit
 		}
-		_fontFamily = erf;
-		switch(erf){	//check rom font family
-			case STANDARD:
-				temp &= 0xFC;
-			break;
-			case ARIAL:
-				temp &= 0xFC; temp |= 0x01;
-			break;
-			case ROMAN:
-				temp &= 0xFC; temp |= 0x02;
-			break;
-			case BOLD:
-				temp |= ((1<<1) | (1<<0)); // set bits 1 and 0
-			break;
-			default:
-				_fontFamily = STANDARD; temp &= 0xFC;
-		}
 		_fontRomCoding = erc;
+		_SFRSETReg = temp;
+		setExtFontFamily(erf,false);	
 		_extFontRom = true;
-		_SFRSETReg = temp;//success, set reg
 		//writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F
 		//delay(4);
+}
+
+/**************************************************************************/
+/*!  
+		select the font family for the external Font Rom Chip
+		Parameters:
+		erf: STANDARD, ARIAL, ROMAN, BOLD
+		setReg: 
+		true(send phisically the register, useful when you change
+		family after set setExternalFontRom)
+		false:(change only the register container, useful during config)
+*/
+/**************************************************************************/
+void RA8875::setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg) {
+	_fontFamily = erf;
+	switch(erf){	//check rom font family
+		case STANDARD:
+			_SFRSETReg &= 0xFC;
+		break;
+		case ARIAL:
+			_SFRSETReg &= 0xFC; _SFRSETReg |= 0x01;
+		break;
+		case ROMAN:
+			_SFRSETReg &= 0xFC; _SFRSETReg |= 0x02;
+		break;
+		case BOLD:
+			_SFRSETReg |= ((1<<1) | (1<<0)); // set bits 1 and 0
+		break;
+		default:
+			_fontFamily = STANDARD; _SFRSETReg &= 0xFC;
+			return;
+	}
+	if (setReg) writeReg(RA8875_SFRSET,_SFRSETReg);
 }
 
 /**************************************************************************/
@@ -576,8 +597,6 @@ void RA8875::showCursor(boolean cur,enum RA8875tcursor c){
 */
 /**************************************************************************/
 void RA8875::setCursorBlinkRate(uint8_t rate){
-	// _MWCR0Reg |= (1 << 5);
-	//writeReg(RA8875_MWCR0,_MWCR0Reg);
 	writeReg(RA8875_BTCR,rate);//set blink rate
 }
 
@@ -592,7 +611,6 @@ void RA8875::setCursorBlinkRate(uint8_t rate){
 void RA8875::setTextColor(uint16_t fColor, uint16_t bColor){
 	setForegroundColor(fColor);
 	setBackgroundColor(bColor);
-	//bitClear(_FNCR1Reg,6);
 	_FNCR1Reg &= ~(1 << 6);
 	writeReg(RA8875_FNCR1,_FNCR1Reg);
 }
@@ -607,8 +625,7 @@ void RA8875::setTextColor(uint16_t fColor, uint16_t bColor){
 
 void RA8875::setTextColor(uint16_t fColor){
 	setForegroundColor(fColor);
-	 _FNCR1Reg |= (1 << 6);
-	//bitSet(_FNCR1Reg,6);
+	_FNCR1Reg |= (1 << 6);
 	writeReg(RA8875_FNCR1,_FNCR1Reg);
 }
 
@@ -631,6 +648,7 @@ void RA8875::setFontScale(uint8_t scale){
 /**************************************************************************/
 /*!		
 		Choose between 16x16(8x16) - 24x24(12x24) - 32x32(16x32)
+		for External Font ROM
 		Parameters:
 		ts:X16,X24,X32
 		halfSize:true/false (16x16 -> 8x16 and so on...)
@@ -679,6 +697,8 @@ void RA8875::setFontSpacing(uint8_t spc){//ok
 void RA8875::textWrite(const char* buffer, uint16_t len) {
 	bool goBack = false;
 	uint8_t start = 0;
+	uint16_t i,ny;
+	uint8_t t1,t2;
 	if (_currentMode == GRAPHIC){
 		changeMode(TEXT);
 		goBack = true;
@@ -686,17 +706,17 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 	if (len == 0) len = strlen(buffer);
 	if (len > 0 && ((buffer[0] == '\r') && (buffer[1] == '\n'))){//got a println?
 		//get current y
-		uint8_t t1 = readReg(RA8875_F_CURYL);
-		uint8_t t2 = readReg(RA8875_F_CURYH);
+		t1 = readReg(RA8875_F_CURYL);
+		t2 = readReg(RA8875_F_CURYH);
 		//calc new line y
-		uint16_t ny = (t2 << 8) | (t1 & 0xFF);
+		ny = (t2 << 8) | (t1 & 0xFF);
 		//update y
 		ny = ny + (16 + (16*_textScale))+_fontInterline;//TODO??
 		setCursor(0,ny);
 		start = 2;
 	}
 	writeCommand(RA8875_MRWC);
-	for (uint16_t i=start;i<len;i++){
+	for (i=start;i<len;i++){
 		if (buffer[i] == '\n' || buffer[i] == '\r') {
 			//_cursor_y += textsize * 8;
 			//_cursor_x  = 0;
@@ -808,7 +828,6 @@ void RA8875::setGraphicCursor(uint8_t cur) {
 	temp |= cur;
 	if (_useMultiLayers){
 		_currentLayer == 1 ? temp |= (1 << 0) : temp &= ~(1 << 0);
-		Serial.println("bit!");
 	} else {
 		temp &= ~(1 << 0);//
 	}
@@ -871,9 +890,23 @@ void RA8875::waitBusy(uint8_t res) {
 */
 /**************************************************************************/
 void RA8875::setXY(int16_t x, int16_t y) {
-	checkLimitsHelper(x,y);
+	if (x < 0) x = 0;
+	if (y < 0) y = 0;
+	
+	setX(x);
+	setY(y);
+}
+
+void RA8875::setX(uint16_t x) {
+	if (x >= _width) x = _width-1;
+	
 	writeReg(RA8875_CURH0, x);
-	writeReg(RA8875_CURH1, x >> 8);
+	writeReg(RA8875_CURH1, x >> 8); 
+}
+
+void RA8875::setY(uint16_t y) {
+	if (y >= _height) y = _height-1;
+	
 	writeReg(RA8875_CURV0, y);
 	writeReg(RA8875_CURV1, y >> 8);  
 }
@@ -887,7 +920,7 @@ void RA8875::setXY(int16_t x, int16_t y) {
 
 */
 /**************************************************************************/
-void RA8875::pushPixels(uint32_t num, uint16_t p) {
+/* void RA8875::pushPixels(uint32_t num, uint16_t p) {
 	startSend();
 	SPI.transfer(RA8875_DATAWRITE);
 	while (num--) {
@@ -896,7 +929,7 @@ void RA8875::pushPixels(uint32_t num, uint16_t p) {
 	}
 	endSend();
 }
-
+ */
 /**************************************************************************/
 /*!		
 		Define a window for perform scroll
@@ -911,7 +944,9 @@ void RA8875::pushPixels(uint32_t num, uint16_t p) {
 void RA8875::setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB){
 	checkLimitsHelper(XL,YT);
 	checkLimitsHelper(XR,YB);
+	
 	_scrollXL = XL; _scrollXR = XR; _scrollYT = YT; _scrollYB = YB;
+	
     writeReg(RA8875_HSSW0,_scrollXL);
     writeReg(RA8875_HSSW1,_scrollXL >> 8);
   
@@ -932,7 +967,7 @@ void RA8875::setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB){
 */
 /**************************************************************************/
 void RA8875::scroll(uint16_t x,uint16_t y){ 
-	if (y > _scrollYB) y = _scrollYB;//mmmm... not sure
+	if (y > _scrollYB) y = _scrollYB;//??? mmmm... not sure
 	if (_scrollXL == 0 && _scrollXR == 0 && _scrollYT == 0 && _scrollYB == 0){
 		//do nothing, scroll window inactive
 	} else {
@@ -983,11 +1018,14 @@ void RA8875::DMA_startAddress(unsigned long adrs){
 void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum){  
 	checkLimitsHelper(x,y);
 	checkLimitsHelper(w,h);
+	
 	writeReg(RA8875_SFCLR,0x00);
 	writeReg(RA8875_SROC,0x87);
 	writeReg(RA8875_DMACR,0x02);
 	//setActiveWindow(0,_width-1,0,_height-1); 
+	
 	setXY(x,y);
+	
 	DMA_startAddress(261120 * (picnum-1));
 	DMA_blockModeSize(w,h,w);   
 	writeReg(RA8875_DMACR,0x03);
@@ -1020,6 +1058,7 @@ void RA8875::BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY){
     writeReg(RA8875_HDBE1,DX >> 8);//BET written to the target horizontal position	   
     
     writeReg(RA8875_VSBE0,SY);//BTE vertical position of read/write data
+	
 	temp0 = SY >> 8;   
 	temp1 = readReg(RA8875_VSBE1);
 	temp1 &= 0x80;
@@ -1027,6 +1066,7 @@ void RA8875::BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY){
 	writeReg(RA8875_VSBE1,temp0);//BTE vertical position of read/write data  
   
     writeReg(RA8875_VDBE0,DY);//BET written to the target  vertical  position
+	
 	temp0 = DY >> 8;   
 	temp1 = readReg(RA8875_VDBE1);
 	temp1 &= 0x80;
@@ -1054,10 +1094,11 @@ void RA8875::BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY){
 */
 /**************************************************************************/
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color){
-	checkLimitsHelper(x,y);
+	//checkLimitsHelper(x,y);
 	setXY(x,y);
+	
 	writeCommand(RA8875_MRWC);
-	writeData16(color);
+	writeData16(color); 
 }
 
 /**************************************************************************/
@@ -1077,6 +1118,7 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 	if (y1 >= _height) y1 = _height-1;
 	
 	lineAddressing(x0,y0,x1,y1);
+	
 	setForegroundColor(color);
 	
 	writeReg(RA8875_DCR,0x80);
@@ -1325,13 +1367,13 @@ void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled){
 	checkLimitsHelper(x0,y0);
 	if (r < 1) r = 1;
-	//X
+
 	writeReg(RA8875_DCHR0,x0);
 	writeReg(RA8875_DCHR1,x0 >> 8);
-	//Y
+
 	writeReg(RA8875_DCVR0,y0);
 	writeReg(RA8875_DCVR1,y0 >> 8);	   
-	//R
+
 	writeReg(RA8875_DCRR,r); 
 
 	setForegroundColor(color);
@@ -1350,7 +1392,9 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 	checkLimitsHelper(x,y);
 	if (w < 1) w = 1;
 	if (h < 1) h = 1;
+	
 	lineAddressing(x,y,w,h);
+	
 	setForegroundColor(color);
 
 	writeCommand(RA8875_DCR);
@@ -1381,12 +1425,14 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 	checkLimitsHelper(x0,y0);
 	checkLimitsHelper(x1,y1);
 	checkLimitsHelper(x2,y2);
+	
 	lineAddressing(x0,y0,x1,y1);
 	//p2
 	writeReg(RA8875_DTPH0,x2);
 	writeReg(RA8875_DTPH1,x2 >> 8);
 	writeReg(RA8875_DTPV0,y2);
 	writeReg(RA8875_DTPV1,y2 >> 8);
+	
 	setForegroundColor(color);
 	
 	writeCommand(RA8875_DCR);
@@ -1400,7 +1446,9 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 */
 /**************************************************************************/
 void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled){
+	//TODO:limits!
 	curveAddressing(xCenter,yCenter,longAxis,shortAxis);
+	
 	setForegroundColor(color);
 
 	writeCommand(RA8875_ELLIPSE);
@@ -1414,7 +1462,9 @@ void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, i
 */
 /**************************************************************************/
 void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled){
+	//TODO:limits!
 	curveAddressing(xCenter,yCenter,longAxis,shortAxis);
+	
 	setForegroundColor(color);
 
 	writeCommand(RA8875_ELLIPSE);
@@ -1428,19 +1478,22 @@ void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 */
 /**************************************************************************/
 void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled){
-	if (r < 1) rectHelper(x,y,w,h,color,filled);
+	if (r < 1) rectHelper(x,y,w,h,color,filled);//??? reason?
+	
 	checkLimitsHelper(x,y);
 	checkLimitsHelper(w,h);
+	
 	lineAddressing(x,y,w,h);
 	//P2
 	writeReg(RA8875_ELL_A0,r);
 	writeReg(RA8875_ELL_A1,r >> 8);
 	writeReg(RA8875_ELL_B0,r);
 	writeReg(RA8875_ELL_B1,r >> 8);
+	
 	setForegroundColor(color);
 
 	writeCommand(RA8875_ELLIPSE);
-	filled == true ? writeData(0xE0) :writeData(0xA0);
+	filled == true ? writeData(0xE0) : writeData(0xA0);
 	waitPoll(RA8875_ELLIPSE, RA8875_DCR_LINESQUTRI_STATUS);
 }
 
@@ -1550,10 +1603,10 @@ void RA8875::PWMsetup(uint8_t pw,boolean on, uint8_t clock) {
 			set = RA8875_PxCR_DISABLE;
 		}
 	}
-	writeReg(reg, set | (clock & 0xF));
+	writeReg(reg,(set | (clock & 0xF)));
 }
 /**************************************************************************/
-/*!
+/*! (from adafruit)
       Enables or disables the on-chip touch screen controller
 */
 /**************************************************************************/
@@ -1702,6 +1755,7 @@ boolean RA8875::useLayers(boolean on) {
 /*!
 		Change the current Active Layer (used in several functions)
 		It will work only if useLayer set to true and applicable!
+		So use useLayers(true) first!
 		Parameters:
 		layer:1..2
       
@@ -1729,7 +1783,7 @@ void RA8875::setActiveLayer(uint8_t layer) {
 /**************************************************************************/
 void RA8875::layerEffect(enum RA8875boolean efx){
 	uint8_t	reg = 0b00000000;
-	reg &= ~(0x07);//clear bit 2,1,0
+	//reg &= ~(0x07);//clear bit 2,1,0
 	switch(efx){//                       bit 2,1,0 of LTPR0
 		case LAYER1: //only layer 1 visible  [000]
 			//do nothing
@@ -1756,9 +1810,7 @@ void RA8875::layerEffect(enum RA8875boolean efx){
 			//do nothing
 		break;
 	}
-	if (_useMultiLayers){
-		writeReg(RA8875_LTPR0,reg);
-	}
+	if (_useMultiLayers) writeReg(RA8875_LTPR0,reg);
 }
 
 /**************************************************************************/
@@ -1772,63 +1824,61 @@ void RA8875::layerTransparency(uint8_t layer1,uint8_t layer2){
 	if (layer2 > 8) layer2 = 8;
 	
 	uint8_t res = 0b00000000;//RA8875_LTPR1
-	
+	//reg &= ~(0x07);//clear bit 2,1,0
 	switch (layer1){
 		case 0: //disable layer
-			bitSet(res,3);
+			res |= (1 << 3);
 		break;
 		case 1: //1/8
-			bitSet(res,0); bitSet(res,1); bitSet(res,2);
+			res |= (1 << 0); res |= (1 << 1); res |= (1 << 2);
 		break;
 		case 2: //1/4
-			bitSet(res,1); bitSet(res,2);
+			res |= (1 << 1); res |= (1 << 2);
 		break;
 		case 3: //3/8
-			bitSet(res,0); bitSet(res,2);
+			res |= (1 << 0); res |= (1 << 2);
 		break;
 		case 4: //1/2
-			bitSet(res,2);
+			res |= (1 << 2);
 		break;
 		case 5: //5/8
-			bitSet(res,0); bitSet(res,1);
+			res |= (1 << 0); res |= (1 << 1);
 		break;
 		case 6: //3/4
-			bitSet(res,1);
+			res |= (1 << 1);
 		break;
 		case 7: //7/8
-			bitSet(res,0);
+			res |= (1 << 0);
 		break;
 	}
 	
 	switch (layer2){
 		case 0: //disable layer
-			bitSet(res,7);
+			res |= (1 << 7);
 		break;
 		case 1: //1/8
-			bitSet(res,4); bitSet(res,5); bitSet(res,6);
+			res |= (1 << 4); res |= (1 << 5); res |= (1 << 6);
 		break;
 		case 2: //1/4
-			bitSet(res,5); bitSet(res,6);
+			res |= (1 << 5); res |= (1 << 6);
 		break;
 		case 3: //3/8
-			bitSet(res,4); bitSet(res,6);
+			res |= (1 << 4); res |= (1 << 6);
 		break;
 		case 4: //1/2
-			bitSet(res,6);
+			res |= (1 << 6);
 		break;
 		case 5: //5/8
-			bitSet(res,4); bitSet(res,5);
+			res |= (1 << 4); res |= (1 << 5);
 		break;
 		case 6: //3/4
-			bitSet(res,5);
+			res |= (1 << 5);
 		break;
 		case 7: //7/8
-			bitSet(res,4);
+			res |= (1 << 4);
 		break;
 	}
-	if (_useMultiLayers){
-		writeReg(RA8875_LTPR1,res);
-	}
+	if (_useMultiLayers) writeReg(RA8875_LTPR1,res);
 }
 
 /**************************************************************************/
@@ -1853,6 +1903,7 @@ void RA8875::scanDirection(boolean invertH,boolean invertV){
 void RA8875::displayOn(boolean on) {
 	on == true ? writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON) : writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
 }
+
 
 /**************************************************************************/
 /*!
@@ -1897,10 +1948,10 @@ uint8_t  RA8875::readReg(uint8_t reg) {
 		d: the data
 */
 /**************************************************************************/
-void  RA8875::writeData(uint8_t d) {
+void  RA8875::writeData(uint8_t data) {
 	startSend();
 	SPI.transfer(RA8875_DATAWRITE);
-	SPI.transfer(d);
+	SPI.transfer(data);
 	endSend();
 }
 
@@ -1911,11 +1962,11 @@ void  RA8875::writeData(uint8_t d) {
 		d: the data (16 bit)
 */
 /**************************************************************************/
-void  RA8875::writeData16(uint16_t d) {
+void  RA8875::writeData16(uint16_t data) {
 	startSend();
 	SPI.transfer(RA8875_DATAWRITE);
-	SPI.transfer(d >> 8);
-	SPI.transfer(d);
+	SPI.transfer(data >> 8);
+	SPI.transfer(data);
 	endSend();
 }
 

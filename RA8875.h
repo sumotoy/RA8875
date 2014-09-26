@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.48(early beta) tested only w Teensy3.1
+	Version:0.49(early beta) tested only w Teensy3.1
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -207,22 +207,8 @@ enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
 enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
 
 // Touch screen cal structs
-typedef struct Point 
-{
-  int32_t x;
-  int32_t y;
-} tsPoint_t;
-
-typedef struct Matrix 
-{
-  int32_t An,
-          Bn,
-          Cn,
-          Dn,
-          En,
-          Fn,
-          Divider ;
-} tsMatrix_t;
+typedef struct Point { int32_t x; int32_t y; } tsPoint_t;
+typedef struct Matrix { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
 
 class RA8875 : public Print {
  public:
@@ -269,12 +255,15 @@ class RA8875 : public Print {
 	void		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
 	void 		setIntFontCoding(enum RA8875fontCoding f);
+	void		setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg=true);
 //--------------Graphic Funcions -------------------------
 	void    	setXY(int16_t x, int16_t y);//graphic set location
+	void 		setX(uint16_t x);
+	void 		setY(uint16_t y) ;
 	void 		setGraphicCursor(uint8_t cur);//0...7 Select a custom graphic cursor (you should upload first)
 	void 		showGraphicCursor(boolean cur);//show graphic cursor
 	//--------------- DRAW -------------------------
-	void    	pushPixels(uint32_t num, uint16_t p);//push large number of pixels
+	//void    	pushPixels(uint32_t num, uint16_t p);//push large number of pixels
 	//void    	fillRect(void);
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
@@ -315,8 +304,10 @@ class RA8875 : public Print {
 	boolean 	touchRead(uint16_t *x, uint16_t *y);
 	//thanks to Adafruit for this!
     inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
-	//void    	writeCommand(uint8_t d);
-	//void    	writeData(uint8_t d);
+	void    	writeCommand(uint8_t d);
+	//void    	writeData(uint8_t data);
+	void  		writeData16(uint16_t data);
+	//void 		waitBusy(uint8_t res);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -331,8 +322,10 @@ using Print::write;
 
  private:
 	//------------- VARS ----------------------------
+	volatile uint32_t		_spiSpeed;//for SPI transactions
 	uint8_t 		 		_cs, _rst;
 	uint16_t 		 		_width, _height;
+	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	uint8_t 		 		_textScale;
 	bool					_textWrap;
 	uint8_t					_fontSpacing;
@@ -348,15 +341,13 @@ using Print::write;
 	enum RA8875sizes 		_size;
 	enum RA8875fontSource 	_fontSource;
 	enum RA8875tcursor		_textCursorStyle;
-	
+	//layer vars -----------------------------
 	uint8_t					_maxLayers;
 	bool					_useMultiLayers;
 	uint8_t					_currentLayer;
-	
+	//scroll vars ----------------------------
 	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
 	
-	volatile uint32_t		_spiSpeed;//for SPI transactions
-	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	//		functions --------------------------
 	void 	initialize(uint8_t initIndex);
 	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
@@ -377,9 +368,9 @@ using Print::write;
     // Low level access  commands ----------------------
 	void    	writeReg(uint8_t reg, uint8_t val);
 	uint8_t 	readReg(uint8_t reg);
-	void    	writeCommand(uint8_t d);
-	void    	writeData(uint8_t d);
-	void  		writeData16(uint16_t d);
+	//void    	writeCommand(uint8_t d);
+	void    	writeData(uint8_t data);
+	//void  		writeData16(uint16_t data);
 	uint8_t 	readData(bool stat=false);
 	
 	

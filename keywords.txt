@@ -55,6 +55,7 @@ setFontSize	KEYWORD2
 setFontScale	KEYWORD2
 setFontSpacing	KEYWORD2
 setExternalFontRom	KEYWORD2
+setExtFontFamily	KEYWORD2
 setFontFullAlign	KEYWORD2
 setFontRotate	KEYWORD2
 setFontInterline	KEYWORD2
@@ -71,6 +72,10 @@ scanDirection	KEYWORD2
 setActiveLayer	KEYWORD2
 layerEffect	KEYWORD2
 layerTransparency	KEYWORD2
+writeCommand	KEYWORD2
+writeData16	KEYWORD2
+setX	KEYWORD2
+setY	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

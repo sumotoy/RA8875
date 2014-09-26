@@ -35,12 +35,6 @@
 10: PCLK period = 4 times of System Clock period
 11: PCLK period = 8 times of System Clock period*/
 #define RA8875_PCSR             	  0x04//Pixel Clock Setting Register
-	#define RA8875_PCSR_PDATR       0x00
-	#define RA8875_PCSR_PDATL       0x80
-	#define RA8875_PCSR_CLK         0x00
-	#define RA8875_PCSR_2CLK        0x01
-	#define RA8875_PCSR_4CLK        0x02
-	#define RA8875_PCSR_8CLK        0x03
 /* Serial Flash/ROM Configuration 	 [0x05]
 ----- Bit 7 (Serial Flash/ROM I/F # Select)
 0:Serial Flash/ROM 0 , 1:Serial Flash/ROM 1
@@ -67,7 +61,7 @@
 11: SFCL frequency = System clock frequency / 4 */
 #define RA8875_SFCLR         		  0x06//Serial Flash/ROM CLK
 	#define EXTROM_SFCLSPEED	0b00000011// /4 0b00000010 /2
-/* ystem Configuration Register		 [0x10]
+/* System Configuration Register		 [0x10]
 ----- Bit 7,6,5,4 (na) 
 ----- Bit 3,2 (Color Depth Setting) 
 00: 8-bpp generic TFT, i.e. 256 colors
@@ -76,10 +70,6 @@
 00: 8-bit MCU Interface
 1x: 16-bit MCU Interface */
 #define RA8875_SYSR             	  0x10//System Configuration Register
-	#define RA8875_SYSR_8BPP        0x00
-	#define RA8875_SYSR_16BPP       0x0C
-	#define RA8875_SYSR_MCU8        0x00
-	#define RA8875_SYSR_MCU16       0x03
 /* LCD Horizontal Display Width Register [0x14]
 ----- Bit 7 (na)
 ----- Bit 6,5,4,3,2,1,0 (Horizontal Display Width Setting Bit)
