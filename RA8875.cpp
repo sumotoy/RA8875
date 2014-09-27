@@ -87,6 +87,7 @@ void RA8875::begin(enum RA8875sizes s) {
 	_scrollYT = 0;
 	_scrollYB = 0;
 	_useMultiLayers = false;//starts with one layer only
+	_touchPin = 255;
 /* Display Configuration Register	  [0x20]
 	  7: (Layer Setting Control) 0:one Layer, 1:two Layers
 	  6,5,4: (na)
@@ -1605,6 +1606,8 @@ void RA8875::PWMsetup(uint8_t pw,boolean on, uint8_t clock) {
 	}
 	writeReg(reg,(set | (clock & 0xF)));
 }
+#if !defined(USE_EXTERNALTOUCH)
+
 /**************************************************************************/
 /*! (from adafruit)
       Enables or disables the on-chip touch screen controller
@@ -1673,50 +1676,64 @@ boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
 	ty <<= 2;
 	tx |= temp & 0x03;        // get the bottom x bits
 	ty |= (temp >> 2) & 0x03; // get the bottom y bits
+	
 	#if defined (INVERTETOUCH_X)
-	tx = 1024 - tx;
+		tx = 1024 - tx;
 	#endif
+	
 	#if defined (INVERTETOUCH_Y)
-	ty = 1024 - ty;
+		ty = 1024 - ty;
 	#endif
+	
 	//calibrate???
 	  #if (TOUCSRCAL_XLOW != 0)
 		minX = TOUCSRCAL_XLOW;
 		if (tx < TOUCSRCAL_XLOW) tx = TOUCSRCAL_XLOW;
 	  #endif
+	  
 	  #if (TOUCSRCAL_YLOW != 0)
 		minY = TOUCSRCAL_YLOW;
 		if (ty < TOUCSRCAL_YLOW) ty = TOUCSRCAL_YLOW;
 	  #endif
+	  
 	  #if (TOUCSRCAL_XHIGH != 0)
 		maxX = TOUCSRCAL_XHIGH;
 		if (tx > TOUCSRCAL_XHIGH) tx = TOUCSRCAL_XHIGH;
 	  #endif
+	  
 	  #if (TOUCSRCAL_XHIGH != 0)
 		maxY = TOUCSRCAL_YHIGH;
 		if (ty > TOUCSRCAL_YHIGH) ty = TOUCSRCAL_YHIGH;
 	  #endif
+	  
 	#if defined (TOUCHINPIXELS)
 		*x = map(tx,minX,maxX,0,_width-1);
 		*y = map(ty,minY,maxY,0,_height-1);
 	#else
 		#if (TOUCSRCAL_XLOW != 0 || (TOUCSRCAL_XHIGH != 0))
-		*x = map(tx,minX,maxX,0,1024);
+			*x = map(tx,minX,maxX,0,1024);
 		#else
-		*x = tx;
+			*x = tx;
 		#endif
+		
 		#if (TOUCSRCAL_YLOW != 0 || (TOUCSRCAL_YHIGH != 0))
-		*y = map(ty,minY,maxY,0,1024);
+			*y = map(ty,minY,maxY,0,1024);
 		#else
-		*y = ty;
+			*y = ty;
 		#endif
 	#endif
 
 	// Clear TP INT Status
-	writeReg(RA8875_INTC2, RA8875_INTCx_TP);
+	clearTouchInt();
 	return true;
 }
 
+void RA8875::clearTouchInt(void) {
+	writeReg(RA8875_INTC2, RA8875_INTCx_TP);
+}
+
+
+#endif
 /**************************************************************************/
 /*!
 		Instruct the RA8875 chip to use 2 layers (if it's possible)

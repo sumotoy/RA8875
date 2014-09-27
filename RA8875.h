@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.49b1(early beta) tested only w Teensy3.1
+	Version:0.49b2(early beta) tested only w Teensy3.1
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -128,6 +128,10 @@ If you have an SPI library that support SPI TRANSACTIONS
 this library will use it, however if you vant to use the old one for compatibility
 just comment the following line */
 #define USESPITRANSACTIONS//uncomment will force to use the standard SPI library
+/* EXTERNAL TOUCH CONTROLLER ++++++++++++++++++++++++++++++++++++++++++
+Some TFT come with capacitive touch screen or you may decide to use a better
+controller for that, decomment the following line to save resources */
+//#define USE_EXTERNALTOUCH
 /* TOUCH SCREEN AXIS INVERSION +++++++++++++++++++++++++++++++++++++++
 Some chinese product have both axis inverted (EastRising),
 you can uncomment INVERTETOUCH_Y or INVERTETOUCH_X or both
@@ -149,10 +153,12 @@ To perform the touch screen calibration, load libTouchSCalibration.ino and open 
 3) the highest value of x by touching the lower/bottom corner of your tft, put the value in TOUCSRCAL_XHIGH
 4) in the same manner you get the max value of y, put that value in TOUCSRCAL_XHIGH
 */
+#if !defined(USE_EXTERNALTOUCH)
 #define TOUCSRCAL_XLOW	62//44
 #define TOUCSRCAL_YLOW	153//147
 #define TOUCSRCAL_XHIGH	924//945
 #define TOUCSRCAL_YHIGH	917//934
+#endif
 /* Max Speed it's ONLY used in SPI Transaction mode,
 it ensure the max and correct speed for accessing RA8875 in Read/Write...
 Datasheet it's clear:
@@ -299,9 +305,13 @@ class RA8875 : public Print {
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
 //--------------Touch Screen -------------------------
+#if !defined(USE_EXTERNALTOUCH)
 	void    	touchEnable(boolean on);
 	boolean 	touched(void);
 	boolean 	touchRead(uint16_t *x, uint16_t *y);
+	void 		clearTouchInt(void);
+#endif
+//----------------------------------------------------
 	//thanks to Adafruit for this!
     inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
 	void    	writeCommand(uint8_t d);
@@ -324,6 +334,7 @@ using Print::write;
 	//------------- VARS ----------------------------
 	volatile uint32_t		_spiSpeed;//for SPI transactions
 	uint8_t 		 		_cs, _rst;
+	uint8_t					_touchPin;
 	uint16_t 		 		_width, _height;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	uint8_t 		 		_textScale;

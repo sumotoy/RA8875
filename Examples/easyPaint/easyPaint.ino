@@ -34,6 +34,7 @@ void setup()
 
   pinMode(RA8875_INT, INPUT);
   digitalWrite(RA8875_INT, HIGH);
+  //tft.touchBegin(2);
 
   tft.touchEnable(true);
   interface();
@@ -43,7 +44,8 @@ uint16_t choosenColor = 0;
 
 void loop() 
 {
-
+  tft.clearTouchInt();//clear previous int
+  delay(1);
   if (!digitalRead(RA8875_INT)) 
   {
     if (tft.touched()) 
@@ -119,4 +121,3 @@ void interface(){
   tft.fillRect(10+(40*6)+(10*6),10,40,40,RA8875_YELLOW);
   tft.drawRect(10+(40*7)+(10*7),10,40,40,RA8875_WHITE);
 }
-
