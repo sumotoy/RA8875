@@ -60,6 +60,11 @@ RA8875 will shine even with a small and slow MCU even if you are driving a 800x4
 You have onboard touch screen controller, keypad controller, PWM's 2GPIO's, has BTE graphic engine and DMA capabilities and much much more, really impressive.
 After weeks of experimenting I found the main drawback of this chip, loading images. Adafruit board dosn't have FONT ROM and FLASH RAM chip but some chinese vendor included in their board and the Flash Ram chip it's really useful for loading images FAST, unfortunatly I discovered too late that images should be programmed BEFORE soldering chip in the board and seems no other way reprogram it, too bad that RAiO dosn't provide a way (at list I cannot find one till now) to reprogram Flash chip onboard, if someone have some infos about reprogram the 128Mb flash chip without desoldering or (as the RAiO app note says) disconnect several resistors, reprogram and riconnect, it would be precius!
 
+#### RA8875 chip bugs!
+I discovered several bugs in the chip.<br>
+Register 0x10 (SYSR), setting bit 3 to 1 should set the 65K color feature.
+In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.
+
 #### Connections
 It's an Early beta, only SPI so it uses native SPI.
 MOSI,MISO,SCK pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other may differ)
