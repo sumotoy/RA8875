@@ -76,6 +76,7 @@ writeCommand	KEYWORD2
 writeData16	KEYWORD2
 setX	KEYWORD2
 setY	KEYWORD2
+clearTouchInt	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
