@@ -2,7 +2,8 @@ RA8875 library
 ==============
 
 [![video test](http://i.ytimg.com/vi/WbFOsxjFCL8/mqdefault.jpg)](http://www.youtube.com/embed/WbFOsxjFCL8)
-<br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.
+<br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
+**Wiki added!**
 
 ##### Current Version: 0.49b1 (early beta, reload all library until 0.8 between versions!!!)<br>
 Current beta **tested only with**:
