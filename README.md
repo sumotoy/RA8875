@@ -58,6 +58,7 @@ I'm started with 4 wire SPI that is probably the best choice, just 4 wires (mayb
 
 RA8875 will shine even with a small and slow MCU even if you are driving a 800x400 65K color tft!
 You have onboard touch screen controller, keypad controller, PWM's 2GPIO's, has BTE graphic engine and DMA capabilities and much much more, really impressive.
+After weeks of experimenting I found the main drawback of this chip, loading images. Adafruit board dosn't have FONT ROM and FLASH RAM chip but some chinese vendor included in their board and the Flash Ram chip it's really useful for loading images FAST, unfortunatly I discovered too late that images should be programmed BEFORE soldering chip in the board and seems no other way reprogram it, too bad that RAiO dosn't provide a way (at list I cannot find one till now) to reprogram Flash chip onboard, if someone have some infos about reprogram the 128Mb flash chip without desoldering or (as the RAiO app note says) disconnect several resistors, reprogram and riconnect, it would be precius!
 
 #### Connections
 It's an Early beta, only SPI so it uses native SPI.
