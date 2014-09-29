@@ -27,13 +27,14 @@ You are using 4 wire SPI here, so:
  if you are using DUE or 1280 or 2560 plese refere to correct pin
  since they are different!
  */
- 
+
 #define RA8875_INT 2//for touch screen
 #define RA8875_CS 10//SS
 #define RA8875_RESET 9//reset for the screen
 
-uint16_t tempData[10][2];
-volatile uint8_t count = 0;
+uint8_t samples = 20;
+uint16_t tempData[20][2];
+volatile int count = 0;
 volatile uint8_t scount = 0;
 uint16_t tx,ty;
 uint16_t valx,valy;
@@ -101,17 +102,17 @@ void loop()
   {
 
     Serial.print("."); 
-    if (count > 9){
+    if (count > samples-1){
       count = 0;
       tft.touchEnable(false);
       valx = 0; 
       valy = 0;
-      for (uint8_t i=0;i<10;i++){
+      for (uint8_t i=0;i<samples;i++){
         valx = valx+tempData[i][0];
         valy = valy+tempData[i][1];
       }
-      valx = valx/10;
-      valy = valy/10;
+      valx = valx/samples;
+      valy = valy/samples;
       if (scount >= 3){
         scount = 255;
         tft.touchEnable(false);
@@ -147,7 +148,7 @@ void loop()
         tft.changeMode(GRAPHIC);
         Serial.println("\nok, Now Touch Bottom/Right angle!");
         tft.touchEnable(true);
-        count = 0;
+        count = -1;//it prevents a spurious read after touch enable
         break;
       case 2:// BOTTOM/RIGHT
         tft.fillScreen(RA8875_BLACK);
@@ -209,9 +210,12 @@ void loop()
       }
     } 
     else {
+      delay(1);
       tft.touchReadRaw(&tx, &ty);//we using 10bit adc data here
-      tempData[count][0] = tx;
-      tempData[count][1] = ty;
+      if (count >= 0){
+        tempData[count][0] = tx;
+        tempData[count][1] = ty;
+      }
       count++;
     }
   }
