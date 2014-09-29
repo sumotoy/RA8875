@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!**
 
-##### Current Version: 0.49b7 (early beta, reload all library until 0.8 between versions!!!)<br>
+##### Current Version: 0.49b7 (early beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1
@@ -15,6 +15,7 @@ Current beta **tested only with**:
 
 * 0.49b1:Fixed 800x480 initialization
 * 0.49b7:Complete rebuilded touch screen stuff, now much easier and super easy to calibrate
+(note: this version have different Touch Screen approach so commands changed! Examples where updated to reflect changes)
 
 ###### Upcoming beta 0.6 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
