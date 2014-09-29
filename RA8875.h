@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.49b7(early beta) tested only w Teensy3.1
+	Version:0.49b8(early beta) tested only w Teensy3.1
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -149,6 +149,7 @@ enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T
 enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
 enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
+enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
 
 // Touch screen cal structs
 typedef struct Point { int32_t x; int32_t y; } tsPoint_t;
@@ -232,11 +233,15 @@ class RA8875 : public Print {
 //-------------- DMA -------------------------------
 	void 		drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum);
 //-------------- BTE --------------------------------------------
-	void 		BTE_Size(uint16_t w, uint16_t h);
-	void	 	BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
+	void 		BTE_size(uint16_t w, uint16_t h);
+	void	 	BTE_source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
+	void		BTE_ROP_code(unsigned char setx);//TESTING
+	void 		BTE_enable(void);//TESTING
+	
 //-------------- LAYERS -----------------------------------------
 	boolean 	useLayers(boolean on);
-	void		setActiveLayer(uint8_t layer);
+	//void		setActiveLayer(uint8_t layer);
+	void		writeTo(enum RA8875writes d);//TESTING
 	void 		layerEffect(enum RA8875boolean efx);
 	void 		layerTransparency(uint8_t layer1,uint8_t layer2);
 //--------------GPIO & PWM -------------------------
@@ -258,7 +263,7 @@ class RA8875 : public Print {
 	void    	writeCommand(uint8_t d);
 	//void    	writeData(uint8_t data);
 	void  		writeData16(uint16_t data);
-	//void 		waitBusy(uint8_t res);//0x80, 0x40(BTE busy), 0x01(DMA busy)
+	//void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -342,7 +347,7 @@ using Print::write;
 	
 	
 	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
-	void 		waitBusy(uint8_t res);//0x80, 0x40(BTE busy), 0x01(DMA busy)
+	void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 	void 		startSend();
 	void 		endSend();
 	// Register containers -----------------------------------------

@@ -1068,7 +1068,7 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 
 */
 /**************************************************************************/
-void RA8875::BTE_Size(uint16_t w, uint16_t h){
+void RA8875::BTE_size(uint16_t w, uint16_t h){
     writeReg(RA8875_BEWR0,w);//BET area width literacy  
     writeReg(RA8875_BEWR1,w >> 8);//BET area width literacy	   
     writeReg(RA8875_BEHR0,h);//BET area height literacy
@@ -1080,7 +1080,7 @@ void RA8875::BTE_Size(uint16_t w, uint16_t h){
 
 */
 /**************************************************************************/
-void RA8875::BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY){
+void RA8875::BTE_source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY){
 	uint8_t temp0,temp1;
     writeReg(RA8875_HSBE0,SX);//BTE horizontal position of read/write data
     writeReg(RA8875_HSBE1,SX >> 8);//BTE horizontal position of read/write data   
@@ -1104,6 +1104,59 @@ void RA8875::BTE_Source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY){
 	temp0 = temp0 | temp1;	
 	writeReg(RA8875_VDBE1,temp0);//BET written to the target  vertical  position 
 }		
+
+//TESTING
+void RA8875::BTE_ROP_code(unsigned char setx){//
+    writeReg(RA8875_BECR1,setx);//BECR1	   
+}
+
+//TESTING
+void RA8875::BTE_enable(void) {	
+	uint8_t temp = readReg(RA8875_BECR0);
+	temp |= (1 << 7); //bit set 7
+	writeReg(RA8875_BECR0,temp);  
+}
+
+
+
+//TESTING
+void RA8875::writeTo(enum RA8875writes d){
+	uint8_t temp = readReg(RA8875_MWCR1);
+	switch(d){
+		if (_useMultiLayers){
+		case L1:
+			temp &= ~((1<<3) | (1<<2));// Clear bits 3 and 2
+			temp &= ~(1 << 0); //clear bit 0
+			_currentLayer = 0;
+		break;
+		case L2:
+			temp &= ~((1<<3) | (1<<2));// Clear bits 3 and 2
+			temp |= (1 << 0); //bit set 0
+			_currentLayer = 1;
+		break;
+		}
+		case CGRAM: 
+			temp &= ~(1 << 3); //clear bit 3
+			temp |= (1 << 2); //bit set 2
+			if (bitRead(_FNCR0Reg,7)){//REG[0x21] bit7 must be 0
+				_FNCR0Reg &= ~(1 << 7); //clear bit 7
+				writeReg(RA8875_FNCR0,_FNCR0Reg);  
+			}
+		break;
+		case PATTERN:
+			temp |= (1 << 3); //bit set 3
+			temp |= (1 << 2); //bit set 2
+		break;
+		case CURSOR:
+			temp |= (1 << 3); //bit set 3
+			temp &= ~(1 << 2); //clear bit 2
+		break;
+		default:
+		break;
+	}
+	writeReg(RA8875_MWCR1,temp);  
+}
+
 /**************************************************************************/
 /*!
 
@@ -1637,7 +1690,6 @@ void RA8875::PWMsetup(uint8_t pw,boolean on, uint8_t clock) {
 	writeReg(reg,(set | (clock & 0xF)));
 }
 
-
 #if !defined(USE_EXTERNALTOUCH)
 
 /**************************************************************************/
@@ -1870,9 +1922,11 @@ boolean RA8875::useLayers(boolean on) {
 		if (clearBuffer) { 
 			//for some reason if you switch to multilayer the layer 2 has garbage
 			//better clear
-			setActiveLayer(2);//switch to layer 2
+			//setActiveLayer(2);//switch to layer 2
+			writeTo(L2);//switch to layer 2
 			clearMemory(false);//clear memory of layer 2
-			setActiveLayer(1);//go back to layer 1
+			//setActiveLayer(1);//go back to layer 1
+			writeTo(L1);//switch to layer 2
 		}
 		return true;//it's possible with current conf
 	}
@@ -1890,7 +1944,7 @@ boolean RA8875::useLayers(boolean on) {
       
 */
 /**************************************************************************/
-void RA8875::setActiveLayer(uint8_t layer) {
+/* void RA8875::setActiveLayer(uint8_t layer) {
 	if (_useMultiLayers){
 		uint8_t temp = readReg(RA8875_MWCR1);
 		if (layer < 2){
@@ -1902,7 +1956,7 @@ void RA8875::setActiveLayer(uint8_t layer) {
 		}
 		writeData(temp);
 	}
-}
+} */
 
 /**************************************************************************/
 /*!
