@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!**
 
-##### Current Version: 0.49b7 (early beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.49b8 (early beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1
