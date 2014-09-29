@@ -37,7 +37,11 @@ RA8875::RA8875(uint8_t CS) {
 void RA8875::begin(enum RA8875sizes s) {
 	_size = s;
 	uint8_t initIndex;
-
+	_width = 480;
+	_height = 272;
+	initIndex = 1;
+	_maxLayers = 2;
+	_size = RA8875_480x272;
 	if (_size == RA8875_320x240) {//still not supported! Wait next version
 		_width = 320;
 		_height = 240;
@@ -58,18 +62,12 @@ void RA8875::begin(enum RA8875sizes s) {
 		_height = 480;
 		initIndex = 3;
 		_maxLayers = 1;
-	} else {
-		_width = 480;
-		_height = 272;
-		initIndex = 1;
-		_maxLayers = 2;
-		_size = RA8875_480x272;
 	}
+	
 	_currentLayer = 0;
 	_currentMode = GRAPHIC;
 	_spiSpeed = MAXSPISPEED;
-	_cursorX = 0;
-	_cursorY = 0;
+	_cursorX = 0; _cursorY = 0;
 	_textWrap = true;
 	_textSize = X16;
 	_fontSpacing = 0;
@@ -82,12 +80,17 @@ void RA8875::begin(enum RA8875sizes s) {
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
 	_textCursorStyle = BLINK;
-	_scrollXL = 0;
-	_scrollXR = 0;
-	_scrollYT = 0;
-	_scrollYB = 0;
+	_scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
 	_useMultiLayers = false;//starts with one layer only
+	#if !defined(USE_EXTERNALTOUCH)
 	_touchPin = 255;
+	_clearTInt = false;
+	_touchEnabled = false;
+	_tsAdcMinX = 0; _tsAdcMinY = 0; _tsAdcMaxX = 1024; _tsAdcMaxY = 1024;
+	#endif
+	#if defined(USE_RA8875_KEYMATRIX)
+	_keyMatrixEnabled = false;
+	#endif
 /* Display Configuration Register	  [0x20]
 	  7: (Layer Setting Control) 0:one Layer, 1:two Layers
 	  6,5,4: (na)
@@ -139,6 +142,33 @@ void RA8875::begin(enum RA8875sizes s) {
 		 10		Roman		na				Pres Forms B
 		 11		Bold		na				na */
 	_SFRSETReg = 0b00000000;
+	
+	/*	Interrupt Control Register1		  [0xF0]
+	7,6,5: (na)
+	4: KEYSCAN Interrupt Enable Bit
+	3: DMA Interrupt Enable Bit
+	2: TOUCH Panel Interrupt Enable Bit
+	1: BTE Process Complete Interrupt Enable Bit
+	0:
+	When MCU-relative BTE operation is selected(*1) and BTE
+	Function is Enabled(REG[50h] Bit7 = 1), this bit is used to
+		Enable the BTE Interrupt for MCU R/W:
+		0 : Disable BTE interrupt for MCU R/W.
+		1 : Enable BTE interrupt for MCU R/W.
+	When the BTE Function is Disabled, this bit is used to
+		Enable the Interrupt of Font Write Function:
+		0 : Disable font write interrupt.
+		1 : Enable font write interrupt.
+	*/
+	_INTC1Reg = 0b00000000;
+	
+	/*	Touch Panel Control Register 0     [0x70]
+	7: 0(disable, 1:(enable)
+	6,5,4:TP Sample Time Adjusting (000...111)
+	3:Touch Panel Wakeup Enable 0(disable),1(enable)
+	2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
+	_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
+	
 	
 	pinMode(_cs, OUTPUT);
 	digitalWrite(_cs, HIGH);
@@ -213,7 +243,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	if (_textCursorStyle == BLINK) showCursor(false,BLINK); //set default text cursor type and turn off
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
 	setFont(INT);	//set internal font use
-
+	setTextColor(RA8875_WHITE);//since the blackground it's black...
 	//now tft it's ready to go and in [Graphic mode]
 }
 
@@ -1606,33 +1636,87 @@ void RA8875::PWMsetup(uint8_t pw,boolean on, uint8_t clock) {
 	}
 	writeReg(reg,(set | (clock & 0xF)));
 }
+
+
 #if !defined(USE_EXTERNALTOUCH)
 
 /**************************************************************************/
-/*! (from adafruit)
-      Enables or disables the on-chip touch screen controller
+/*!   Initialize support for on-chip resistive Touch Screen controller
+	  It also enable the Touch Screen
+	  Parameters:
+	  intPin:pin connected to RA8875 INT
 */
 /**************************************************************************/
-void RA8875::touchEnable(boolean on) {
-	if (on) {
-		/* Enable Touch Panel (Reg 0x70) */
-		writeReg(RA8875_TPCR0, RA8875_TPCR0_ENABLE        | 
-							   RA8875_TPCR0_WAIT_16384CLK  |
-							   RA8875_TPCR0_WAKEDISABLE   | 
-							   RA8875_TPCR0_ADCCLK_DIV4); // 10mhz max!
-		/* Set Auto Mode      (Reg 0x71) */
-		writeReg(RA8875_TPCR1, RA8875_TPCR1_AUTO    | 
-							// RA8875_TPCR1_VREFEXT | 
-							  RA8875_TPCR1_DEBOUNCE);
-		/* Enable TP INT */
-		writeReg(RA8875_INTC1, readReg(RA8875_INTC1) | RA8875_INTCx_TP);
-	} else {
-		/* Disable TP INT */
-		writeReg(RA8875_INTC1, readReg(RA8875_INTC1) & ~RA8875_INTCx_TP);
-		/* Disable Touch Panel (Reg 0x70) */
-		writeReg(RA8875_TPCR0, RA8875_TPCR0_DISABLE);
+void RA8875::touchBegin(uint8_t intPin) {
+	_touchPin = intPin;
+	pinMode(_touchPin, INPUT);
+	digitalWrite(_touchPin, HIGH);
+	//auto mode + debounce on
+	writeReg(RA8875_TPCR1, RA8875_TPCR1_AUTO | RA8875_TPCR1_DEBOUNCE);
+	touchEnable(true);
+}
+
+/**************************************************************************/
+/*! 
+      Enables or disables the on-chip touch screen controller
+	  Parameters:
+	  enabled:true(enable),false(disable)
+*/
+/**************************************************************************/
+void RA8875::touchEnable(boolean enabled) {
+	if (_touchPin < 255){
+		if (!_touchEnabled && enabled) {
+			_INTC1Reg |= (1 << 2); //bit set 2
+			writeReg(RA8875_INTC1, _INTC1Reg);
+			_TPCR0Reg |= (1 << 7); //bit set 7
+			writeReg(RA8875_TPCR0, _TPCR0Reg);
+			_touchEnabled = true;
+		} else if (_touchEnabled && !enabled) {
+			_INTC1Reg &= ~(1 << 2); //clear bit 2
+			writeReg(RA8875_INTC1, _INTC1Reg);
+			_TPCR0Reg &= ~(1 << 7); //clear bit 7
+			writeReg(RA8875_TPCR0, _TPCR0Reg);
+			_touchEnabled = false;
+		}
 	}
 }
+
+/**************************************************************************/
+/*!   Detect a touch and return true, otherwise false.
+	  It also correctly resets INT register to avoid false detections.
+	  Will not work at all (return false) if touchBegin/touchEnable not set.
+	  Using autoclear=true: 
+	  This is useful to detect any press without get coordinates!
+	  Note that if you are not using autoclear you will need a readTouchADC or readTouchPixel
+	  just after touchDetect or the INT register will not clear and you will get a loopback!
+	  In contrast, using autoclear and readTouchADC/readTouchPixel will result in wrong readings.
+	  Parameters:
+	  Autoclear:(true/false) set true when you want to use this function standalone and
+	  not followed by a coordinate reading with readTouchADC/readTouchPixel
+*/
+/**************************************************************************/
+boolean RA8875::touchDetect(boolean autoclear) {
+	if (_touchEnabled){
+		if (!digitalRead(_touchPin)) {
+			_clearTInt = true;
+			if (touched()){
+				if (autoclear) clearTouchInt();
+				return true;
+			} else {
+				return false;
+			}
+		}
+		if (_clearTInt){
+			_clearTInt = false;
+			clearTouchInt();
+			delay(1);
+		}
+		return false;
+	} else {
+		return false;
+	}
+}
+
 
 /**************************************************************************/
 /*! (from adafruit)
@@ -1648,35 +1732,21 @@ boolean RA8875::touched(void) {
 }
 
 /**************************************************************************/
-/*! (based on adafruit)
-      Reads the last touch event
-      Parameters:
-      x:  ADC value (0...1024) of x
-      y:  ADC value (0...1024) of y
-	  Based on setting TOUCHINPIXELS it can be:
-      x:  position in pix (0...width) of x
-      y:  position in pix (0...width) of y
-	  It also perform calibrations.
-      
-      @note Calling this function will clear the touch panel interrupt on
-            the RA8875, resetting the flag used by the 'touched' function
+/*!   Read 10bit internal ADC of RA8875 registers and perform corrections
+	  It will return always RAW data
+	  Parameters:
+	  x:out 0...1024
+	  Y:out 0...1024
 */
 /**************************************************************************/
-boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
-	uint16_t tx, ty;
-	uint8_t temp;
-	uint16_t minX = 0;
-	uint16_t minY = 0;
-	uint16_t maxX = 1024;
-	uint16_t maxY = 1024;
-	tx = readReg(RA8875_TPXH);
-	ty = readReg(RA8875_TPYH);
-	temp = readReg(RA8875_TPXYL);
+void RA8875::readTouchADC(uint16_t *x, uint16_t *y) {
+	uint16_t tx =  readReg(RA8875_TPXH);
+	uint16_t ty =  readReg(RA8875_TPYH);
+	uint8_t temp = readReg(RA8875_TPXYL);
 	tx <<= 2;
 	ty <<= 2;
 	tx |= temp & 0x03;        // get the bottom x bits
 	ty |= (temp >> 2) & 0x03; // get the bottom y bits
-	
 	#if defined (INVERTETOUCH_X)
 		tx = 1024 - tx;
 	#endif
@@ -1684,49 +1754,91 @@ boolean RA8875::touchRead(uint16_t *x, uint16_t *y) {
 	#if defined (INVERTETOUCH_Y)
 		ty = 1024 - ty;
 	#endif
-	
 	//calibrate???
-	  #if (TOUCSRCAL_XLOW != 0)
-		minX = TOUCSRCAL_XLOW;
+	  #if defined(TOUCSRCAL_XLOW) && (TOUCSRCAL_XLOW != 0)
+		_tsAdcMinX = TOUCSRCAL_XLOW;
 		if (tx < TOUCSRCAL_XLOW) tx = TOUCSRCAL_XLOW;
 	  #endif
 	  
-	  #if (TOUCSRCAL_YLOW != 0)
-		minY = TOUCSRCAL_YLOW;
+	  #if defined(TOUCSRCAL_YLOW) && (TOUCSRCAL_YLOW != 0)
+		_tsAdcMinY = TOUCSRCAL_YLOW;
 		if (ty < TOUCSRCAL_YLOW) ty = TOUCSRCAL_YLOW;
 	  #endif
 	  
-	  #if (TOUCSRCAL_XHIGH != 0)
-		maxX = TOUCSRCAL_XHIGH;
+	  #if defined(TOUCSRCAL_XHIGH) && (TOUCSRCAL_XHIGH != 0)
+		_tsAdcMaxX = TOUCSRCAL_XHIGH;
 		if (tx > TOUCSRCAL_XHIGH) tx = TOUCSRCAL_XHIGH;
 	  #endif
 	  
-	  #if (TOUCSRCAL_XHIGH != 0)
-		maxY = TOUCSRCAL_YHIGH;
+	  #if defined(TOUCSRCAL_YHIGH) && (TOUCSRCAL_YHIGH != 0)
+		_tsAdcMaxY = TOUCSRCAL_YHIGH;
 		if (ty > TOUCSRCAL_YHIGH) ty = TOUCSRCAL_YHIGH;
 	  #endif
-	  
-	#if defined (TOUCHINPIXELS)
-		*x = map(tx,minX,maxX,0,_width-1);
-		*y = map(ty,minY,maxY,0,_height-1);
-	#else
-		#if (TOUCSRCAL_XLOW != 0 || (TOUCSRCAL_XHIGH != 0))
-			*x = map(tx,minX,maxX,0,1024);
-		#else
-			*x = tx;
-		#endif
-		
-		#if (TOUCSRCAL_YLOW != 0 || (TOUCSRCAL_YHIGH != 0))
-			*y = map(ty,minY,maxY,0,1024);
-		#else
-			*y = ty;
-		#endif
-	#endif
-
-	// Clear TP INT Status
-	clearTouchInt();
-	return true;
+	 *x = tx;
+	 *y = ty;
 }
+
+/**************************************************************************/
+/*!   Returns 10bit x,y data with TRUE scale (0...1024)
+	  Parameters:
+	  x:out 0...1024
+	  Y:out 0...1024
+*/
+/**************************************************************************/
+void RA8875::touchReadRaw(uint16_t *x, uint16_t *y) {
+	uint16_t tx,ty;
+	readTouchADC(&tx,&ty);
+	#if (defined(TOUCSRCAL_XLOW) && (TOUCSRCAL_XLOW != 0)) || (defined(TOUCSRCAL_XHIGH) && (TOUCSRCAL_XHIGH != 0))
+		*x = map(tx,_tsAdcMinX,_tsAdcMaxX,0,1024);
+	#else
+		*x = tx;
+	#endif
+	#if (defined(TOUCSRCAL_YLOW) && (TOUCSRCAL_YLOW != 0)) || (defined(TOUCSRCAL_YHIGH) && (TOUCSRCAL_YHIGH != 0))
+		*y = map(ty,_tsAdcMinY,_tsAdcMaxY,0,1024);
+	#else
+		*y = ty;
+	#endif
+	clearTouchInt();
+}
+
+/**************************************************************************/
+/*!   Returns pixel x,y data with SCREEN scale (screen width, screen Height)
+	  Parameters:
+	  x:out 0...screen width  (pixels)
+	  Y:out 0...screen Height (pixels)
+*/
+/**************************************************************************/
+void RA8875::touchReadPixel(uint16_t *x, uint16_t *y) {
+	uint16_t tx,ty;
+	readTouchADC(&tx,&ty);
+	*x = map(tx,_tsAdcMinX,_tsAdcMaxX,0,_width-1);
+	*y = map(ty,_tsAdcMinY,_tsAdcMaxY,0,_height-1);
+	clearTouchInt();
+}
+
+/**************************************************************************/
+/*!   A service utility that detects if system has been calibrated in the past
+	  Return true if an old calibration exists
+*/
+/**************************************************************************/
+boolean RA8875::touchCalibrated(void) {
+	uint8_t uncaltetection = 4;
+	#if defined(TOUCSRCAL_XLOW) && (TOUCSRCAL_XLOW != 0)
+		uncaltetection--;
+	#endif
+	#if defined(TOUCSRCAL_YLOW) && (TOUCSRCAL_YLOW != 0)
+		uncaltetection--;
+	#endif
+	#if defined(TOUCSRCAL_XHIGH) && (TOUCSRCAL_XHIGH != 0)
+		uncaltetection--;
+	#endif
+	#if defined(TOUCSRCAL_YHIGH) && (TOUCSRCAL_YHIGH != 0)
+		uncaltetection--;
+	#endif
+	if (uncaltetection < 1) return true;
+	return false;
+}
+
 
 void RA8875::clearTouchInt(void) {
 	writeReg(RA8875_INTC2, RA8875_INTCx_TP);

@@ -1,9 +1,8 @@
 /* Touch screen super-easy paint!
-Actually this sketch needs the TOUCHINPIXELS inside RA8875.h file
-enabled!
- */
-
-
+  This version use the new touch screen functions, much easier!
+  Did you have already calibrated your screen? Better do as soon you can
+  Open TouchScreenCalibration example and follow instructions.
+*/
 
 #include <SPI.h>
 #include <RA8875.h>
@@ -12,15 +11,16 @@ You are using 4 wire SPI here, so:
  MOSI:11
  MISO:12
  SCK:13
- the rest of pin below:
+ if you are using DUE or 1280 or 2560 plese refere to correct pin
+ since they are different!
+ 
+ Other pins:
  */
 #define RA8875_INT 2//for touch screen
 #define RA8875_CS 10//SS
 #define RA8875_RESET 9//reset for the screen
 
 uint16_t tx, ty;
-
-
 
 RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
 
@@ -30,13 +30,9 @@ void setup()
   //while (!Serial) {;}
   Serial.println("RA8875 start");
 
-  tft.begin(RA8875_480x272);
+  tft.begin(RA8875_480x272);//initialize library
 
-  pinMode(RA8875_INT, INPUT);
-  digitalWrite(RA8875_INT, HIGH);
-  //tft.touchBegin(2);
-
-  tft.touchEnable(true);
+  tft.touchBegin(RA8875_INT);//enable Touch support!
   interface();
 }
 
@@ -44,16 +40,8 @@ uint16_t choosenColor = 0;
 
 void loop() 
 {
-  tft.clearTouchInt();//clear previous int
-  delay(1);
-  if (!digitalRead(RA8875_INT)) 
-  {
-    if (tft.touched()) 
-    {
-      tft.touchRead(&tx, &ty);
-#if !defined (TOUCHINPIXELS)
-  #error would be nice if you enable TOUCHINPIXELS inRA8875.h file!
-#endif
+  if (tft.touchDetect()){//easy!
+      tft.touchReadPixel(&tx, &ty);//read directly in pixel!
       if (ty >= 0 && ty <= 55){ //interface area
         if ((tx > 10 && tx < (10+40))){
           choosenColor = RA8875_WHITE;
@@ -107,7 +95,6 @@ void loop()
         //if (choosenColor != 0) tft.fillCircle(tx,ty,1,choosenColor);
         if (choosenColor != 0) tft.drawPixel(tx,ty,choosenColor);
       }
-    } 
   }
 }
 

@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.49b2(early beta) tested only w Teensy3.1
+	Version:0.49b7(early beta) tested only w Teensy3.1
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,50 +17,6 @@ Even if similar to Adafruit_RA8875 in some parts this library was builded origin
 (as the Adafruit one) from the application note and datasheet from RAiO, however
 I spent quite a lot of time to improve and bring to life all features so if you clone,
 copy or modify please leave all my original notes intact.
-
-------------------------------------------------------
-Some Features of the chip
-------------------------------------------------------
-
-	- Hardware accellerated graphic functions
-	- Build-in resistive Touch Screen controller
-	- DMA
-	- BTE
-	- Build-In keypad controller
-	- Internal Font library
-	- Support fot external ROM Font Chip (Genicomp)
-	- Support for external Flash Ram chip
-	- Mixed Graphic/Text capable
-	- Many communication protocols supported
-	- Interrupts and Wait pins
-	- Internal memory
-	- User Patterns
-	- User graphic Cursors
-	- User defined Font Chars
-	- Multiple Scrolling
-	- Using relative big size screens with tiny MCU
-	- Advanced sleep mode with multiple way to wake-up
-	_ 2 PWM
-	- 2 GPIO
-
----------------------------
-The goals of this library:
----------------------------
-
-	- Compatible with most RA8875 based TFT's and even Adafruit piggyBack
-	- All resolution supported
-	- All functions supported (included keypad, ext. flash, ext. font chip, etc.)
-	- All communication protocol supported
-
-NOTES:
-I'm normally use the excellent Adafruit_GFX library for all my tft,oled stuff but this time NO
- since this chip use it's graphic accellerated functions, I was really surprised when I see that
-the Adafruit version use it! Simply a waste of memory/resources!
-The SPI code uses a new feature called SPI Transitions that it's brand new and not official, it's 
-included with Teensy3 1.0.5R2 and hopefully will be included by Arduino 1.5.8 as well so check for it!
-Using SPI Transitions will force you to check if the other libraries that use SPI in your project (if you have)
-are compatible, fortunately it's easy stuff to do but better say in advance. If you use a non SPI transitions
-library the code will automatically compile with standard one but speed will suffer so it's highly raccomanded.
 
 -----------------------------------
 Wiring
@@ -120,7 +76,6 @@ Note: East Rising and Genicomp looks the same chip! Just named different
   #include <avr/pgmspace.h>
 #endif
 
-#include "_utility/RA8875Registers.h"
 /* ---------------------------- USER SETTINGS ---------------------*/
 
 /* SPI TRANSACTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -128,58 +83,17 @@ If you have an SPI library that support SPI TRANSACTIONS
 this library will use it, however if you vant to use the old one for compatibility
 just comment the following line */
 #define USESPITRANSACTIONS//uncomment will force to use the standard SPI library
+
 /* EXTERNAL TOUCH CONTROLLER ++++++++++++++++++++++++++++++++++++++++++
 Some TFT come with capacitive touch screen or you may decide to use a better
 controller for that, decomment the following line to save resources */
 //#define USE_EXTERNALTOUCH
-/* TOUCH SCREEN AXIS INVERSION +++++++++++++++++++++++++++++++++++++++
-Some chinese product have both axis inverted (EastRising),
-you can uncomment INVERTETOUCH_Y or INVERTETOUCH_X or both
-if your display fall in that case! */
-#define INVERTETOUCH_Y
-#define INVERTETOUCH_X
-/* TOUCH SCREEN IN PIXELS ++++++++++++++++++++++++++++++++++++++++++++
-Normally Touch Screen return ADC values (0...1024) but decomment
-the following it will return values in pixels */
-#define TOUCHINPIXELS
-/* ------------- TOUCH SCREEN CALIBRATION (how to) -----------
-Touch Screen are not all the same and needs a calibration, you will see
-yourself by load touchPaint.ino example, try to paint all over the screen!
-If you have space on one or more side you prolly need to calibrate values  
-    ---- perform calibration ----
-To perform the touch screen calibration, load libTouchSCalibration.ino and open serial terminal:
-1) the lowest value of x by touch the top/left angle of your tft, put value in TOUCSRCAL_XLOW
-2) you can get the lowest value of y in the same time, put value in TOUCSRCAL_YLOW
-3) the highest value of x by touching the lower/bottom corner of your tft, put the value in TOUCSRCAL_XHIGH
-4) in the same manner you get the max value of y, put that value in TOUCSRCAL_XHIGH
-*/
-#if !defined(USE_EXTERNALTOUCH)
-#define TOUCSRCAL_XLOW	62//44
-#define TOUCSRCAL_YLOW	153//147
-#define TOUCSRCAL_XHIGH	924//945
-#define TOUCSRCAL_YHIGH	917//934
-#endif
-/* Max Speed it's ONLY used in SPI Transaction mode,
-it ensure the max and correct speed for accessing RA8875 in Read/Write...
-Datasheet it's clear:
 
-System clock/3(only write cycle)
-System clock/6(with read cycle)
-
-My TFT uses a 20Mhz xtal so...
-Write:	6.67Mhz
-Read: 	3.34Mhz
-
-MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
-Not all MCU are capable to work at those speeds. Those parameters should work fine.
-*/
-#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3
-	#define MAXSPISPEED 			6600000
-#elif defined(__SAM3X8E__)							 // due
-	#define MAXSPISPEED 			6600000
-#else												 //rest of the world
-	#define MAXSPISPEED 			4000000
-#endif
+/* INTERNAL KEY MATRIX ++++++++++++++++++++++++++++++++++++++++++
+RA8875 has a 5x6 Key Matrix controller onboard, if you are not plan to use it
+better leave commented the following define since it will share some registers
+with several functions, otherwise de-comment it! */
+//#define USE_RA8875_KEYMATRIX
 /* DEFAULT CURSOR BLINK RATE ++++++++++++++++++++++++++++++++++++++++++++
 Nothing special here, you can set the default blink rate */
 #define DEFAULTCURSORBLINKRATE		10
@@ -188,7 +102,31 @@ RA8875 has 4 different font set, same shape but suitable for most languages
 please look at RA8875 datasheet and choose the correct one for your language!
 The default one it's the most common one and should work in most situations */
 #define DEFAULTINTENCODING			ISO_IEC_8859_1//ISO_IEC_8859_2,ISO_IEC_8859_3,ISO_IEC_8859_4
+
+/* SPI MAX SPEED it's ONLY used in SPI Transaction mode +++++++++++++++++++
+it ensure the max and correct speed for accessing RA8875 in Read/Write...
+Datasheet it's clear:
+
+System clock/3(only write cycle), System clock/6(with read cycle)
+
+My TFT uses a 20Mhz xtal so...
+Write:	6.67Mhz, Read: 	3.34Mhz
+
+MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
+Not all MCU are capable to work at those speeds. Those parameters should work fine.
+*/
+#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3
+	#define MAXSPISPEED 			6600000//3300000 in READ
+#elif defined(__SAM3X8E__)							 // due
+	#define MAXSPISPEED 			6600000
+#else												 //rest of the world
+	#define MAXSPISPEED 			4000000//2000000 in READ
+#endif
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
+#include "_utility/RA8875Registers.h"
+#if !defined(USE_EXTERNALTOUCH)
+#include "_utility/RA8875Calibration.h"
+#endif
 
 // Colors (RGB565)
 #define	RA8875_BLACK            0x0000
@@ -306,10 +244,13 @@ class RA8875 : public Print {
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
 //--------------Touch Screen -------------------------
 #if !defined(USE_EXTERNALTOUCH)
-	void    	touchEnable(boolean on);
-	boolean 	touched(void);
-	boolean 	touchRead(uint16_t *x, uint16_t *y);
-	void 		clearTouchInt(void);
+	void 		touchBegin(uint8_t intPin);//prepare Touch Screen driver
+	void    	touchEnable(boolean enabled);//enable/disable Touch Polling (disable INT)
+	boolean 	touchDetect(boolean autoclear=false);//true=touch detected
+	//Note:		must followed by touchReadxxx or use autoclear=true for standalone
+	void 		touchReadRaw(uint16_t *x, uint16_t *y);//returns 10bit ADC data (0...1024)
+	void 		touchReadPixel(uint16_t *x, uint16_t *y);//return pixels (0...width, 0...height)
+	boolean		touchCalibrated(void);//true if screen calibration it's present
 #endif
 //----------------------------------------------------
 	//thanks to Adafruit for this!
@@ -334,7 +275,17 @@ using Print::write;
 	//------------- VARS ----------------------------
 	volatile uint32_t		_spiSpeed;//for SPI transactions
 	uint8_t 		 		_cs, _rst;
+	// Touch Screen vars ---------------------
+	#if !defined(USE_EXTERNALTOUCH)
 	uint8_t					_touchPin;
+	bool					_clearTInt;
+	uint16_t 				_tsAdcMinX,_tsAdcMinY,_tsAdcMaxX,_tsAdcMaxY;
+	bool					_touchEnabled;
+	#endif
+	#if defined(USE_RA8875_KEYMATRIX)
+	bool					_keyMatrixEnabled;
+	#endif
+	//----------------------------------------
 	uint16_t 		 		_width, _height;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	uint8_t 		 		_textScale;
@@ -358,7 +309,7 @@ using Print::write;
 	uint8_t					_currentLayer;
 	//scroll vars ----------------------------
 	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
-	
+
 	//		functions --------------------------
 	void 	initialize(uint8_t initIndex);
 	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
@@ -373,6 +324,11 @@ using Print::write;
 	void 	lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	void 	curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	void 	roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);
+	#if !defined(USE_EXTERNALTOUCH)
+	void	readTouchADC(uint16_t *x, uint16_t *y);
+	void 	clearTouchInt(void);
+	boolean touched(void);
+	#endif
 	void 	DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR);
 	void 	DMA_startAddress(unsigned long adrs);
 	//---------------------------------------------------------
@@ -390,13 +346,14 @@ using Print::write;
 	void 		startSend();
 	void 		endSend();
 	// Register containers -----------------------------------------
-	uint8_t		_MWCR0Reg;//keep track of the register 		  [0x40]
-	uint8_t		_DPCRReg;  ////Display Configuration		  [0x20]
-	uint8_t		_FNCR0Reg;//Font Control Register 0 		  [0x21]
-	uint8_t		_FNCR1Reg;//Font Control Register1 			  [0x22]
-	uint8_t		_FWTSETReg;//Font Write Type Setting Register [0x2E]
-	uint8_t		_SFRSETReg;//Serial Font ROM Setting 		  [0x2F]
-
+	uint8_t		_MWCR0Reg; //keep track of the register 		  [0x40]
+	uint8_t		_DPCRReg;  ////Display Configuration		  	  [0x20]
+	uint8_t		_FNCR0Reg; //Font Control Register 0 		  	  [0x21]
+	uint8_t		_FNCR1Reg; //Font Control Register1 			  [0x22]
+	uint8_t		_FWTSETReg; //Font Write Type Setting Register 	  [0x2E]
+	uint8_t		_SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
+	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
+	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
 };
 
 #endif
