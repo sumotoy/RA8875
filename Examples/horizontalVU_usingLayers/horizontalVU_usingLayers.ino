@@ -6,6 +6,11 @@
  another black rectangle starting from the value to the end of the colored bar.
  As result the operation it's really fast even on a slow SPI.
  Created by Max MC Costa for s.u.m.o.t.o.y
+ 
+ BEWARE! If you have an 800x480 or 640x480 display this example --> DO NOT WORK! <--
+ Why? It's a limitation of RA8875 chip, at these resolutions no layers! Cannot be solved, 
+ even working at 256 colors (bleah!) there's still limitations! so...peace of mind...
+ 
  */
 
 
