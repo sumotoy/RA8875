@@ -53,7 +53,7 @@ Thanks for your attention....
   - Correct use of Print, Write and Println
   - Correct use of setCursor to mimic LiquidCrystal library
 
-This early beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and will be prolly adapted for Arduino 1.5.8 as well pretty soon, but can automatically downgrade to normal SPI library.
+This early beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library.
 The beta release will use a main section for all chip stuff and several other libs for the protocols (as my LiquidCrystalNew).
 I should have a stable and workable version in a couple of days with many examples included...
 
