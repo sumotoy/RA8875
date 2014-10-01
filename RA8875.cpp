@@ -37,35 +37,33 @@ RA8875::RA8875(uint8_t CS) {
 void RA8875::begin(enum RA8875sizes s) {
 	_size = s;
 	uint8_t initIndex;
-	_width = 480;
-	_height = 272;
-	initIndex = 1;
-	_maxLayers = 2;
-	_size = RA8875_480x272;
+
+	_size = s;
 	if (_size == RA8875_320x240) {//still not supported! Wait next version
 		_width = 320;
 		_height = 240;
 		initIndex = 0;
 		_maxLayers = 2;
-		_size = s;
 	} else if (_size == RA8875_480x272 || _size == Adafruit_480x272) {
 		_width = 480;
 		_height = 272;
 		initIndex = 1;
 		_maxLayers = 2;
-		_size = s;
 	} else if (_size == RA8875_640x480) {//still not supported! Wait next version
 		_width = 640;
 		_height = 480;
 		initIndex = 2;
 		_maxLayers = 1;
-		_size = s;
 	} else if (_size == RA8875_800x480 || _size == Adafruit_800x480) {
 		_width = 800;
 		_height = 480;
 		initIndex = 3;
 		_maxLayers = 1;
-		_size = s;
+	} else {
+		_width = 480;
+		_height = 272;
+		initIndex = 1;
+		_maxLayers = 2;
 	}
 	
 	_currentLayer = 0;
