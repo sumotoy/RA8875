@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!**
 
-##### Current Version: 0.49b9 (early beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.49b10 (early beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1
@@ -18,6 +18,7 @@ Current beta **tested only with**:
 (note: this version have different Touch Screen approach so commands changed! Examples where updated to reflect changes)
 * 0.49b8:new command writeTo very useful for write to layers (1,2), pattern,cgram,cursor,etc. A great example of how using layers!
 * 0.49b9:Fixed a silly error in display identifier that not enable GPIOx when adafruit stuff is used. Another attemp (I hope the last!) to get 800x480 initialization fixed.
+* 0.49b10:Added support for user custom fonts and example.
 
 ###### Upcoming beta 0.6 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
