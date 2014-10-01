@@ -62,8 +62,8 @@ setExtFontFamily	KEYWORD2
 setFontFullAlign	KEYWORD2
 setFontRotate	KEYWORD2
 setFontInterline	KEYWORD2
-uploadChar	KEYWORD2
-customChar	KEYWORD2
+uploadUserChar	KEYWORD2
+showUserChar	KEYWORD2
 setGraphicCursor	KEYWORD2
 showGraphicCursor	KEYWORD2
 getCursor	KEYWORD2

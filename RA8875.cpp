@@ -346,7 +346,14 @@ void RA8875::changeMode(enum RA8875modes m) {
 	}
 }
 
-void RA8875::uploadChar(const uint8_t symbol[],uint8_t address) {
+/**************************************************************************/
+/*!		Upload user custom cahr or symbol to CGRAM, max 255
+		Parameters:
+		symbol[]: an 8bit x 16 char in an array. Must be exact 16 bytes
+		address: 0...255 the address of the CGRAM where to store the char
+*/
+/**************************************************************************/
+void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address) {
 	bool modeChanged = false;
 	if (_currentMode != GRAPHIC) {//was in text!
 		changeMode(GRAPHIC);
@@ -361,8 +368,18 @@ void RA8875::uploadChar(const uint8_t symbol[],uint8_t address) {
 	if (modeChanged) changeMode(TEXT);
 }
 
-void RA8875::customChar(uint8_t symbolAddrs) {
+/**************************************************************************/
+/*!		Retrieve and print to screen the user custom char or symbol
+		User have to store a custom char before use this function
+		Parameters:
+		address: 0...255 the address of the CGRAM where char it's stored
+		wide:0 for single 8x16 char, if you have wider chars that use 
+		more than a char slot they can be showed combined (see examples)
+*/
+/**************************************************************************/
+void RA8875::showUserChar(uint8_t symbolAddrs,uint8_t wide) {
 	uint8_t oldRegState = _FNCR0Reg;
+	uint8_t i;
 	bitSet(oldRegState,7);//set to CGRAM
 	writeReg(RA8875_FNCR0,oldRegState);
 	//layers?
@@ -375,7 +392,13 @@ void RA8875::customChar(uint8_t symbolAddrs) {
 	} else {
 		writeTo(L1);
 	}
-	writeReg(RA8875_MRWC,symbolAddrs);//write custom font from location
+	writeCommand(RA8875_MRWC);
+	writeData(symbolAddrs);
+	if (wide > 0){
+		for (i=1;i<=wide;i++){
+			writeData(symbolAddrs+i);
+		}
+	}
 	if (oldRegState != _FNCR0Reg) writeReg(RA8875_FNCR0,_FNCR0Reg);
 }
 
@@ -556,8 +579,6 @@ void RA8875::setFont(enum RA8875fontSource s) {
 		}
 	}
 }
-
-
 
 /**************************************************************************/
 /*!  
@@ -1970,29 +1991,6 @@ boolean RA8875::useLayers(boolean on) {
 	return false;//not possible with current conf
 }
 
-/**************************************************************************/
-/*!
-		Change the current Active Layer (used in several functions)
-		It will work only if useLayer set to true and applicable!
-		So use useLayers(true) first!
-		Parameters:
-		layer:1..2
-      
-*/
-/**************************************************************************/
-/* void RA8875::setActiveLayer(uint8_t layer) {
-	if (_useMultiLayers){
-		uint8_t temp = readReg(RA8875_MWCR1);
-		if (layer < 2){
-			_currentLayer = 0;
-			temp &= ~(1 << 0);
-		} else {
-			_currentLayer = 1;
-			temp |= (1 << 0);
-		}
-		writeData(temp);
-	}
-} */
 
 /**************************************************************************/
 /*!
