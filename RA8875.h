@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.49b9(early beta) tested only w Teensy3.1
+	Version:0.49b10(early beta) tested only w Teensy3.1
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -190,6 +190,8 @@ class RA8875 : public Print {
 				//and get the current data, this is useful sometime because the chip track cursor internally only
 	void    	setTextColor(uint16_t fColor, uint16_t bColor);
 	void 		setTextColor(uint16_t fColor);//transparent background
+	void 		uploadChar(const uint8_t symbol[],uint8_t address);
+	void		customChar(uint8_t symbolAddrs);
 	void    	setFontScale(uint8_t scale);//0..3
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max

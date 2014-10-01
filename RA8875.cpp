@@ -234,8 +234,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	clearMemory(true);//clear FULL memory
 	//end of hardware initialization
 	delay(10); 
-
-	//bug();
+	
     //now starts the first time setting up
 	displayOn(true);//turn On Display
 	if (_size == Adafruit_480x272 || _size == Adafruit_800x480) GPIOX(true);//only for adafruit stuff 
@@ -345,6 +344,39 @@ void RA8875::changeMode(enum RA8875modes m) {
 			writeData(_MWCR0Reg);
 		}
 	}
+}
+
+void RA8875::uploadChar(const uint8_t symbol[],uint8_t address) {
+	bool modeChanged = false;
+	if (_currentMode != GRAPHIC) {//was in text!
+		changeMode(GRAPHIC);
+		modeChanged = true;
+	}
+	writeReg(RA8875_CGSR,address);
+	writeTo(CGRAM);
+	writeCommand(RA8875_MRWC);
+	for (uint8_t i=0;i<16;i++){
+		writeData(symbol[i]);
+	}
+	if (modeChanged) changeMode(TEXT);
+}
+
+void RA8875::customChar(uint8_t symbolAddrs) {
+	uint8_t oldRegState = _FNCR0Reg;
+	bitSet(oldRegState,7);//set to CGRAM
+	writeReg(RA8875_FNCR0,oldRegState);
+	//layers?
+ 	if (_useMultiLayers){
+		if (_currentLayer == 0){
+			writeTo(L1);
+		} else {
+			writeTo(L2);
+		}
+	} else {
+		writeTo(L1);
+	}
+	writeReg(RA8875_MRWC,symbolAddrs);//write custom font from location
+	if (oldRegState != _FNCR0Reg) writeReg(RA8875_FNCR0,_FNCR0Reg);
 }
 
 /**************************************************************************/
@@ -524,6 +556,8 @@ void RA8875::setFont(enum RA8875fontSource s) {
 		}
 	}
 }
+
+
 
 /**************************************************************************/
 /*!  
