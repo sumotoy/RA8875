@@ -94,14 +94,14 @@ Since it's not a great advantage to use it with 8/16 parallel interface I choose
 
 #### RA8875 chip bugs!
 I discovered several bugs in the chip.<br>
-Register 0x10 (SYSR), setting bit 3 to 1 should set the 65K color feature.
-In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.
-The chip it's prone to freeze if you send out-of-range data, this forced me to surrond code by data-limits-check.
+Register 0x10 (SYSR), setting bit 3 to 1 should set the 65K color feature.<br>
+In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.<br>
+The chip it's prone to freeze if you send out-of-range data, this forced me to surrond code by data-limits-check.<br>
 
 #### Wiring with your MCU
-It's an Early beta, only SPI for now so it uses _native SPI_.
-MOSI,MISO,SCK pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)
-CS and RST it's your choice, I'm using the standard UNO/Teensy3 CS pin (10), as RST it's really possible use _any_ pin.
-You also need another 2 PINS, one for Touch Screen (I used 2) and another for SD cs (I used 4). If your board don't have SD slot (Adafruit don't) just not open the SD example but you can use any SD card holder and use it.
+It's an Early beta, only SPI for now so it uses _native SPI_.<br>
+MOSI,MISO,SCK pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)<br>
+CS and RST it's your choice, I'm using the standard UNO/Teensy3 CS pin (10), as RST it's really possible use _any_ pin.<br>
+You also need another 2 PINS, one for Touch Screen (I used pin 2) and another for SD cs (I used pin 4).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)
 
 
