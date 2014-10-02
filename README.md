@@ -57,27 +57,46 @@ Thanks for your attention....
   - Correct use of Print, Write and Println
   - Correct use of setCursor to mimic LiquidCrystal library
 
-This early beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library.
+This early beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.
 The beta release will use a main section for all chip stuff and several other libs for the protocols (as my LiquidCrystalNew).
 I should have a stable and workable version in a couple of days with many examples included...
 
 
 #### About RA8875 chip
 This is amazing device, if you read the capabilities you will shocked but all come at a price...
-All communications with this chip can be a problem, remember that it's not a classic driver where you have basic drawing commands and you build up everithing else, this one use kinda macros and the chip will take care of all drawings so you have tons of registers and commands, I spent hours studing the hudge datasheet!!!
-Another issue... when you sent a command you will need to check if the chip has terminated job before send another istruction, this is important since your MCU it's really fast to send commands and it's prolly faster than RA8875 (that needs to execute the job) so you can easily going messed up! 
-The chip it's prone to freeze if you send data out of range, this not happen with all istructions but I'm investigating, actually I finally wrapped almost all functions against out-of-range values.
+It cannot act as framebuffer device so forget video and fast loading images even using it's 16 bit bus, it have almost every drawing functions internally hardware accellerated so it's perfectly suitable for drawing interfaces and text mixed to graphics fast and without using cpu resources.
+Since all drawing commands are mostly macros, it has a MASSIVE amount of registers, prolly one of the biggest resource driven chip I ever see, really hudge datasheet, it takes a lot of time go deep inside it.
+Do you think that driving with 8 or 16 bit interface will be much faster than Serial? I really don't think so!
+The problem is that chip needs time to perform a command! In brief, the scenario it's something like this:
+You tell it to draw a rect by send rect macros command and colors, the chip starts it's job but you cannot send another command until has finished it's job so you have to check it's register or the WAIT pin before send another command.
+This almost for every command. Also drawing bitmap images it's a slow job, there's not a way to send chunks of data, at list I haven't find a working way, the only fast way to get a picture fast on screen is use internal DMA and a optional SPI Flash memory pre-programmed and controlled directly by the chip!
+Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip, with datasheet on hand this chip have a limit of 6.6Mhz for write and 3.2Mhz for read so it's perfectly for SPI Transactions (thanks to Paul Stoffregen for this) that is supported officially in the last IDE for Teensy (1.0.6 release 1.20) and Arduino (1.5.8).
 
-I'm started with 4 wire SPI that is probably the best choice, just 4 wires (maybe 5 or 6) and you can have a full color interface without lose all your MCU pins, it's pretty damn fast but I spent hours to figure out that the best way it's use SPI transactions since Write commands can be max 6.6Mhz but Read ones works only at 3.2Mhz max! If you are using another SPI chip on the same bus remember to modify his library for use SPI transactions and you save the day...
+#### RA8875 in short
 
-RA8875 will shine even with a small and slow MCU even if you are driving a 800x400 65K color tft!
-You have onboard touch screen controller, keypad controller, PWM's 2GPIO's, has BTE graphic engine and DMA capabilities and much much more, really impressive.
-After weeks of experimenting I found the main drawback of this chip, loading images. Adafruit board dosn't have FONT ROM and FLASH RAM chip but some chinese vendor included in their board and the Flash Ram chip it's really useful for loading images FAST, unfortunatly I discovered too late that images should be programmed BEFORE soldering chip in the board and seems no other way reprogram it, too bad that RAiO dosn't provide a way (at list I cannot find one till now) to reprogram Flash chip onboard, if someone have some infos about reprogram the 128Mb flash chip without desoldering or (as the RAiO app note says) disconnect several resistors, reprogram and riconnect, it would be precius!
+* full accellerated drawing functions.
+* support for TFT till 800x480.
+* onboard resistive touch screen driver.
+* onboard 4x5 keypad controller driver.
+* internal font chip.
+* external optional font chip.
+* external optional SPI flash chip.
+* 2 x PWM generators.
+* 2 x GPIOX.
+* BTE hardware engine.
+* DMA access to font rom and SPI flash.
+* 256 user configurable fonts.
+* Patterns support.
+* user configurable graphic cursors.
+* Layers support (not for screen larger than 480x272).
+* configurable INT pin.
+
 
 #### RA8875 chip bugs!
 I discovered several bugs in the chip.<br>
 Register 0x10 (SYSR), setting bit 3 to 1 should set the 65K color feature.
 In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.
+The chip it's prone to freeze if you send out-of-range data, this forced me to surrond code by data-limits-check.
 
 #### Wiring with your MCU
 It's an Early beta, only SPI for now so it uses _native SPI_.
