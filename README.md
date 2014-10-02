@@ -94,7 +94,7 @@ Since it's not a great advantage to use it with 8/16 parallel interface I choose
 
 #### RA8875 chip bugs!
 I discovered several bugs in the chip.<br>
-Register 0x10 (SYSR), setting bit 3 to 1 should set the 65K color feature.<br>
+Register **0x10** (SYSR), setting bit 3 to 1 should set the 65K color feature.<br>
 In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.<br>
 Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br>
 _The chip it's prone to freeze if you send out-of-range data_, this forced me to surrond code by data-limits-check.<br>
