@@ -9,17 +9,21 @@ RA8875 library
 Current beta **tested only with**:
 
 * Teensy 3.1
-* Chinese RA8875 5"Inch (480x272) in SPI mode (should be compatible with Adafruit board, more or less)
+* Chinese RA8875 5"Inch (480x272) in SPI mode
+
+A couple of users tested also with:
+* Arduino UNO, Arduino YUN
+* Adafruit RA8875 board w 800x600 and 480x272 displays
 
 ##### Beta changes:
 
-* 0.49b1:<s>Fixed 800x480 initialization</s> Grrr..not yet!
+* 0.49b1:<s>Fixed 800x480 initialization</s>
 * 0.49b7:Complete rebuilded touch screen stuff, now much easier and super easy to calibrate
 (note: this version have different Touch Screen approach so commands changed! Examples where updated to reflect changes)
 * 0.49b8:new command writeTo very useful for write to layers (1,2), pattern,cgram,cursor,etc. A great example of how using layers!
 * 0.49b9:Fixed a silly error in display identifier that not enable GPIOx when adafruit stuff is used. Another attemp (I hope the last!) to get 800x480 initialization fixed.
 * 0.49b10:Added support for user custom fonts and example.
-* 0.49b11:Changed name for user char upload/show, custom font can be designed wide as needed, better example for that.
+* 0.49b11:Changed name for user char upload/show, custom font can be designed wide as needed, better example for that, officially fixed 800x480 compatibility and examples verified with arduino uno.
 
 ###### Upcoming beta 0.6 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
