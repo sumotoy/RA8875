@@ -3,9 +3,12 @@
 	It's a great example of many 2d objects in a 3d space (matrix transformations)
 	and show the capabilities of RA8875 chip.
 */
-
+#ifdef __AVR__
+#define sinf sin
+#endif
 #include <SPI.h>
 #include <RA8875.h>
+
 
 /*
 You are using 4 wire SPI here, so:
@@ -174,5 +177,4 @@ void draw(int16_t xyz[3][NDOTS], uint16_t col[NDOTS]){
     }
   }
 }
-
 
