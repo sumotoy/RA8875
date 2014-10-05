@@ -202,7 +202,12 @@ void RA8875::begin(const enum RA8875sizes s) {
 */
 /**************************************************************************/
 void RA8875::initialize(uint8_t initIndex) {
-	if (_rst == 255) softReset();
+	if (_rst == 255) {//soft reset
+		writeCommand(RA8875_PWRR);
+		writeData(RA8875_PWRR_SOFTRESET);
+		writeData(RA8875_PWRR_NORMAL);
+		delay(200);
+	}
 	const uint8_t initStrings[4][15] = {
 	{0x0A,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (to be fixed)
 	{0x10,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (0x0A)
@@ -253,13 +258,13 @@ void RA8875::initialize(uint8_t initIndex) {
       Software Reset
 */
 /**************************************************************************/
-void RA8875::softReset(void) {
+/* void RA8875::softReset(void) {
 	writeCommand(RA8875_PWRR);
 	writeData(RA8875_PWRR_SOFTRESET);
 	writeData(RA8875_PWRR_NORMAL);
 	delay(200);
 }
-
+ */
 /**************************************************************************/
 /*!		
 		Clear memory

@@ -165,7 +165,7 @@ class RA8875 : public Print {
 //------------- Setup -------------------------
 	void 		begin(const enum RA8875sizes s);
 //------------- Hardware related -------------------------
-	void    	softReset(void);
+	//void    	softReset(void);
 	void    	displayOn(boolean on);
 	void    	sleep(boolean sleep);
 	void 		brightness(uint8_t val);//ok

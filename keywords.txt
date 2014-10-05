@@ -12,7 +12,6 @@ RA8875	KEYWORD1
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
-softReset	KEYWORD2
 displayOn	KEYWORD2
 sleep	KEYWORD2
 brightness	KEYWORD2
