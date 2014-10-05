@@ -101,8 +101,9 @@ _The chip it's prone to freeze if you send out-of-range data_, this forced me to
 
 #### Wiring with your MCU
 It's an Early beta, only SPI for now so it uses _native SPI_.<br>
-MOSI,MISO,SCK pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)<br>
-CS and RST it's your choice, I'm using the standard UNO/Teensy3 CS pin (10), as RST it's really possible use _any_ pin.<br>
-You also need another 2 PINS, one for Touch Screen (I used pin 2) and another for SD cs (I used pin 4).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)
+**MOSI,MISO,SCK** pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)<br>
+For **RST** it's your choice, it's really possible use _any_ pin.<br>
+For **CS** pin you have to choose between these pin on Teensy3:2,6,9,10,15,20,21,22,23. On UNO or DUE refer to they documents.<br>
+You also need another 2 PINS, **INT** for Touch Screen (I used pin 2) and a **CS** for SD (I used pin 21).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)
 
 
