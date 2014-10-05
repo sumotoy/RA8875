@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.49b11(early beta) tested only w Teensy3.1
+	Version:0.49b12(early beta) tested only w Teensy3.1
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -74,6 +74,7 @@ Note: East Rising and Genicomp looks the same chip! Just named different
 
 #ifdef __AVR__
   #include <avr/pgmspace.h>
+  #include <math.h>
 #endif
 
 /* ---------------------------- USER SETTINGS ---------------------*/
@@ -88,6 +89,7 @@ just comment the following line */
 Some TFT come with capacitive touch screen or you may decide to use a better
 controller for that, decomment the following line to save resources */
 //#define USE_EXTERNALTOUCH
+
 
 /* INTERNAL KEY MATRIX ++++++++++++++++++++++++++++++++++++++++++
 RA8875 has a 5x6 Key Matrix controller onboard, if you are not plan to use it
@@ -158,10 +160,10 @@ typedef struct Matrix { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
 class RA8875 : public Print {
  public:
 //------------- Instance -------------------------
-	RA8875(uint8_t cs, uint8_t rst);
-	RA8875(uint8_t cs);
+	RA8875(const uint8_t cs, const uint8_t rst);
+	RA8875(const uint8_t cs);
 //------------- Setup -------------------------
-	void 		begin(enum RA8875sizes s);
+	void 		begin(const enum RA8875sizes s);
 //------------- Hardware related -------------------------
 	void    	softReset(void);
 	void    	displayOn(boolean on);
@@ -183,6 +185,8 @@ class RA8875 : public Print {
 	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);
 //--------------Text functions ------------------------- 
 	//----------cursor stuff................
+	//to calculate max column. (screenWidth/fontWidth)-1
+	//to calculate max row.    (screenHeight/fontHeight)-1
 	void		showCursor(boolean cur,enum RA8875tcursor c=BLINK);//show text cursor, select cursor typ (NORMAL,BLINK)
 	void 		setCursorBlinkRate(uint8_t rate);//0...255 0:faster
 	void    	setCursor(uint16_t x, uint16_t y);
@@ -242,7 +246,6 @@ class RA8875 : public Print {
 	
 //-------------- LAYERS -----------------------------------------
 	boolean 	useLayers(boolean on);
-	//void		setActiveLayer(uint8_t layer);
 	void		writeTo(enum RA8875writes d);//TESTING
 	void 		layerEffect(enum RA8875boolean efx);
 	void 		layerTransparency(uint8_t layer1,uint8_t layer2);
