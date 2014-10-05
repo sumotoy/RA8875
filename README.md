@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!**
 
-##### Current Version: 0.49b11 (early beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.49b12 (early beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1
@@ -24,6 +24,7 @@ A couple of users tested also with:
 * 0.49b9:Fixed a silly error in display identifier that not enable GPIOx when adafruit stuff is used. Another attemp (I hope the last!) to get 800x480 initialization fixed.
 * 0.49b10:Added support for user custom fonts and example.
 * 0.49b11:Changed name for user char upload/show, custom font can be designed wide as needed, better example for that, officially fixed 800x480 compatibility and examples verified with arduino uno.
+* 0.49b12:Added a softReset workaround if the rst pin is not used. Fixed bubbles example in AVR.
 
 ###### Upcoming beta 0.6 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
