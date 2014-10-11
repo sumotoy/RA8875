@@ -54,7 +54,7 @@ Thanks for your attention....
   - All communication protocols supported
   - Support for the many external ROM Font chip
   - Support for the external SPI FLASH
-  - Suitable for Teensy 3 and Arduino's
+  - Working with Teensy 3.x, Arduino's, Energia IDE supported MCU's (stellaris, etc.)
   - Correct use of Print, Write and Println
   - Correct use of setCursor to mimic LiquidCrystal library
 
@@ -105,6 +105,7 @@ It's an Early beta, only SPI for now so it uses _native SPI_.<br>
 **MOSI,MISO,SCK** pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)<br>
 For **RST** it's your choice, it's really possible use _any_ pin.<br>
 For **CS** pin you have to choose between these pin on Teensy3:2,6,9,10,15,20,21,22,23. On UNO or DUE refer to they documents.<br>
-You also need another 2 PINS, **INT** for Touch Screen (I used pin 2) and a **CS** for SD (I used pin 21).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)
+You also need another 2 PINS, **INT** for Touch Screen (I used pin 2) and a **CS** for SD (I used pin 21).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)<br>
+From version 0.6, Energia IDE will be supported so many MCU's can be used but should wait 0.6 and since I have only Stellaris LM4F120XL I cannot be sure of the various MCU's wiring so drop me a note, at list I can add to the documentation!
 
 
