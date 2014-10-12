@@ -32,12 +32,20 @@ RA8875::RA8875(const uint8_t CS) {
     RA8875_800x480 (5" and 7" displays)
 	Adafruit_480x272 (4.3" Adafruit displays)
 	Adafruit_800x480 (5" and 7" Adafruit displays)
+	UPDATE! Some devices ONLY in Energia IDE needs an extra parameter!
+	module: sets the SPI interface (it depends from MCU). Default:0
 */
 /**************************************************************************/
+#if defined(ENERGIA)
+void RA8875::begin(const enum RA8875sizes s,uint8_t module) {
+#else
 void RA8875::begin(const enum RA8875sizes s) {
+#endif
 	_size = s;
 	uint8_t initIndex;
-
+#if defined(ENERGIA)
+	SPImodule = module;
+#endif
 	_size = s;
 	if (_size == RA8875_320x240) {//still not supported! Wait next version
 		_width = 320;
@@ -181,15 +189,20 @@ void RA8875::begin(const enum RA8875sizes s) {
 		delay(300);
 		digitalWrite(_rst, HIGH);
 	}
-	
+#if defined(NEEDS_SET_MODULE)//energia specific
+	SPI.setModule(SPImodule);
+#endif
 	SPI.begin();
 #if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
 	_spiSpeed = MAXSPISPEED;//go back to full speed
 #else//do not use SPItransactons
-	SPI.setClockDivider(SPI_CLOCK_DIV4);//4Mhz
+	#if defined(ENERGIA)
+		SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
+	#else
+		SPI.setClockDivider(SPI_CLOCK_DIV4);//4Mhz (6.6Mhz Max)
+	#endif
 	SPI.setDataMode(SPI_MODE0);
 #endif
-	
 	initialize(initIndex);
 }
 
@@ -1015,10 +1028,10 @@ void RA8875::setY(uint16_t y) {
 /**************************************************************************/
 /* void RA8875::pushPixels(uint32_t num, uint16_t p) {
 	startSend();
-	SPI.transfer(RA8875_DATAWRITE);
+	SPItranfer(RA8875_DATAWRITE);
 	while (num--) {
-		SPI.transfer(p >> 8);
-		SPI.transfer(p);
+		SPItranfer(p >> 8);
+		SPItranfer(p);
 	}
 	endSend();
 }
@@ -1167,12 +1180,20 @@ void RA8875::BTE_source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY){
 	writeReg(RA8875_VDBE1,temp0);//BET written to the target  vertical  position 
 }		
 
-//TESTING
+/**************************************************************************/
+/*! TESTING
+
+*/
+/**************************************************************************/
 void RA8875::BTE_ROP_code(unsigned char setx){//
     writeReg(RA8875_BECR1,setx);//BECR1	   
 }
 
-//TESTING
+/**************************************************************************/
+/*! TESTING
+
+*/
+/**************************************************************************/
 void RA8875::BTE_enable(void) {	
 	uint8_t temp = readReg(RA8875_BECR0);
 	temp |= (1 << 7); //bit set 7
@@ -1180,8 +1201,11 @@ void RA8875::BTE_enable(void) {
 }
 
 
+/**************************************************************************/
+/*! TESTING
 
-//TESTING
+*/
+/**************************************************************************/
 void RA8875::writeTo(enum RA8875writes d){
 	uint8_t temp = readReg(RA8875_MWCR1);
 	switch(d){
@@ -1984,11 +2008,9 @@ boolean RA8875::useLayers(boolean on) {
 		if (clearBuffer) { 
 			//for some reason if you switch to multilayer the layer 2 has garbage
 			//better clear
-			//setActiveLayer(2);//switch to layer 2
 			writeTo(L2);//switch to layer 2
 			clearMemory(false);//clear memory of layer 2
-			//setActiveLayer(1);//go back to layer 1
-			writeTo(L1);//switch to layer 2
+			writeTo(L1);//switch to layer 1
 		}
 		return true;//it's possible with current conf
 	}
@@ -2172,8 +2194,8 @@ uint8_t  RA8875::readReg(uint8_t reg) {
 /**************************************************************************/
 void  RA8875::writeData(uint8_t data) {
 	startSend();
-	SPI.transfer(RA8875_DATAWRITE);
-	SPI.transfer(data);
+	SPItranfer(RA8875_DATAWRITE);
+	SPItranfer(data);
 	endSend();
 }
 
@@ -2186,9 +2208,9 @@ void  RA8875::writeData(uint8_t data) {
 /**************************************************************************/
 void  RA8875::writeData16(uint16_t data) {
 	startSend();
-	SPI.transfer(RA8875_DATAWRITE);
-	SPI.transfer(data >> 8);
-	SPI.transfer(data);
+	SPItranfer(RA8875_DATAWRITE);
+	SPItranfer(data >> 8);
+	SPItranfer(data);
 	endSend();
 }
 
@@ -2201,20 +2223,28 @@ uint8_t  RA8875::readData(bool stat) {
 	#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
 	_spiSpeed = MAXSPISPEED/2;
 	#else
-	SPI.setClockDivider(SPI_CLOCK_DIV8);//2Mhz (3.3Mhz max)
+		#if defined(ENERGIA)
+			SPI.setClockDivider(SPI_SPEED_READ);//2Mhz (3.3Mhz max)
+		#else
+			SPI.setClockDivider(SPI_CLOCK_DIV8);//2Mhz (3.3Mhz max)
+		#endif
 	#endif
 	startSend();
 	if (stat){
-		SPI.transfer(RA8875_CMDREAD);
+		SPItranfer(RA8875_CMDREAD);
 	} else {
-		SPI.transfer(RA8875_DATAREAD);
+		SPItranfer(RA8875_DATAREAD);
 	}
-	uint8_t x = SPI.transfer(0x0);
+	uint8_t x = SPItranfer(0x0);
 	endSend();
 	#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
 	_spiSpeed = MAXSPISPEED;
 	#else
-	SPI.setClockDivider(SPI_CLOCK_DIV4);//4Mhz (6.6Mhz Max)
+		#if defined(ENERGIA)
+			SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
+		#else
+			SPI.setClockDivider(SPI_CLOCK_DIV4);//4Mhz (6.6Mhz Max)
+		#endif
 	#endif
 	return x;
 }
@@ -2235,14 +2265,26 @@ uint8_t  RA8875::readStatus(void) {
 		d: the command
 */
 /**************************************************************************/
-void  RA8875::writeCommand(uint8_t d) {
+void RA8875::writeCommand(uint8_t d) {
 	startSend();
-	SPI.transfer(RA8875_CMDWRITE);
-	SPI.transfer(d);
+	SPItranfer(RA8875_CMDWRITE);
+	SPItranfer(d);
 	endSend();
 }
 
-
+/**************************************************************************/
+/*! PRIVATE
+		temp workaround
+*/
+/**************************************************************************/
+uint8_t RA8875::SPItranfer(uint8_t data){
+#if ENERGIA
+    SPDR = SPI.transfer(data);
+	return SPDR;
+#else
+	return SPI.transfer(data);
+#endif
+}
 
 /**************************************************************************/
 /*! PRIVATE
@@ -2252,6 +2294,8 @@ void  RA8875::writeCommand(uint8_t d) {
 void RA8875::startSend(){
 #if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
 	SPI.beginTransaction(SPISettings(_spiSpeed, MSBFIRST, SPI_MODE0));
+#elif !defined(ENERGIA)
+	cli();//protect from interrupts
 #endif
 #if defined(__MK20DX128__) || defined(__MK20DX256__)
 	digitalWriteFast(_cs, LOW);
@@ -2273,6 +2317,8 @@ void RA8875::endSend(){
 #endif
 #if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
 	SPI.endTransaction();
+#elif !defined(ENERGIA)
+	sei();//enable interrupts
 #endif
 }
 

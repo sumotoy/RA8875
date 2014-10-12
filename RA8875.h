@@ -2,7 +2,8 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.49b12(early beta) tested only w Teensy3.1
+	Version:0.51(early beta) introduces compatibility 
+	with Energia IDE and his MCU's
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -10,36 +11,64 @@ An attemp to create a full featured library support for RA8875 chip from RAiO
 that is alternative to the buggy and incomplete Adafruit_RA8875 (but thanks Ada 
 and PaintYourDragon, great work aniway).
 
----------------------------
-About Copyrights...
----------------------------
+-------------------------------------------------------------------------------------
+					>>>>>>>>>>>> About Copyrights <<<<<<<<<<<<<<<
+-------------------------------------------------------------------------------------
 Even if similar to Adafruit_RA8875 in some parts this library was builded originated
 (as the Adafruit one) from the application note and datasheet from RAiO, however
 I spent quite a lot of time to improve and bring to life all features so if you clone,
-copy or modify please leave all my original notes intact.
+copy or modify please leave all my original notes intact!
 
------------------------------------
-Wiring
------------------------------------
-chip		Teensy/Uno
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-CLK:		pin 13
-MOSI:		pin 11
-MISO:		pin 12
-CS:			pin 10 (selectable)
-INT:		pin 3  (selectable)
-RESET:		pin 9  (selectable and optional)
-*In some modules you can leave unconnected but check if it's needed!
+-------------------------------------------------------------------------------------
+				>>>>>>>>>>>>>>>>>>>>> Wiring <<<<<<<<<<<<<<<<<<<<<<<<<
+-------------------------------------------------------------------------------------
+TFT side	Teensy/Uno
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+CLK:		pin 13 UNO
+MOSI:		pin 11 UNO
+MISO:		pin 12 UNO
+CS:			pin 10 (selectable but note 1*!)
+INT:		pin 2  (selectable 2*)
+RESET:		pin 9  (selectable and optional 0*)
+*(0) In some modules you can leave unconnected but check if it's needed!
+*(1) On Teensy3.x not all pin are usable for CS! Read the printed paper
+that come with your Teensy3.x for more informations!
+*(2) Arduino cannot use any pin for interrupts! In my examples I don't use
+interrupts but just reading pin state so you can use any pin :)
+-------------------------------------------------------------------------------------
+TFT side	Stellaris (LM4F120XL) module=0 (still not checked)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+CLK:		xxx
+MOSI:		xxx
+MISO:		xxx
+CS:			xxx  (selectable)
+INT:		xxx  (selectable)
+RESET:		xxx  (selectable and optional)
 
-*if you use an optional SD card here's connections...
-SD CLK:		pin 13 shared
-SD MOSI:	pin 11 shared
-SD MISO:	pin 12 shared
-SD CS:		pin 4  (selectable)
+*if you use an [optional] SD card here's connections...
+-------------------------------------------------------------------------------------
+TFT side	Teensy/Uno
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SD CLK:		pin 13 [shared with RA]
+SD MOSI:	pin 11 [shared with RA]
+SD MISO:	pin 12 [shared with RA]
+SD CS:		pin 4  (selectable 3*)
+SD CARD ID: pin xx (selectable and optional)
+*(3) On Teensy3.x not all pin are usable for CS! Read the printed paper
+that come with your Teensy3.x for more informations!
+-------------------------------------------------------------------------------------
+TFT side	Stellaris (LM4F120XL) module=0 (still not checked)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SD CLK:		xxx shared
+SD MOSI:	xxx shared
+SD MISO:	xxx shared
+SD CS:		xxx  (selectable)
 SD CARD ID: pin xx (selectable and optional)
 
-
--------------SUPPORTED EXTERNAL FONT CHIP
+-------------------------------------------------------------------------------------
+				 >>>>>> SUPPORTED EXTERNAL FONT CHIP <<<<<<<<<
+Optional!
+-------------------------------------------------------------------------------------
 East Rising
 	ER3300-1
 	ER3302-1
@@ -54,7 +83,10 @@ Genicomp
 	GT23L24M1Z
 	GT23L32S4W
 Note: East Rising and Genicomp looks the same chip! Just named different
--------------SUPPORTED EXTERNAL FONT ENCODING
+-------------------------------------------------------------------------------------
+			   >>>>> SUPPORTED EXTERNAL FONT ENCODING <<<<<<
+Optional!
+-------------------------------------------------------------------------------------
 	GB2312
 	GB12345
 	BIG5
@@ -68,12 +100,52 @@ Note: East Rising and Genicomp looks the same chip! Just named different
 #ifndef _RA8875MC_H_
 #define _RA8875MC_H_
 
+#if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
+#include "Energia.h"
 
+#undef byte
+#define byte      uint8_t
+#define PGM_P     const char*
+#define memcpy_P  memcpy
+#define prog_char const char
+#define PROGMEM
+//#define pgm_read_byte(data) *(data)
+#define strlen_P  strlen
+#define PSTR
+
+  #if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//stellaris
+    #define NEEDS_SET_MODULE
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+	#define SPI_SPEED_READ SPI_CLOCK_DIV8
+    //#error TIVA_DEVICE__//stellaris tiva?
+  #elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)
+    #define NEEDS_SET_MODULE
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+	#define SPI_SPEED_READ SPI_CLOCK_DIV8
+    //#error STELLARIS_DEVICE__//stellaris first version
+  #elif defined(__MSP430MCU__)
+    //#error MSP430_DEVICE__
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+	#define SPI_SPEED_READ SPI_CLOCK_DIV4
+  #elif defined(TMS320F28069)//C2000
+    //#error F2802_DEVICE__//???
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+	#define SPI_SPEED_READ SPI_CLOCK_DIV4
+  #elif defined(__CC3200R1M1RGC__)
+    //#error CC3200_DEVICE__//???
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+	#define SPI_SPEED_READ SPI_CLOCK_DIV4
+  #endif
+
+	static uint8_t SPImodule;
+	static uint8_t SPDR;
+	
+#else
 #include "Arduino.h"
+#endif
 #include "Print.h"
 
 #ifdef __AVR__
-  #include <avr/pgmspace.h>
   #include <math.h>
 #endif
 
@@ -163,7 +235,11 @@ class RA8875 : public Print {
 	RA8875(const uint8_t cs, const uint8_t rst);
 	RA8875(const uint8_t cs);
 //------------- Setup -------------------------
+#if defined(ENERGIA)
+	void 		begin(const enum RA8875sizes s,uint8_t module=0);
+#else
 	void 		begin(const enum RA8875sizes s);
+#endif
 //------------- Hardware related -------------------------
 	//void    	softReset(void);
 	void    	displayOn(boolean on);
@@ -355,6 +431,7 @@ using Print::write;
 	void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 	void 		startSend();
 	void 		endSend();
+	uint8_t 	SPItranfer(uint8_t data);
 	// Register containers -----------------------------------------
 	uint8_t		_MWCR0Reg; //keep track of the register 		  [0x40]
 	uint8_t		_DPCRReg;  ////Display Configuration		  	  [0x20]
