@@ -2,24 +2,13 @@
 	This example was adapted from ugfx http://ugfx.org
 	It's a great example of many 2d objects in a 3d space (matrix transformations)
 	and show the capabilities of RA8875 chip.
+ Tested and worked with:
+ Teensy3,Teensy3.1,Arduino UNO,Arduino YUN,Arduino Leonardo,Stellaris
+ Works with Arduino 1.0.6 IDE, Arduino 1.5.8 IDE, Energia 0013 IDE
 */
 #ifdef __AVR__
 #define sinf sin
 #endif
-#include <SPI.h>
-#include <RA8875.h>
-
-
-/*
-You are using 4 wire SPI here, so:
- MOSI:11
- MISO:12
- SCK:13
- the rest of pin below:
- */
-#define RA8875_INT 2
-#define RA8875_CS 10
-#define RA8875_RESET 9
 
 #define NDOTS 512			// Number of dots
 #define SCALE 4096
@@ -30,7 +19,42 @@ You are using 4 wire SPI here, so:
 #define BLUE_COLORS (32)
 
 
-RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
+#include <SPI.h>
+#include <RA8875.h>
+
+/*
+Teensy3.x and Arduino's
+You are using 4 wire SPI here, so:
+ MOSI:  11//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ MISO:  12//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ SCK:   13//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ the rest of pin below:
+ */
+#define RA8875_INT 2 //any pin
+#define RA8875_CS 10 //see below...
+/*
+Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
+Arduino's 8 bit: any
+DUE: should be any but not sure
+*/
+#define RA8875_RESET 9//any pin or nothing!
+
+#if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
+
+RA8875 tft = RA8875(3);//select SPI module 3
+/*
+for module 3 (stellaris)
+SCLK:  PD_0
+MOSI:  PD_3
+MISO:  PD_2
+SS:    PD_1
+*/
+#else
+
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
+
+#endif
+
 
 
 int16_t sine[SCALE+(SCALE/4)];
@@ -42,6 +66,17 @@ int16_t xyz[3][NDOTS];
 uint16_t col[NDOTS];
 int pass = 0;
 
+
+void initialize (void){
+  uint16_t i;
+  /* if you change the SCALE*1.25 back to SCALE, the program will
+   * occassionally overrun the cosi array -- however this actually
+   * produces some interesting effects as the BUBBLES LOSE CONTROL!!!!
+   */
+  for (i = 0; i < SCALE+(SCALE/4); i++)
+    //sine[i] = (-SCALE/2) + (int)(sinf(PI2 * i / SCALE) * sinf(PI2 * i / SCALE) * SCALE);
+    sine[i] = (int)(sinf(PI2 * i / SCALE) * SCALE);
+}
 
 void setup() 
 {
@@ -55,55 +90,6 @@ void setup()
 }
 
 
-
-void loop() 
-{
-  matrix(xyz, col);
-  rotate(xyz, angleX, angleY, angleZ);
-  draw(xyz, col);
-
-  angleX += speedX;
-  angleY += speedY;
-  angleZ += speedZ;
-
-  if (pass > 400) speedY = 1;
-  if (pass > 800) speedX = 1;
-  if (pass > 1200) speedZ = 1;
-  pass++;
-
-  if (angleX >= SCALE) {
-    angleX -= SCALE;
-  } 
-  else if (angleX < 0) {
-    angleX += SCALE;
-  }
-
-  if (angleY >= SCALE) {
-    angleY -= SCALE;
-  } 
-  else if (angleY < 0) {
-    angleY += SCALE;
-  }
-
-  if (angleZ >= SCALE) {
-    angleZ -= SCALE;
-  } 
-  else if (angleZ < 0) {
-    angleZ += SCALE;
-  }
-}
-
-
-void initialize (void){
-  uint16_t i;
-  /* if you change the SCALE*1.25 back to SCALE, the program will
-   * occassionally overrun the cosi array -- however this actually
-   * produces some interesting effects as the BUBBLES LOSE CONTROL!!!!
-   */
-  for (i = 0; i < SCALE+(SCALE/4); i++)
-    //sine[i] = (-SCALE/2) + (int)(sinf(PI2 * i / SCALE) * sinf(PI2 * i / SCALE) * SCALE);
-    sine[i] = (int)(sinf(PI2 * i / SCALE) * SCALE);
-}
 
 void matrix (int16_t xyz[3][NDOTS], uint16_t col[NDOTS]){
   static uint32_t t = 0;
@@ -175,6 +161,43 @@ void draw(int16_t xyz[3][NDOTS], uint16_t col[NDOTS]){
       oldProjY[i] = projY;
       oldDotSize[i] = dotSize;
     }
+  }
+}
+
+void loop() 
+{
+  matrix(xyz, col);
+  rotate(xyz, angleX, angleY, angleZ);
+  draw(xyz, col);
+
+  angleX += speedX;
+  angleY += speedY;
+  angleZ += speedZ;
+
+  if (pass > 400) speedY = 1;
+  if (pass > 800) speedX = 1;
+  if (pass > 1200) speedZ = 1;
+  pass++;
+
+  if (angleX >= SCALE) {
+    angleX -= SCALE;
+  } 
+  else if (angleX < 0) {
+    angleX += SCALE;
+  }
+
+  if (angleY >= SCALE) {
+    angleY -= SCALE;
+  } 
+  else if (angleY < 0) {
+    angleY += SCALE;
+  }
+
+  if (angleZ >= SCALE) {
+    angleZ -= SCALE;
+  } 
+  else if (angleZ < 0) {
+    angleZ += SCALE;
   }
 }
 

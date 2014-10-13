@@ -1,22 +1,47 @@
 /*
   A really simple analog clock
+ Tested and worked with:
+ Teensy3,Teensy3.1,Arduino UNO,Arduino YUN,Arduino Leonardo,Stellaris
+ Works with Arduino 1.0.6 IDE, Arduino 1.5.8 IDE, Energia 0013 IDE
 */
+
 
 #include <SPI.h>
 #include <RA8875.h>
 
 /*
+Teensy3.x and Arduino's
 You are using 4 wire SPI here, so:
- MOSI:11
- MISO:12
- SCK:13
+ MOSI:  11//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ MISO:  12//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ SCK:   13//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
  the rest of pin below:
  */
-#define RA8875_INT 2
-#define RA8875_CS 10
-#define RA8875_RESET 9
+#define RA8875_INT 2 //any pin
+#define RA8875_CS 10 //see below...
+/*
+Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
+Arduino's 8 bit: any
+DUE: should be any but not sure
+*/
+#define RA8875_RESET 9//any pin or nothing!
 
-RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
+#if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
+
+RA8875 tft = RA8875(3);//select SPI module 3
+/*
+for module 3 (stellaris)
+SCLK:  PD_0
+MOSI:  PD_3
+MISO:  PD_2
+SS:    PD_1
+*/
+#else
+
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
+
+#endif
+
 
 uint16_t ccenterx,ccentery;//center x,y of the clock
 const uint16_t cradius = 110;//radius of the clock
@@ -27,6 +52,28 @@ uint16_t osx,osy,omx,omy,ohx,ohy;
 uint16_t x0 = 0, x1 = 0, yy0 = 0, yy1 = 0;
 uint32_t targetTime = 0;// for next 1 second timeout
 uint8_t hh,mm,ss;  //containers for current time
+
+
+void drawClockFace(){
+  tft.fillCircle(ccenterx, ccentery, cradius, RA8875_BLUE);
+  tft.fillCircle(ccenterx, ccentery, cradius-4, RA8875_BLACK);
+  // Draw 12 lines
+  for(int i = 0; i<360; i+= 30) {
+    sx = cos((i-90)*scosConst);
+    sy = sin((i-90)*scosConst);
+    x0 = sx*(cradius-4)+ccenterx;
+    yy0 = sy*(cradius-4)+ccentery;
+    x1 = sx*(cradius-11)+ccenterx;
+    yy1 = sy*(cradius-11)+ccentery;
+    tft.drawLine(x0, yy0, x1, yy1, RA8875_BLUE);
+  }
+}
+
+static uint8_t conv2d(const char* p) {
+  uint8_t v = 0;
+  if ('0' <= *p && *p <= '9') v = *p - '0';
+  return 10 * v + *++p - '0';
+}
 
 void setup(void) {
   tft.begin(RA8875_480x272);
@@ -46,47 +93,6 @@ void setup(void) {
   mm = conv2d(__TIME__+3);
   ss = conv2d(__TIME__+6);
   targetTime = millis() + 1000; 
-}
-
-
-
-void loop() {
-  if (targetTime < millis()) {
-    targetTime = millis()+1000;
-    ss++;
-    if (ss == 60) {
-      ss = 0;
-      mm++;
-      if(mm > 59) {
-        mm = 0;
-        hh++;
-        if (hh > 23) hh = 0;
-      }
-    }
-    drawClockHands(hh,mm,ss);
-    drawPrintTime(34,151,hh,mm,ss);
-  }
-}
-
-static uint8_t conv2d(const char* p) {
-  uint8_t v = 0;
-  if ('0' <= *p && *p <= '9') v = *p - '0';
-  return 10 * v + *++p - '0';
-}
-
-void drawClockFace(){
-  tft.fillCircle(ccenterx, ccentery, cradius, RA8875_BLUE);
-  tft.fillCircle(ccenterx, ccentery, cradius-4, RA8875_BLACK);
-  // Draw 12 lines
-  for(int i = 0; i<360; i+= 30) {
-    sx = cos((i-90)*scosConst);
-    sy = sin((i-90)*scosConst);
-    x0 = sx*(cradius-4)+ccenterx;
-    yy0 = sy*(cradius-4)+ccentery;
-    x1 = sx*(cradius-11)+ccenterx;
-    yy1 = sy*(cradius-11)+ccentery;
-    tft.drawLine(x0, yy0, x1, yy1, RA8875_BLUE);
-  }
 }
 
 void drawClockHands(uint8_t h,uint8_t m,uint8_t s){
@@ -149,4 +155,24 @@ void drawPrintTime(uint16_t x,uint16_t y, uint8_t h,uint8_t m,uint8_t s){
   } 
   tft.changeMode(GRAPHIC);
 }
+
+void loop() {
+  if (targetTime < millis()) {
+    targetTime = millis()+1000;
+    ss++;
+    if (ss == 60) {
+      ss = 0;
+      mm++;
+      if(mm > 59) {
+        mm = 0;
+        hh++;
+        if (hh > 23) hh = 0;
+      }
+    }
+    drawClockHands(hh,mm,ss);
+    drawPrintTime(34,151,hh,mm,ss);
+  }
+}
+
+
 

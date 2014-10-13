@@ -3,29 +3,56 @@
  	quick & slow dirty method!
 	Look inside the folder RA8875/examples/sd_example
 	there's a folder, copy the content in a formatted FAT32 SD card
+WARNING:
+This example needs a working SD library for Energia IDE and actually it uses
+one for Teensy3.x and arduino so at the moment you cannot use this example.
  */
 
 
 #include <SPI.h>
 #include <RA8875.h>
+
+#if !defined(ENERGIA)
 #include <SD.h>
+#else
+#error this example need a working SD library not compatible with Energia
+#endif
 
 /*
-We are using 4 wire SPI here, so:
- MOSI:11
- MISO:12
- SCK:13
- for Arduino DUE and MEGA the above pins are different!
- please check the arduino site for correct pin
+Teensy3.x and Arduino's
+You are using 4 wire SPI here, so:
+ MOSI:  11//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ MISO:  12//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ SCK:   13//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
  the rest of pin below:
  */
-#define RA8875_INT   2
-#define RA8875_CS    10
-#define RA8875_RESET 9
+#define RA8875_INT 2 //any pin
+#define RA8875_CS 10 //see below...
+/*
+Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
+Arduino's 8 bit: any
+DUE: should be any but not sure
+*/
+#define RA8875_RESET 9//any pin or nothing!
+
+#if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
+
+RA8875 tft = RA8875(3);//select SPI module 3
+/*
+for module 3 (stellaris)
+SCLK:  PD_0
+MOSI:  PD_3
+MISO:  PD_2
+SS:    PD_1
+*/
+#else
+
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
+
+#endif
+
 
 #define SDCSPIN      6//for SD
-
-RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
 
 
 void setup() 
@@ -35,7 +62,7 @@ void setup()
   Serial.println("RA8875 start");
 
   tft.begin(RA8875_480x272);
-
+#if !defined(ENERGIA)
   if (!SD.begin(SDCSPIN)) {
     Serial.println("SD failed!");
     return;
@@ -43,6 +70,7 @@ void setup()
   Serial.println("OK!");
 
   bmpDraw("alert.bmp", 0, 0);//copy the enclosed image in a SD card (check the folder!!!)
+#endif
 }
 
 void loop() 
@@ -53,6 +81,7 @@ void loop()
 
 #define BUFFPIXEL 30
 
+#if !defined(ENERGIA)
 void bmpDraw(const char *filename, int16_t x, int16_t y) {
 
   File     bmpFile;
@@ -156,6 +185,5 @@ uint32_t read32(File f) {
   ((uint8_t *)&result)[3] = f.read(); // MSB
   return result;
 }
-
-
+#endif
 

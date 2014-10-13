@@ -10,21 +10,84 @@
  BEWARE! If you have an 800x480 or 640x480 display this example --> DO NOT WORK! <--
  Why? It's a limitation of RA8875 chip, at these resolutions no layers! Cannot be solved, 
  even working at 256 colors (bleah!) there's still limitations! so...peace of mind...
- 
- */
 
+ Tested and worked with:
+ Teensy3,Teensy3.1,Arduino UNO,Arduino YUN,Arduino Leonardo,Stellaris
+ Works with Arduino 1.0.6 IDE, Arduino 1.5.8 IDE, Energia 0013 IDE
+ */
 
 #include <SPI.h>
 #include <RA8875.h>
 
-#define RA8875_INT 2
-#define RA8875_CS 10
-#define RA8875_RESET 9
+/*
+Teensy3.x and Arduino's
+You are using 4 wire SPI here, so:
+ MOSI:  11//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ MISO:  12//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ SCK:   13//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ the rest of pin below:
+ */
+#define RA8875_INT 2 //any pin
+#define RA8875_CS 10 //see below...
+/*
+Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
+Arduino's 8 bit: any
+DUE: should be any but not sure
+*/
+#define RA8875_RESET 9//any pin or nothing!
 
-RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
+#if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
+
+RA8875 tft = RA8875(3);//select SPI module 3
+/*
+for module 3 (stellaris)
+SCLK:  PD_0
+MOSI:  PD_3
+MISO:  PD_2
+SS:    PD_1
+*/
+#else
+
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
+
+#endif
+
 
 uint8_t  segW = 2;
 uint8_t  barH = 15;
+
+//this draw the masking bar(s)
+void drawHbarVal(uint16_t originX,uint16_t originY,uint8_t segments,uint8_t maxVal){
+  //tft.fillRect(originX+segW*(2*segments-1)+2,originY+2,segW,barH-4,RA8875_WHITE);//single dot
+  tft.fillRect(originX+2,originY+2,segW*(2*segments-1),barH-4,RA8875_WHITE);
+  tft.fillRect(originX+2+segW*(2*segments-1),originY+2,(2+segW*(2*maxVal-1))-(segW*(2*segments-1)+2),barH-4,RA8875_BLACK);
+  tft.drawRect(originX,originY,segW*(2*maxVal-1)+4,barH,tft.Color565(255,255,255));
+}
+
+//draw the colored bar
+void drawHbar(uint16_t originX,uint16_t originY,uint8_t segments,uint8_t maxVal){
+  uint16_t spacer = 0;
+  uint8_t div = maxVal/4;
+  uint8_t rc,gc,bc;
+  for (uint8_t i=0;i<segments;i++){
+    if (i > 0) spacer = segW*(2*i);
+    rc = map(i,0,maxVal,100,255);
+    gc = map(i,maxVal,0,100,255);
+    if (i >= div && i <= div*2){
+      bc = map(i,0,div*2,0,180);
+    } 
+    else if (i >= div*2 && i <= div*3){  
+      bc = map(i,div*2,div*3,180,0);
+    } 
+    else {
+      bc = 0;
+    }
+    tft.fillRect(originX+spacer+2,originY+2,segW,barH-4,tft.Color565(bc,gc,rc));
+  }
+  tft.drawRect(originX,originY,segW*(2*maxVal-1)+4,barH,tft.Color565(100,100,100));
+}
+
+
 
 void setup() 
 {
@@ -87,38 +150,4 @@ void loop()
   }
 
 }
-
-//this draw the masking bar(s)
-void drawHbarVal(uint16_t originX,uint16_t originY,uint8_t segments,uint8_t maxVal){
-  //tft.fillRect(originX+segW*(2*segments-1)+2,originY+2,segW,barH-4,RA8875_WHITE);//single dot
-  tft.fillRect(originX+2,originY+2,segW*(2*segments-1),barH-4,RA8875_WHITE);
-  tft.fillRect(originX+2+segW*(2*segments-1),originY+2,(2+segW*(2*maxVal-1))-(segW*(2*segments-1)+2),barH-4,RA8875_BLACK);
-  tft.drawRect(originX,originY,segW*(2*maxVal-1)+4,barH,tft.Color565(255,255,255));
-}
-
-//draw the colored bar
-void drawHbar(uint16_t originX,uint16_t originY,uint8_t segments,uint8_t maxVal){
-  uint16_t spacer = 0;
-  uint8_t div = maxVal/4;
-  uint8_t rc,gc,bc;
-  for (uint8_t i=0;i<segments;i++){
-    if (i > 0) spacer = segW*(2*i);
-    rc = map(i,0,maxVal,100,255);
-    gc = map(i,maxVal,0,100,255);
-    if (i >= div && i <= div*2){
-      bc = map(i,0,div*2,0,180);
-    } 
-    else if (i >= div*2 && i <= div*3){  
-      bc = map(i,div*2,div*3,180,0);
-    } 
-    else {
-      bc = 0;
-    }
-    tft.fillRect(originX+spacer+2,originY+2,segW,barH-4,tft.Color565(bc,gc,rc));
-  }
-  tft.drawRect(originX,originY,segW*(2*maxVal-1)+4,barH,tft.Color565(100,100,100));
-}
-
-
-
 

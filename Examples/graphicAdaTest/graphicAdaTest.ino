@@ -1,81 +1,49 @@
 /*
 The slight modified adafruit test for his libraries
 adapted (easily) for this one, shows how simple is deal with it.
+ Tested and worked with:
+ Teensy3,Teensy3.1,Arduino UNO,Arduino YUN,Arduino Leonardo,Stellaris
+ Works with Arduino 1.0.6 IDE, Arduino 1.5.8 IDE, Energia 0013 IDE
 */
 
 #include <SPI.h>
 #include <RA8875.h>
 
 /*
+Teensy3.x and Arduino's
 You are using 4 wire SPI here, so:
- MOSI:11
- MISO:12
- SCK:13
+ MOSI:  11//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ MISO:  12//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
+ SCK:   13//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
  the rest of pin below:
  */
-#define RA8875_INT 2
-#define RA8875_CS 10
-#define RA8875_RESET 9
+#define RA8875_INT 2 //any pin
+#define RA8875_CS 10 //see below...
+/*
+Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
+Arduino's 8 bit: any
+DUE: should be any but not sure
+*/
+#define RA8875_RESET 9//any pin or nothing!
 
-RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
+#if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
+
+RA8875 tft = RA8875(3);//select SPI module 3
+/*
+for module 3 (stellaris)
+SCLK:  PD_0
+MOSI:  PD_3
+MISO:  PD_2
+SS:    PD_1
+*/
+#else
+
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
+
+#endif
 
 float p = 3.1415926;
 
-void setup() 
-{
-  Serial.begin(9600);
-  //while (!Serial) {;}
-  Serial.println("RA8875 start");
-
-  tft.begin(RA8875_480x272);
-
-  uint16_t time = millis();
-  tft.fillScreen(RA8875_BLACK);
-  time = millis() - time;
-
-  Serial.println(time, DEC);
-  delay(500);
-
-  tft.fillScreen(RA8875_BLACK);
-  testdrawtext("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur adipiscing ante sed nibh tincidunt feugiat. Maecenas enim massa, fringilla sed malesuada et, malesuada sit amet turpis. Sed porttitor neque ut ante pretium vitae malesuada nunc bibendum. Nullam aliquet ultrices massa eu hendrerit. Ut sed nisi lorem. In vestibulum purus a tortor imperdiet posuere. ", RA8875_WHITE);
-  delay(1000);
-
-  // tft print function!
-  tftPrintTest();
-  delay(1000);
-
-  // line draw test
-  testlines(RA8875_YELLOW);
-  delay(500);
-
-  testfastlines(RA8875_RED, RA8875_BLUE);
-  delay(500);
-
-  testdrawrects(RA8875_GREEN);
-  delay(500);
-
-  testfillrects(RA8875_YELLOW, RA8875_MAGENTA);
-  delay(500);
-  tft.fillScreen(RA8875_BLACK);
-  testfillcircles(10, RA8875_BLUE);
-  testdrawcircles(10, RA8875_WHITE);
-  delay(500);
-
-  testroundrects();
-  delay(500);
-
-  testtriangles();
-  delay(500);
-
-
-  mediabuttons();
-  delay(500);
-  Serial.println("done");
-  delay(1000);
-}
-
-void loop(){
-}
 
 void mediabuttons() {
   // play
@@ -266,4 +234,60 @@ void testlines(uint16_t color) {
   for (int16_t y=0; y < tft.height(); y+=6) {
     tft.drawLine(tft.width()-1, tft.height()-1, 0, y, color);
   }
+}
+
+void setup() 
+{
+  Serial.begin(9600);
+  //while (!Serial) {;}
+  Serial.println("RA8875 start");
+
+  tft.begin(RA8875_480x272);
+
+  uint16_t time = millis();
+  tft.fillScreen(RA8875_BLACK);
+  time = millis() - time;
+
+  Serial.println(time, DEC);
+  delay(500);
+
+  tft.fillScreen(RA8875_BLACK);
+  testdrawtext("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur adipiscing ante sed nibh tincidunt feugiat. Maecenas enim massa, fringilla sed malesuada et, malesuada sit amet turpis. Sed porttitor neque ut ante pretium vitae malesuada nunc bibendum. Nullam aliquet ultrices massa eu hendrerit. Ut sed nisi lorem. In vestibulum purus a tortor imperdiet posuere. ", RA8875_WHITE);
+  delay(1000);
+
+  // tft print function!
+  tftPrintTest();
+  delay(1000);
+
+  // line draw test
+  testlines(RA8875_YELLOW);
+  delay(500);
+
+  testfastlines(RA8875_RED, RA8875_BLUE);
+  delay(500);
+
+  testdrawrects(RA8875_GREEN);
+  delay(500);
+
+  testfillrects(RA8875_YELLOW, RA8875_MAGENTA);
+  delay(500);
+  tft.fillScreen(RA8875_BLACK);
+  testfillcircles(10, RA8875_BLUE);
+  testdrawcircles(10, RA8875_WHITE);
+  delay(500);
+
+  testroundrects();
+  delay(500);
+
+  testtriangles();
+  delay(500);
+
+
+  mediabuttons();
+  delay(500);
+  Serial.println("done");
+  delay(1000);
+}
+
+void loop(){
 }

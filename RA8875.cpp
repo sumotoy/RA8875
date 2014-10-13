@@ -8,8 +8,13 @@
 	RS: Reset pin
 */
 /**************************************************************************/
+#if defined(NEEDS_SET_MODULE)
+RA8875::RA8875(const uint8_t module, const uint8_t RST) {
+	selectCS(module);
+#else
 RA8875::RA8875(const uint8_t CS, const uint8_t RST) {
 	_cs = CS;
+#endif
 	_rst = RST;
 }
 
@@ -19,11 +24,42 @@ RA8875::RA8875(const uint8_t CS, const uint8_t RST) {
 	CS: SPI SS pin
 */
 /**************************************************************************/
+#if defined(NEEDS_SET_MODULE)
+RA8875::RA8875(const uint8_t module) {
+	selectCS(module);
+#else
 RA8875::RA8875(const uint8_t CS) {
 	_cs = CS;
+#endif
 	_rst = 255;
 }
 
+/**************************************************************************/
+/*!	PRIVATE
+	Helper, it will set CS pin accordly module selected
+	module: 0...3
+*/
+/**************************************************************************/
+#if defined(NEEDS_SET_MODULE)
+void RA8875::selectCS(uint8_t module) {
+	if (module > 3) module = 3;
+	switch(module){
+		case 0:
+			_cs = PA_3;
+		break;
+		case 1:
+			_cs = PF_3;
+		break;
+		case 2:
+			_cs = PB_5;
+		break;
+		case 3:
+			_cs = PD_1;
+		break;
+	}
+	SPImodule = module;
+}
+#endif
 /**************************************************************************/
 /*!
 	Initialize library and SPI
@@ -36,16 +72,10 @@ RA8875::RA8875(const uint8_t CS) {
 	module: sets the SPI interface (it depends from MCU). Default:0
 */
 /**************************************************************************/
-#if defined(ENERGIA)
-void RA8875::begin(const enum RA8875sizes s,uint8_t module) {
-#else
+
 void RA8875::begin(const enum RA8875sizes s) {
-#endif
 	_size = s;
 	uint8_t initIndex;
-#if defined(ENERGIA)
-	SPImodule = module;
-#endif
 	_size = s;
 	if (_size == RA8875_320x240) {//still not supported! Wait next version
 		_width = 320;
@@ -179,9 +209,10 @@ void RA8875::begin(const enum RA8875sizes s) {
 	2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
 	_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
 	
-	
+	#if !defined(ENERGIA)
 	pinMode(_cs, OUTPUT);
 	digitalWrite(_cs, HIGH);
+	#endif
 	
 	if (_rst < 255){
 		pinMode(_rst, OUTPUT); 
@@ -198,11 +229,17 @@ void RA8875::begin(const enum RA8875sizes s) {
 #else//do not use SPItransactons
 	#if defined(ENERGIA)
 		SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
+		delay(50);
 	#else
 		SPI.setClockDivider(SPI_CLOCK_DIV4);//4Mhz (6.6Mhz Max)
+		delay(50);
 	#endif
 	SPI.setDataMode(SPI_MODE0);
 #endif
+	#if defined(ENERGIA)//dunno why but energia wants this here or not work!
+	pinMode(_cs, OUTPUT);
+	digitalWrite(_cs, HIGH);
+	#endif
 	initialize(initIndex);
 }
 
@@ -820,12 +857,27 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 		ny = ny + (16 + (16*_textScale))+_fontInterline;//TODO??
 		setCursor(0,ny);
 		start = 2;
+	#if defined(ENERGIA)//oops! Energia 013 seems have a bug here! Should send a \r but only \n given!
+	} else if (len > 0 && ((buffer[0] == '\n'))){
+		//get current y
+		t1 = readReg(RA8875_F_CURYL);
+		t2 = readReg(RA8875_F_CURYH);
+		//calc new line y
+		ny = (t2 << 8) | (t1 & 0xFF);
+		//update y
+		ny = ny + (16 + (16*_textScale))+_fontInterline;//TODO??
+		setCursor(0,ny);
+		start = 1;
 	}
+	#else
+	}
+	#endif
 	writeCommand(RA8875_MRWC);
 	for (i=start;i<len;i++){
 		if (buffer[i] == '\n' || buffer[i] == '\r') {
 			//_cursor_y += textsize * 8;
 			//_cursor_x  = 0;
+
 		} else {
 			writeData(buffer[i]);
 			waitBusy(0x80);
@@ -2279,8 +2331,9 @@ void RA8875::writeCommand(uint8_t d) {
 /**************************************************************************/
 uint8_t RA8875::SPItranfer(uint8_t data){
 #if ENERGIA
-    SPDR = SPI.transfer(data);
-	return SPDR;
+    //SPDR = SPI.transfer(data);
+	//return SPDR;
+	return SPI.transfer(data);
 #else
 	return SPI.transfer(data);
 #endif
