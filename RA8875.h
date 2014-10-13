@@ -114,12 +114,13 @@ Optional!
 
   #if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
     #define NEEDS_SET_MODULE
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-	#define SPI_SPEED_READ SPI_CLOCK_DIV8
-  #elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV16
+	#define SPI_SPEED_READ SPI_CLOCK_DIV32
+  #elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version (the only I have for tests)
     #define NEEDS_SET_MODULE
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-	#define SPI_SPEED_READ SPI_CLOCK_DIV8
+	//It uses 80Mhz clock so I need Write:	6.67Mhz, Read: 	3.34Mhz
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV16 // 5.0 Mhz
+	#define SPI_SPEED_READ SPI_CLOCK_DIV32  // 2.5 Mhz
   #elif defined(__MSP430MCU__)//MSP430???
 	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
 	#define SPI_SPEED_READ SPI_CLOCK_DIV4
