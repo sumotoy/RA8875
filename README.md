@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!**
 
-##### Current Version: 0.55 (early beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.60 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -27,8 +27,9 @@ A couple of users tested also with:
 * 0.49b12:Added a softReset workaround if the rst pin is not used. Fixed bubbles example in AVR. Say ByeBye to useless command softReset();
 * 0.51:First compatibility test with Energia IDE (stellaris,tiva,etc.) passed but not tested!
 * 0.55:Tested and worked (all examples except SD) with **Stellaris** and **Energia 0013 IDE**. All examples now works with any MCU (stellaris included). Due recently changes in Arduino 1.0.6 IDE haved to change all examples.
+* 0.60:Introduced compatibility if used width PJRC Audio Board! Still fixing this but plan to release fully compatible for next release in these days.
 
-###### Upcoming beta 0.6 release
+###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
 
 ##### description
@@ -59,8 +60,9 @@ Thanks for your attention....
   - Working with Teensy 3.x, Arduino's, Energia IDE supported MCU's (stellaris, etc.)
   - Correct use of Print, Write and Println
   - Correct use of setCursor to mimic LiquidCrystal library
+  - Compatibility with alternative SPI pinouts on Teensy 3.x, this will let you use it with Audio board!
 
-This early beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.
+This beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.
 The beta release will use a main section for all chip stuff and several other libs for the protocols (as my LiquidCrystalNew).
 I should have a stable and workable version in a couple of days with many examples included...
 
@@ -110,4 +112,6 @@ For **CS** pin you have to choose between these pin on Teensy3:2,6,9,10,15,20,21
 You also need another 2 PINS, **INT** for Touch Screen (I used pin 2) and a **CS** for SD (I used pin 21).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)<br>
 From version 0.6, Energia IDE will be supported so many MCU's can be used but should wait 0.6 and since I have only Stellaris LM4F120XL I cannot be sure of the various MCU's wiring so drop me a note, at list I can add to the documentation!
 
+#### Compatible with PJRC Audio Board! (teensy3.x only)
+Current beta has a new designed instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 
