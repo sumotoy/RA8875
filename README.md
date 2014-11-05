@@ -27,7 +27,7 @@ A couple of users tested also with:
 * 0.49b12:Added a softReset workaround if the rst pin is not used. Fixed bubbles example in AVR. Say ByeBye to useless command softReset();
 * 0.51:First compatibility test with Energia IDE (stellaris,tiva,etc.) passed but not tested!
 * 0.55:Tested and worked (all examples except SD) with **Stellaris** and **Energia 0013 IDE**. All examples now works with any MCU (stellaris included). Due recently changes in Arduino 1.0.6 IDE haved to change all examples.
-* 0.60:Introduced compatibility if used width PJRC Audio Board! Still fixing this but plan to release fully compatible for next release in these days.
+* 0.60:Introduced compatibility if used width [PJRC Audio Board!](http://www.pjrc.com/store/teensy3_audio.html) Still fixing this but plan to release fully compatible for next release in these days.
 
 ###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
