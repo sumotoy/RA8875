@@ -2,8 +2,8 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.55(early beta) introduces compatibility 
-	with Energia IDE and his MCU's (tested!)
+	Version:0.60 introduces compatibility 
+	with Teensy3.x audio board!
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -47,15 +47,15 @@ RESET:		xxx  (selectable and optional)
 
 *if you use an [optional] SD card here's connections...
 -------------------------------------------------------------------------------------
-TFT side	Teensy/Uno
+TFT side	Teensy2/Teensy3/Uno
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 SD CLK:		pin 13 [shared with RA]
 SD MOSI:	pin 11 [shared with RA]
 SD MISO:	pin 12 [shared with RA]
 SD CS:		pin 4  (selectable 3*)
 SD CARD ID: pin xx (selectable and optional)
-*(3) On Teensy3.x not all pin are usable for CS! Read the printed paper
-that come with your Teensy3.x for more informations!
+*(3) On Teensy3.x not all pin are usable for CS! 
+can be used: 2,6,9,10,15,20,21,22,23
 -------------------------------------------------------------------------------------
 TFT side	Stellaris (LM4F120XL) module=0 (still not checked)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -64,7 +64,19 @@ SD MOSI:	xxx shared
 SD MISO:	xxx shared
 SD CS:		xxx  (selectable)
 SD CARD ID: pin xx (selectable and optional)
-
+-------------------------------------------------------------------------------------
+TFT side	Teensy3 alternative setup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+There are special cases on Teensy 3.x since it can be used for audio shield that remap
+some pin. Using SPI in that situation will be impossible but you can use the alternative
+pins definition feature of Teensy 3!
+SD CLK:		pin 13(normal),pin 14(alt)  [shared with RA]
+SD MOSI:	pin 11(normal),pin 7(alt) 	[shared with RA]
+SD MISO:	pin 12(normal),pin 8(alt) 	[shared with RA]
+SD CS:		pin 2  (selectable 3*)
+SD CARD ID: pin xx (selectable and optional)
+*(3) On Teensy3.x not all pin are usable for CS's! 
+can be used: 2,6,9,10,15,20,21,22,23
 -------------------------------------------------------------------------------------
 				 >>>>>> SUPPORTED EXTERNAL FONT CHIP <<<<<<<<<
 Optional!
@@ -114,13 +126,12 @@ Optional!
 
   #if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
     #define NEEDS_SET_MODULE
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV16
-	#define SPI_SPEED_READ SPI_CLOCK_DIV32
-  #elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version (the only I have for tests)
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+	#define SPI_SPEED_READ SPI_CLOCK_DIV8
+  #elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
     #define NEEDS_SET_MODULE
-	//It uses 80Mhz clock so I need Write:	6.67Mhz, Read: 	3.34Mhz
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV16 // 5.0 Mhz
-	#define SPI_SPEED_READ SPI_CLOCK_DIV32  // 2.5 Mhz
+	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+	#define SPI_SPEED_READ SPI_CLOCK_DIV8
   #elif defined(__MSP430MCU__)//MSP430???
 	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
 	#define SPI_SPEED_READ SPI_CLOCK_DIV4
@@ -227,8 +238,11 @@ typedef struct Matrix { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
 class RA8875 : public Print {
  public:
 //------------- Instance -------------------------
-	RA8875(const uint8_t cs, const uint8_t rst);
-	RA8875(const uint8_t cs);
+	#if defined(__MK20DX128__) || defined(__MK20DX256__)
+	RA8875(const uint8_t CS,const uint8_t RST=255,const boolean altSCLK=false,const boolean altMOSI=false,const boolean altMISO=false);
+	#else
+	RA8875(const uint8_t CS, const uint8_t RST=255);
+	#endif
 //------------- Setup -------------------------
 	void 		begin(const enum RA8875sizes s);
 //------------- Hardware related -------------------------

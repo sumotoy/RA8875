@@ -5,34 +5,43 @@
 /*!
 	Contructor
 	CS: SPI SS pin
-	RS: Reset pin
+	RST: Reset pin
+	altSCLK: alternate SCLK pin. If true = 14, otherwise 13
+	altMOSI: alternate MOSI pin. If true = 7,  otherwise 11
+	altMISO: alternate MISO pin. If true = 8,  otherwise 12
 */
 /**************************************************************************/
+#if defined(__MK20DX128__) || defined(__MK20DX256__)
+
+RA8875::RA8875(const uint8_t CS,const uint8_t RST,const boolean altSCLK,const boolean altMOSI,const boolean altMISO){
+	if (altSCLK) SPI.setSCK(14);
+	if (altMOSI) SPI.setMOSI(7);
+	if (altMISO) SPI.setMISO(8);
+	_cs = CS;
+	_rst = 255;
+	if (_rst != 255) _rst = RST;
+}
+#else
 #if defined(NEEDS_SET_MODULE)
 RA8875::RA8875(const uint8_t module, const uint8_t RST) {
 	selectCS(module);
 #else
-RA8875::RA8875(const uint8_t CS, const uint8_t RST) {
-	_cs = CS;
-#endif
-	_rst = RST;
-}
-
 /**************************************************************************/
 /*!
 	Contructor
 	CS: SPI SS pin
+	RST: Reset pin (255 disable it)
 */
 /**************************************************************************/
-#if defined(NEEDS_SET_MODULE)
-RA8875::RA8875(const uint8_t module) {
-	selectCS(module);
-#else
-RA8875::RA8875(const uint8_t CS) {
+
+RA8875::RA8875(const uint8_t CS, const uint8_t RST) {
 	_cs = CS;
 #endif
 	_rst = 255;
+	if (RST != 255) _rst = RST;
 }
+
+#endif
 
 /**************************************************************************/
 /*!	PRIVATE
