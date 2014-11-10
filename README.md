@@ -115,3 +115,5 @@ From version 0.6, Energia IDE will be supported so many MCU's can be used but sh
 #### Compatible with PJRC Audio Board! (teensy3.x only)
 Current beta has a new designed instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 
+"An FFT snapshot":https://www.pjrc.com/store/teensy3_audio.html
+!https://raw.githubusercontent.com/sumotoy/RA8875/master/documentation/CIMG1886.JPG!
