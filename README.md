@@ -115,5 +115,9 @@ From version 0.6, Energia IDE will be supported so many MCU's can be used but sh
 #### Compatible with PJRC Audio Board! (teensy3.x only)
 Current beta has a new designed instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 
+#### SD CS Pin strage issue when alternate SPI pins used...
+Btw I found a strange bug. Using pin 10 as SD cs cause malfunctioning, the SD library works if used with audio board alone but with any other library (and device) that uses SPI (even if relative cs pin are connected to teensy pins that support CS and are SPI transaction compatible) breaks SD or even disturb other libraries! This not happened if I'm using the standard SPI pins, just when alternate are used. I spend several hours to got this, I dunno the reason.
+Solution? Use another pin for the SD library (I've choosed 21 and worked)
+
 
 ![An FFT snapshot](https://github.com/sumotoy/RA8875/blob/master/documentation/CIMG1886.JPG)
