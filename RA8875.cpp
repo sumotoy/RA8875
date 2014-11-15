@@ -243,6 +243,7 @@ void RA8875::begin(const enum RA8875sizes s) {
 	3:Touch Panel Wakeup Enable 0(disable),1(enable)
 	2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
 	_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
+	
 	SPI.begin();
 
 #if defined _SPI_HYPERDRIVE && (defined(__MK20DX128__) || defined(__MK20DX256__))
@@ -1000,8 +1001,8 @@ void RA8875::setBackgroundColor(uint16_t color){
 	uint8_t data[] = {(uint8_t)((color & 0xF800) >> 11),(uint8_t)((color & 0x07E0) >> 5),(uint8_t)(color & 0x001F)};
 	setMultipleRegisters(reg,data,3);
 #else
-	writeReg(RA8875_BGCR0,((color & 0xF800 >> 11));
-	writeReg(RA8875_BGCR1,((color & 0x07E0 >> 5));
+	writeReg(RA8875_BGCR0,((color & 0xF800) >> 11));
+	writeReg(RA8875_BGCR1,((color & 0x07E0) >> 5));
 	writeReg(RA8875_BGCR2,(color & 0x001F));
 #endif
 }
