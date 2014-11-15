@@ -9,10 +9,11 @@ RA8875 library
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
-* Chinese RA8875 5"Inch (480x272) in SPI mode
+* EastRising RA8875 5"Inch (480x272) in SPI mode
 
 A couple of users tested also with:
 * Arduino UNO, Arduino YUN
+* Arduino MEGA
 * Adafruit RA8875 board w 800x600 and 480x272 displays
 
 ##### Beta changes:
@@ -28,21 +29,22 @@ A couple of users tested also with:
 * 0.51:First compatibility test with Energia IDE (stellaris,tiva,etc.) passed but not tested!
 * 0.55:Tested and worked (all examples except SD) with **Stellaris** and **Energia 0013 IDE**. All examples now works with any MCU (stellaris included). Due recently changes in Arduino 1.0.6 IDE haved to change all examples.
 * 0.60:Introduced compatibility if used width [PJRC Audio Board!](http://www.pjrc.com/store/teensy3_audio.html). <s>Still fixing this but plan to release fully compatible for next release in these days.</s> Tested and working really fast with PJRC Audio Board! I was able to visualize almost in realtime 238 bands from the fft with touch screen and 5x4 matrix switch support as well. Examples coming soon (only for Teensy3.x and Audio Board).
-* 0.64:High optimizations for Teensy3, now uses DMA SPI and several drawing commands optimized. Not deeply tested.
+* 0.64:High optimizations for Teensy3, now uses DMA SPI and several drawing commands optimized. Not deeply tested btw.
 
 ###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
+<br>
+<b>Please note that after releasing 0.64 I unfortunatly damaged my display so I will stop further development until arrive a new one from china!</b><br>
 
-##### description
+##### Description
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x and Arduino's (and I hope for other MCU's).
 This is the first attemp to create a library that use all the features of this chip and I'm tring to optimize as much I can.
 Actually it's in early beta stage, working, but only SPI (4 wires), please read the notes in .h file.
-I provide a lot of examples (check video), more coming soon...
-Please note that there's some remaining code from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note so in that case it's quite difficult talk about copyrights!
-As always, thanks to Lady Ada and his team to provide some code for developers, a good start point!
+I provide a lot of examples (check video), more coming soon...<br>
+Please note that there's a couple of fragments from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note, not at surprise, it has been writed for starting point, so in that case it's quite difficult talk about copyrights!
+As always, thanks to Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of how bad coded was their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff sign that they read just an early datasheet that has many errors...and MANY features missed!<br>This chip needs a careful reading of his datasheet, it has tons of commands and many timing issues so I spent a lot of my free time hours around this.
 
-This library will work with the Adafruit board but was made expecially for the many tft on china market that use this chip, some are quite good and cheap, like
-the EastRising at buydisplay.com, well made and much cheaper than adafruit.
+This library will work with the Adafruit board but was mainly maded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising at buydisplay.com, much cheaper than adafruit. I'm not related to EastRising or BuyDisplay, in any way but I appreciate that I don't have to spend a little fortune for a 2 US $ chip on a board that use the same circuit of the application note plus a level converter.<br>
 
 ### PLEASE, READ THIS
 Until I reached a stable beta (around version 0.9) it's normal that something doesn't go in the right way!
@@ -117,7 +119,7 @@ From version 0.6, Energia IDE will be supported so many MCU's can be used but sh
 Current beta has a new designed instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 
 #### SD CS Pin strage issue when alternate SPI pins used...
-I have an issue with the Paul Stoffregen's optimized SD library, still figuring out what's breaking out. One reason it's the really high speed that forces wires to be really short! This is impossible with the display connected but can be something in the SD library so I still looking for an solution.
+I have an issue with the Paul Stoffregen's optimized SD library, still figuring out what's breaking out. One reason it's the really high speed that forces wires to be really short! This is impossible with the display connected but can also be something in the SD library so I still looking for an solution.
 
 
 ![An FFT snapshot](https://github.com/sumotoy/RA8875/blob/master/documentation/CIMG1886.JPG)
