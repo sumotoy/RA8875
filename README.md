@@ -28,6 +28,7 @@ A couple of users tested also with:
 * 0.51:First compatibility test with Energia IDE (stellaris,tiva,etc.) passed but not tested!
 * 0.55:Tested and worked (all examples except SD) with **Stellaris** and **Energia 0013 IDE**. All examples now works with any MCU (stellaris included). Due recently changes in Arduino 1.0.6 IDE haved to change all examples.
 * 0.60:Introduced compatibility if used width [PJRC Audio Board!](http://www.pjrc.com/store/teensy3_audio.html). <s>Still fixing this but plan to release fully compatible for next release in these days.</s> Tested and working really fast with PJRC Audio Board! I was able to visualize almost in realtime 238 bands from the fft with touch screen and 5x4 matrix switch support as well. Examples coming soon (only for Teensy3.x and Audio Board).
+* 0.64:High optimizations for Teensy3, now uses DMA SPI and several drawing commands optimized. Not deeply tested.
 
 ###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
@@ -116,9 +117,7 @@ From version 0.6, Energia IDE will be supported so many MCU's can be used but sh
 Current beta has a new designed instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 
 #### SD CS Pin strage issue when alternate SPI pins used...
-<s>Btw I found a strange bug. Using pin 10 as SD cs cause malfunctioning, the SD library works if used with audio board alone but with any other library (and device) that uses SPI (even if relative cs pin are connected to teensy pins that support CS and are SPI transaction compatible) breaks SD or even disturb other libraries! This not happened if I'm using the standard SPI pins, just when alternate are used. I spend several hours to got this, I dunno the reason.
-Solution? Use another pin for the SD library (I've choosed 21 and worked)</s>
-Still try to fix this unfortunatly...
+I have an issue with the Paul Stoffregen's optimized SD library, still figuring out what's breaking out. One reason it's the really high speed that forces wires to be really short! This is impossible with the display connected but can be something in the SD library so I still looking for an solution.
 
 
 ![An FFT snapshot](https://github.com/sumotoy/RA8875/blob/master/documentation/CIMG1886.JPG)
