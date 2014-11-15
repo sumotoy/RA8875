@@ -44,12 +44,12 @@ I provide a lot of examples (check video), more coming soon...<br>
 Please note that there's a couple of fragments from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note, not at surprise, it has been writed for starting point, so in that case it's quite difficult talk about copyrights!
 As always, thanks to Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of how bad coded was their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff sign that they read just an early datasheet that has many errors...and MANY features missed!<br>This chip needs a careful reading of his datasheet, it has tons of commands and many timing issues so I spent a lot of my free time hours around this.
 
-This library will work with the Adafruit board but was mainly maded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising at buydisplay.com, much cheaper than adafruit. I'm not related to EastRising or BuyDisplay, in any way but I appreciate that I don't have to spend a little fortune for a 2 US $ chip on a board that use the same circuit of the application note plus a level converter.<br>
+This library will work with the Adafruit board but was mainly coded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising from buydisplay.com, much cheaper than adafruit. I'm not related to EastRising or BuyDisplay, in any way, but I appreciate that I don't have to spend a little fortune for a 2 US $ chip on a board that use the same circuit of the application note plus a level converter.<br>
 
 ### PLEASE, READ THIS
-Until I reached a stable beta (around version 0.9) it's normal that something doesn't go in the right way!
-At this time I'm also redesign the entire library so many functions change name, parameters or disappear, it's not
-safe to use in an project!!!! If you help me testing it's always a great idea, I'm actually working with Teensy3 and buyDisplay version of the TFT (not the adafruit) but plan to switch between MCU's around version 0.8 when function names and overall structure will be fixed.
+Until I reached a stable beta (around version 0.9) it's normal that something doesn't work as expected!
+At this time I'm also redesign the entire library so functions can change name, parameters or disappear, it's not
+a good idea to use in an project at that stage!!!! Help me by testing it would be great, I'm actually working with Teensy3 and buyDisplay version of the TFT (not the adafruit) so Im not sure about compatibility with other MCU.
 Thanks for your attention....
 
 ####  The goals...
@@ -65,18 +65,19 @@ Thanks for your attention....
   - Correct use of setCursor to mimic LiquidCrystal library
   - Compatibility with alternative SPI pinouts on Teensy 3.x, this will let you use it with Audio board!
 
-This beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.
-The beta release will use a main section for all chip stuff and several other libs for the protocols (as my LiquidCrystalNew).
-I should have a stable and workable version in a couple of days with many examples included...
+This beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.<br>
+The beta release will use a main section for all chip stuff and several other libs for the protocols (as my LiquidCrystalNew).<br>
+I should have a stable and workable version in a couple of days with many examples included...<br>
+The last beta introduces some SPI optimizations from Paul Stoffregen that let me able to optimize transfer of data/commands in many drawing functions. I've also introduced compatibility with Audio Shield.<br>
 
 
 #### About RA8875 chip
 This is amazing device, if you read the capabilities you will shocked but all come at a price...<br>
 It cannot act as framebuffer device so forget video and fast loading images even using it's 16 bit bus, it have almost every drawing functions internally hardware accellerated so it's perfectly suitable for drawing interfaces and text mixed to graphics fast and without using cpu resources.<br>
-Since all drawing commands are mostly macros, it has a MASSIVE amount of registers, prolly one of the biggest resource driven chip I ever see, really hudge datasheet, it takes a lot of time go deep inside it.
+Since all drawing commands are mostly macros, it has a MASSIVE amount of registers, prolly one of the biggest resource driven chip I ever see, really hudge datasheet, it takes a lot of time go deep inside it.<br>
 Do you think that driving with 8 or 16 bit interface will be much faster than Serial? I really don't think so!
 The problem is that chip needs time to perform a command! In brief, the scenario it's something like this:<br>
-You tell it to draw a rect by send rect macros command and colors, the chip starts it's job but you cannot send another command until has finished it's job so you have to check it's register or the WAIT pin before send another command.
+You tell it to draw a rect by send rect macros command and colors, the chip starts it's job but you cannot send another command until has finished it's job so you have to check it's register or the WAIT pin before send another command.<br>
 This almost for every command. Also drawing bitmap images it's a slow job, there's not a way to send chunks of data, at list I haven't find a working way, the only fast way to get a picture fast on screen is use internal DMA and a optional SPI Flash memory pre-programmed and controlled directly by the chip!<br>
 Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip, with datasheet on hand this chip have a limit of 6.6Mhz for write and 3.2Mhz for read so it's perfectly for SPI Transactions (thanks to Paul Stoffregen for this) that is supported officially in the last IDE for Teensy (1.0.6 release 1.20) and Arduino (1.5.8).<br>
 
