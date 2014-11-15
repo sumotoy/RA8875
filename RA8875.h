@@ -2,8 +2,9 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.60 introduces compatibility 
+	Version:0.64 introduces compatibility 
 	with Teensy3.x audio board!
+	High Optimizations for Teensy 3 SPI & Drawings
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -111,6 +112,8 @@ Optional!
 
 #ifndef _RA8875MC_H_
 #define _RA8875MC_H_
+
+#define _SPI_HYPERDRIVE
 
 #if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
 #include "Energia.h"
@@ -431,12 +434,65 @@ using Print::write;
 	//void  		writeData16(uint16_t data);
 	uint8_t 	readData(bool stat=false);
 	
+#if defined _SPI_HYPERDRIVE && (defined(__MK20DX128__) || defined(__MK20DX256__))
+	uint8_t pcs_command;
+	
+	void waitFifoNotFull(void) {
+		uint32_t sr;
+		uint32_t tmp __attribute__((unused));
+		do {
+			sr = SPI0.SR;
+			if (sr & 0xF0) tmp = SPI0_POPR;  // drain RX FIFO
+		} while ((sr & (15 << 12)) > (3 << 12));
+	}
+
+	void waitFifoEmpty(void) {
+		uint32_t sr;
+		uint32_t tmp __attribute__((unused));
+		do {
+			sr = SPI0.SR;
+			if (sr & 0xF0) tmp = SPI0_POPR;  // drain RX FIFO
+		} while ((sr & 0xF0F0) > 0);             // wait both RX & TX empty
+	}
+	
+	void waitTransmitComplete(void) __attribute__((always_inline)) {
+		uint32_t tmp __attribute__((unused));
+		while (!(SPI0.SR & SPI_SR_TCF)) ; // wait until final output done
+		tmp = SPI0_POPR;                  // drain the final RX FIFO word
+	}
+	
+	void writecommand_cont(uint8_t c) __attribute__((always_inline)) {
+		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
+		waitFifoNotFull();
+	}
+	void writecommand16_cont(uint16_t c) __attribute__((always_inline)) {
+		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(1) | SPI_PUSHR_CONT;
+		waitFifoNotFull();
+	}
+	void writecommand16_last(uint16_t d) __attribute__((always_inline)) {
+		waitFifoEmpty();
+		SPI0.SR = SPI_SR_TCF;
+		SPI0.PUSHR = d | (pcs_command << 16) | SPI_PUSHR_CTAS(1);
+		waitTransmitComplete();
+	}
+	void writecommand_last(uint8_t c) __attribute__((always_inline)) {
+		waitFifoEmpty();
+		SPI0.SR = SPI_SR_TCF;
+		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0);
+		waitTransmitComplete();
+	}
+	
+	void setMultipleRegisters(uint8_t reg[],uint8_t data[],uint8_t len);
+	
+#endif
 	
 	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
 	void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
+	#if !defined _SPI_HYPERDRIVE
 	void 		startSend();
 	void 		endSend();
 	uint8_t 	SPItranfer(uint8_t data);
+	#endif
 	#if defined(NEEDS_SET_MODULE)
 	void 		selectCS(uint8_t module);
 	#endif
@@ -449,6 +505,12 @@ using Print::write;
 	uint8_t		_SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
+	// test -----------------------------------------
+	#if defined(__MK20DX128__) || defined(__MK20DX256__)
+	boolean altMosiPin;
+	boolean altMisoPin;
+	boolean altSclkPin;
+	#endif
 };
 
 #endif
