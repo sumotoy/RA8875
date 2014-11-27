@@ -10,6 +10,7 @@ Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
 * EastRising RA8875 5"Inch (480x272) in SPI mode
+<b>NOTE</b>:If your do not work please ask here, I've <b>VERIFIED</b> that works.<br>
 
 A couple of users tested also with:
 * Arduino UNO, Arduino YUN
@@ -107,6 +108,7 @@ Register **0x10** (SYSR), setting bit 3 to 1 should set the 65K color feature.<b
 In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.<br>
 Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br>
 _The chip it's prone to freeze if you send out-of-range data_, this forced me to surrond code by data-limits-check.<br>
+Looks like there's a Hardware bug in MISO as described here http://forum.pjrc.com/threads/24668-Teensy-3-*-Text-rendering-issue-with-RA8875-TFT-display<br> and unfortunatly it's not the only one, I first discovered some problem in SCLK as well. This happen when I try to use the SD library that get stuck together with RA8875 no matter MISO connected or not. I'm trying to find a solution for that.<br>
 
 #### Wiring with your MCU
 It's an Early beta, only SPI for now so it uses _native SPI_.<br>
