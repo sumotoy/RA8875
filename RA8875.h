@@ -236,7 +236,7 @@ enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
 
 // Touch screen cal structs
 typedef struct Point { int32_t x; int32_t y; } tsPoint_t;
-typedef struct Matrix { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
+typedef struct { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
 
 class RA8875 : public Print {
  public:
