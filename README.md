@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!**
 
-##### Current Version: 0.65 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.66 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -32,6 +32,7 @@ A couple of users tested also with:
 * 0.60:Introduced compatibility if used width [PJRC Audio Board!](http://www.pjrc.com/store/teensy3_audio.html). <s>Still fixing this but plan to release fully compatible for next release in these days.</s> Tested and working really fast with PJRC Audio Board! I was able to visualize almost in realtime 238 bands from the fft with touch screen and 5x4 matrix switch support as well. Examples coming soon (only for Teensy3.x and Audio Board).
 * 0.64:High optimizations for Teensy3, now uses DMA SPI and several drawing commands optimized. Not deeply tested btw.
 * 0.65:Fix a typo for DUE (thanks for point me to this). Now compile with IDE 1.5.8 and DUE but still untested (wait for user feedbacks!).
+* 0.66: Github app gived me some code sincronization problems so code online failed to update. The actual fix for DUE should works (Thanks DrewJaworskiRIS to point me this issue).
 
 ###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
