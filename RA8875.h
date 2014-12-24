@@ -491,7 +491,7 @@ using Print::write;
 	
 	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
 	void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
-	#if !defined _SPI_HYPERDRIVE
+	#if !(defined _SPI_HYPERDRIVE && (defined(__MK20DX128__) || defined(__MK20DX256__)))
 	void 		startSend();
 	void 		endSend();
 	uint8_t 	SPItranfer(uint8_t data);
