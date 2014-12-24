@@ -2,9 +2,10 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.64 introduces compatibility 
+	Version:0.65 introduces compatibility 
 	with Teensy3.x audio board!
 	High Optimizations for Teensy 3 SPI & Drawings
+	Fixed a typo for DUE.
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -235,8 +236,8 @@ enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };/
 enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
 
 // Touch screen cal structs
-typedef struct Point { int32_t x; int32_t y; } tsPoint_t;
-typedef struct Matrix { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
+typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
+typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fix for DUE
 
 class RA8875 : public Print {
  public:
