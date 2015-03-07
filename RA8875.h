@@ -2,8 +2,14 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
+<<<<<<< HEAD
 	Version:0.65 Compile with DUE and IDE 1.6.x
+=======
+	Version:0.66 introduces compatibility 
+	with Teensy3.x audio board!
+>>>>>>> origin/master
 	High Optimizations for Teensy 3 SPI & Drawings
+	Fixed a typo for DUE. (Thanks DrewJaworskiRIS)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -112,7 +118,10 @@ Optional!
 #ifndef _RA8875MC_H_
 #define _RA8875MC_H_
 
+<<<<<<< HEAD
 //#define _SPI_HYPERDRIVE
+=======
+>>>>>>> origin/master
 
 #if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
 #include "Energia.h"
@@ -196,8 +205,11 @@ Write:	6.67Mhz, Read: 	3.34Mhz
 
 MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
 Not all MCU are capable to work at those speeds. Those parameters should work fine.
+
+_SPI_HYPERDRIVE it's a parameter for Teensy3 and it's experimental. Try comment it if you have troubles.
 */
 #if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3
+	#define _SPI_HYPERDRIVE			//experimental and works only with Teensy3!!!!!
 	#define MAXSPISPEED 			6600000//3300000 in READ
 #elif defined(__SAM3X8E__)							 // due
 	#define MAXSPISPEED 			6600000
@@ -234,8 +246,13 @@ enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };/
 enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
 
 // Touch screen cal structs
+<<<<<<< HEAD
 typedef struct Point { int32_t x; int32_t y; } tsPoint_t;
 typedef struct Matrix_RA { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
+=======
+typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
+typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fix for DUE
+>>>>>>> origin/master
 
 class RA8875 : public Print {
  public:
