@@ -2455,32 +2455,60 @@ uint8_t  RA8875::readData(bool stat) {
 
 	settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE0);
 	SPI.beginTransaction(settings);
+	#if ARDUINO >= 160
+    while (((KINETISK_SPI0.SR) & (15 << 12)) && (--wTimeout)) ; // wait until empty
+    // Make sure the last frame has been sent...
+	KINETISK_SPI0.SR = SPI_SR_TCF;   // dlear it out;
+	#else
     while (((SPI0.SR) & (15 << 12)) && (--wTimeout)) ; // wait until empty
-    
     // Make sure the last frame has been sent...
     SPI0.SR = SPI_SR_TCF;   // dlear it out;
+	#endif
     //wTimeout = 0xffff;
     //while (!((SPI0.SR) & SPI_SR_TCF) && (--wTimeout)) ; // wait until it says the last frame completed
 
     // clear out any current received bytes
     wTimeout = 0x10;    // should not go more than 4...
+	#if ARDUINO >= 160
+     while ((((KINETISK_SPI0.SR) >> 4) & 0xf) && (--wTimeout))  {
+        r = KINETISK_SPI0.POPR;
+    }
+	if (stat){
+		KINETISK_SPI0.PUSHR = RA8875_CMDREAD | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
+	} else {
+		KINETISK_SPI0.PUSHR = RA8875_DATAREAD | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
+	}
+//	while (((KINETISK_SPI0.SR) & (15 << 12)) > (3 << 12)) ; // wait if FIFO full
+    // readdata
+	KINETISK_SPI0.PUSHR = 0 | (pcs_command << 16) | SPI_PUSHR_CTAS(0);
+//	while (((KINETISK_SPI0.SR) & (15 << 12)) > (3 << 12)) ; // wait if FIFO full
+    // Now wait until completed. 
+    wTimeout = 0xffff;
+    while (((KINETISK_SPI0.SR) & (15 << 12)) && (--wTimeout)) ; // wait until empty
+
+    // Make sure the last frame has been sent...
+    KINETISK_SPI0.SR = SPI_SR_TCF;   // dlear it out;
+    wTimeout = 0xffff;
+    while (!((KINETISK_SPI0.SR) & SPI_SR_TCF) && (--wTimeout)) ; // wait until it says the last frame completed
+
+    wTimeout = 0x10;    // should not go more than 4...
+    // lets get all of the values on the FIFO
+    while ((((KINETISK_SPI0.SR) >> 4) & 0xf) && (--wTimeout))  {
+        r = KINETISK_SPI0.POPR;
+    }
+	#else
      while ((((SPI0.SR) >> 4) & 0xf) && (--wTimeout))  {
         r = SPI0.POPR;
     }
- 
-
 	if (stat){
 		SPI0.PUSHR = RA8875_CMDREAD | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
 	} else {
 		SPI0.PUSHR = RA8875_DATAREAD | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
 	}
-   	
 //	while (((SPI0.SR) & (15 << 12)) > (3 << 12)) ; // wait if FIFO full
-
     // readdata
 	SPI0.PUSHR = 0 | (pcs_command << 16) | SPI_PUSHR_CTAS(0);
 //	while (((SPI0.SR) & (15 << 12)) > (3 << 12)) ; // wait if FIFO full
-        
     // Now wait until completed. 
     wTimeout = 0xffff;
     while (((SPI0.SR) & (15 << 12)) && (--wTimeout)) ; // wait until empty
@@ -2495,6 +2523,8 @@ uint8_t  RA8875::readData(bool stat) {
     while ((((SPI0.SR) >> 4) & 0xf) && (--wTimeout))  {
         r = SPI0.POPR;
     }
+    #endif    
+
     SPI.endTransaction();
 	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE0);
     return r;  // get the received byte... should check for it first...

@@ -2,8 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.64 introduces compatibility 
-	with Teensy3.x audio board!
+	Version:0.65 Compile with DUE and IDE 1.6.x
 	High Optimizations for Teensy 3 SPI & Drawings
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
@@ -113,7 +112,7 @@ Optional!
 #ifndef _RA8875MC_H_
 #define _RA8875MC_H_
 
-#define _SPI_HYPERDRIVE
+//#define _SPI_HYPERDRIVE
 
 #if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
 #include "Energia.h"
@@ -236,7 +235,7 @@ enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
 
 // Touch screen cal structs
 typedef struct Point { int32_t x; int32_t y; } tsPoint_t;
-typedef struct Matrix { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
+typedef struct Matrix_RA { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;
 
 class RA8875 : public Print {
  public:
@@ -441,7 +440,11 @@ using Print::write;
 		uint32_t sr;
 		uint32_t tmp __attribute__((unused));
 		do {
+			#if ARDUINO >= 160
+			sr = KINETISK_SPI0.SR;
+			#else
 			sr = SPI0.SR;
+			#endif
 			if (sr & 0xF0) tmp = SPI0_POPR;  // drain RX FIFO
 		} while ((sr & (15 << 12)) > (3 << 12));
 	}
@@ -450,38 +453,63 @@ using Print::write;
 		uint32_t sr;
 		uint32_t tmp __attribute__((unused));
 		do {
+			#if ARDUINO >= 160
+			sr = KINETISK_SPI0.SR;
+			#else
 			sr = SPI0.SR;
+			#endif
 			if (sr & 0xF0) tmp = SPI0_POPR;  // drain RX FIFO
 		} while ((sr & 0xF0F0) > 0);             // wait both RX & TX empty
 	}
 	
 	void waitTransmitComplete(void) __attribute__((always_inline)) {
 		uint32_t tmp __attribute__((unused));
+		#if ARDUINO >= 160
+		while (!(KINETISK_SPI0.SR & SPI_SR_TCF)) ; // wait until final output done
+		#else
 		while (!(SPI0.SR & SPI_SR_TCF)) ; // wait until final output done
+		#endif
 		tmp = SPI0_POPR;                  // drain the final RX FIFO word
 	}
 	
 	void writecommand_cont(uint8_t c) __attribute__((always_inline)) {
+		#if ARDUINO >= 160
+		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
+		#else
 		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
+		#endif
 		waitFifoNotFull();
 	}
 	void writecommand16_cont(uint16_t c) __attribute__((always_inline)) {
+		#if ARDUINO >= 160
+		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(1) | SPI_PUSHR_CONT;
+		#else
 		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(1) | SPI_PUSHR_CONT;
+		#endif
 		waitFifoNotFull();
 	}
 	void writecommand16_last(uint16_t d) __attribute__((always_inline)) {
 		waitFifoEmpty();
+		#if ARDUINO >= 160
+		KINETISK_SPI0.SR = SPI_SR_TCF;
+		KINETISK_SPI0.PUSHR = d | (pcs_command << 16) | SPI_PUSHR_CTAS(1);
+		#else
 		SPI0.SR = SPI_SR_TCF;
 		SPI0.PUSHR = d | (pcs_command << 16) | SPI_PUSHR_CTAS(1);
+		#endif
 		waitTransmitComplete();
 	}
 	void writecommand_last(uint8_t c) __attribute__((always_inline)) {
 		waitFifoEmpty();
+		#if ARDUINO >= 160
+		KINETISK_SPI0.SR = SPI_SR_TCF;
+		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0);
+		#else
 		SPI0.SR = SPI_SR_TCF;
 		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0);
+		#endif
 		waitTransmitComplete();
 	}
-	
 	void setMultipleRegisters(uint8_t reg[],uint8_t data[],uint8_t len);
 	
 #endif
