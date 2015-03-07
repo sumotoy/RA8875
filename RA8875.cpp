@@ -27,7 +27,7 @@ void RA8875::setMultipleRegisters(uint8_t reg[],uint8_t data[],uint8_t len) {
 	altMISO: alternate MISO pin. If true = 8,  otherwise 12
 */
 /**************************************************************************/
-#if defined(__MK20DX128__) || defined(__MK20DX256__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 
 
 RA8875::RA8875(const uint8_t CS,const uint8_t RST,const boolean altSCLK,const boolean altMOSI,const boolean altMISO){
@@ -103,7 +103,7 @@ void RA8875::selectCS(uint8_t module) {
 /**************************************************************************/
 
 void RA8875::begin(const enum RA8875sizes s) {
-#if defined(__MK20DX128__) || defined(__MK20DX256__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 	if (altSclkPin) SPI.setSCK(14);
 	if (altMosiPin) SPI.setMOSI(7);
 	if (altMisoPin) SPI.setMISO(8);
@@ -2620,7 +2620,7 @@ void RA8875::startSend(){
 #elif !defined(ENERGIA)
 	cli();//protect from interrupts
 #endif
-#if defined(__MK20DX128__) || defined(__MK20DX256__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 	digitalWriteFast(_cs, LOW);
 #else
 	digitalWrite(_cs, LOW);
@@ -2633,7 +2633,7 @@ void RA8875::startSend(){
 */
 /**************************************************************************/
 void RA8875::endSend(){
-#if defined(__MK20DX128__) || defined(__MK20DX256__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 	digitalWriteFast(_cs, HIGH);
 #else
 	digitalWrite(_cs, HIGH);

@@ -205,8 +205,10 @@ _SPI_HYPERDRIVE it's a parameter for Teensy3 and it's experimental. Try comment 
 
 
 */
-#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3
+#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1
 	#define _SPI_HYPERDRIVE			//experimental and works only with Teensy3!!!!!
+	#define MAXSPISPEED 			6600000//3300000 in READ
+#elif defined(__MKL26Z64__)							 //teensy LC
 	#define MAXSPISPEED 			6600000//3300000 in READ
 #elif defined(__SAM3X8E__)							 // due
 	#define MAXSPISPEED 			6600000
@@ -250,7 +252,7 @@ typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fi
 class RA8875 : public Print {
  public:
 //------------- Instance -------------------------
-	#if defined(__MK20DX128__) || defined(__MK20DX256__)
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 	RA8875(const uint8_t CS,const uint8_t RST=255,const boolean altSCLK=false,const boolean altMOSI=false,const boolean altMISO=false);
 	#else
 	RA8875(const uint8_t CS, const uint8_t RST=255);
@@ -544,7 +546,7 @@ using Print::write;
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
 	// test -----------------------------------------
-	#if defined(__MK20DX128__) || defined(__MK20DX256__)
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 	boolean altMosiPin;
 	boolean altMisoPin;
 	boolean altSclkPin;
