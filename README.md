@@ -33,6 +33,7 @@ A couple of users tested also with:
 * 0.64:High optimizations for Teensy3, now uses DMA SPI and several drawing commands optimized. Not deeply tested btw.
 * 0.65:Fix a typo for DUE (thanks for point me to this). Now compile with IDE 1.5.8 and DUE but still untested (wait for user feedbacks!).
 * 0.66: Github app gived me some code sincronization problems so code online failed to update. The actual fix for DUE should works (Thanks DrewJaworskiRIS to point me this issue).
+* 0.67:Added compatibility with Teensyduino 1.21b and IDE 1.6.x
 
 ###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
@@ -82,7 +83,7 @@ Do you think that driving with 8 or 16 bit interface will be much faster than Se
 The problem is that chip needs time to perform a command! In brief, the scenario it's something like this:<br>
 You tell it to draw a rect by send rect macros command and colors, the chip starts it's job but you cannot send another command until has finished it's job so you have to check it's register or the WAIT pin before send another command.<br>
 This almost for every command. Also drawing bitmap images it's a slow job, there's not a way to send chunks of data, at list I haven't find a working way, the only fast way to get a picture fast on screen is use internal DMA and a optional SPI Flash memory pre-programmed and controlled directly by the chip!<br>
-Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip, with datasheet on hand this chip have a limit of 6.6Mhz for write and 3.2Mhz for read so it's perfectly for SPI Transactions (thanks to Paul Stoffregen for this) that is supported officially in the last IDE for Teensy (1.0.6 release 1.20) and Arduino (1.5.8).<br>
+Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip, with datasheet on hand this chip have a limit of 6.6Mhz for write and 3.2Mhz for read so it's perfectly for SPI Transactions (thanks to Paul Stoffregen for this) that is supported officially in the last IDE for Teensy (1.0.6 release 1.20) and Arduino (1.6.x).<br>
 
 #### RA8875 in short
 
@@ -125,6 +126,10 @@ Current beta has a new designed instance that can use alternative SPI pinouts, t
 
 #### SD CS Pin strage issue when alternate SPI pins used...
 I have an issue with the Paul Stoffregen's optimized SD library, still figuring out what's breaking out. One reason it's the really high speed that forces wires to be really short! This is impossible with the display connected but can also be something in the SD library so I still looking for an solution.
+<br><b>UPDATE:</b><br>
+The problem it's the RA chip that has MISO not tristate. You will need to wire an extra chip (a 74HCT125 will work) to
+use this display with SD holder. Another caution, DO NOT USE chinese SD holder with level changer chip mounted or you
+will go directly into problems! Those chip have pullup resistor that interfere also with speed so in the best case it will work but really slow.
 
 
 ![An FFT snapshot](https://github.com/sumotoy/RA8875/blob/master/documentation/CIMG1886.JPG)
