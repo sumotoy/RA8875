@@ -2,12 +2,8 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-<<<<<<< HEAD
-	Version:0.65 Compile with DUE and IDE 1.6.x
-=======
-	Version:0.66 introduces compatibility 
-	with Teensy3.x audio board!
->>>>>>> origin/master
+
+	Version:0.67 Compile with DUE and IDE 1.6.x
 	High Optimizations for Teensy 3 SPI & Drawings
 	Fixed a typo for DUE. (Thanks DrewJaworskiRIS)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -119,7 +115,7 @@ Optional!
 #define _RA8875MC_H_
 
 
-//#define _SPI_HYPERDRIVE
+
 
 
 #if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
@@ -206,6 +202,8 @@ MAXSPISPEED parameters it's also related to MCU features so it probably need to 
 Not all MCU are capable to work at those speeds. Those parameters should work fine.
 
 _SPI_HYPERDRIVE it's a parameter for Teensy3 and it's experimental. Try comment it if you have troubles.
+
+
 */
 #if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3
 	#define _SPI_HYPERDRIVE			//experimental and works only with Teensy3!!!!!
