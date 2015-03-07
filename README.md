@@ -64,10 +64,10 @@ Thanks for your attention....
   - All communication protocols supported
   - Support for the many external ROM Font chip
   - Support for the external SPI FLASH
-  - Working with Teensy 3.x, Arduino's, Energia IDE supported MCU's (stellaris, etc.)
+  - Working with Teensy 3.x, Teensy LC, Arduino's, Energia IDE supported MCU's (stellaris, etc.)
   - Correct use of Print, Write and Println
   - Correct use of setCursor to mimic LiquidCrystal library
-  - Compatibility with alternative SPI pinouts on Teensy 3.x, this will let you use it with Audio board!
+  - Compatibility with alternative SPI pinouts on Teensy 3.x,Teensy LC, this will let you use it with Audio board!
 
 This beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.<br>
 The beta release will use a main section for all chip stuff and several other libs for the protocols (as my LiquidCrystalNew).<br>
