@@ -2455,7 +2455,7 @@ uint8_t  RA8875::readData(bool stat) {
 
 	settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE0);
 	SPI.beginTransaction(settings);
-	#if ARDUINO >= 160
+	#if ARDUINO >= 160 || TEENSYDUINO > 120
     while (((KINETISK_SPI0.SR) & (15 << 12)) && (--wTimeout)) ; // wait until empty
     // Make sure the last frame has been sent...
 	KINETISK_SPI0.SR = SPI_SR_TCF;   // dlear it out;
@@ -2469,7 +2469,7 @@ uint8_t  RA8875::readData(bool stat) {
 
     // clear out any current received bytes
     wTimeout = 0x10;    // should not go more than 4...
-	#if ARDUINO >= 160
+	#if ARDUINO >= 160 || TEENSYDUINO > 120
      while ((((KINETISK_SPI0.SR) >> 4) & 0xf) && (--wTimeout))  {
         r = KINETISK_SPI0.POPR;
     }

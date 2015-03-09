@@ -3,7 +3,7 @@
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
 
-	Version:0.67 Compile with DUE and IDE 1.6.x
+	Version:0.68 compile with teensyduino 1.22b
 	High Optimizations for Teensy 3 SPI & Drawings
 	Fixed a typo for DUE. (Thanks DrewJaworskiRIS)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -452,7 +452,7 @@ using Print::write;
 		uint32_t sr;
 		uint32_t tmp __attribute__((unused));
 		do {
-			#if ARDUINO >= 160
+			#if ARDUINO >= 160 || TEENSYDUINO > 120
 			sr = KINETISK_SPI0.SR;
 			#else
 			sr = SPI0.SR;
@@ -465,7 +465,7 @@ using Print::write;
 		uint32_t sr;
 		uint32_t tmp __attribute__((unused));
 		do {
-			#if ARDUINO >= 160
+			#if ARDUINO >= 160 || TEENSYDUINO > 120
 			sr = KINETISK_SPI0.SR;
 			#else
 			sr = SPI0.SR;
@@ -476,7 +476,7 @@ using Print::write;
 	
 	void waitTransmitComplete(void) __attribute__((always_inline)) {
 		uint32_t tmp __attribute__((unused));
-		#if ARDUINO >= 160
+		#if ARDUINO >= 160 || TEENSYDUINO > 120
 		while (!(KINETISK_SPI0.SR & SPI_SR_TCF)) ; // wait until final output done
 		#else
 		while (!(SPI0.SR & SPI_SR_TCF)) ; // wait until final output done
@@ -485,7 +485,7 @@ using Print::write;
 	}
 	
 	void writecommand_cont(uint8_t c) __attribute__((always_inline)) {
-		#if ARDUINO >= 160
+		#if ARDUINO >= 160 || TEENSYDUINO > 120
 		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
 		#else
 		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
@@ -493,7 +493,7 @@ using Print::write;
 		waitFifoNotFull();
 	}
 	void writecommand16_cont(uint16_t c) __attribute__((always_inline)) {
-		#if ARDUINO >= 160
+		#if ARDUINO >= 160 || TEENSYDUINO > 120
 		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(1) | SPI_PUSHR_CONT;
 		#else
 		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(1) | SPI_PUSHR_CONT;
@@ -502,7 +502,7 @@ using Print::write;
 	}
 	void writecommand16_last(uint16_t d) __attribute__((always_inline)) {
 		waitFifoEmpty();
-		#if ARDUINO >= 160
+		#if ARDUINO >= 160 || TEENSYDUINO > 120
 		KINETISK_SPI0.SR = SPI_SR_TCF;
 		KINETISK_SPI0.PUSHR = d | (pcs_command << 16) | SPI_PUSHR_CTAS(1);
 		#else
@@ -513,7 +513,7 @@ using Print::write;
 	}
 	void writecommand_last(uint8_t c) __attribute__((always_inline)) {
 		waitFifoEmpty();
-		#if ARDUINO >= 160
+		#if ARDUINO >= 160 || TEENSYDUINO > 120
 		KINETISK_SPI0.SR = SPI_SR_TCF;
 		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0);
 		#else
