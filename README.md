@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!**
 
-##### Current Version: 0.66 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.68 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -16,6 +16,9 @@ A couple of users tested also with:
 * Arduino UNO, Arduino YUN
 * Arduino MEGA
 * Adafruit RA8875 board w 800x600 and 480x272 displays
+
+##### Teensy notes:
+I love Teensy 3 MCU's, so every library has special features for this micro. This one works with highly optimized SPI that can works with Audio Board and SD card without interfere and at max speed possible. I'm currently adding support for Teensy LC that seems perfect for use with RA8875 so stay tuned for changes.Please note that Teensy3 and 3.1 cannot use any pin for CS as Arduino!!! You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
 
 ##### Beta changes:
 
@@ -34,6 +37,7 @@ A couple of users tested also with:
 * 0.65:Fix a typo for DUE (thanks for point me to this). Now compile with IDE 1.5.8 and DUE but still untested (wait for user feedbacks!).
 * 0.66: Github app gived me some code sincronization problems so code online failed to update. The actual fix for DUE should works (Thanks DrewJaworskiRIS to point me this issue).
 * 0.67:Added compatibility with Teensyduino 1.21b and IDE 1.6.x
+* 0.68:Again changes for Teensyduino 1.22b, in theory it should work as is in Teensyduino 1.20.
 
 ###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
@@ -41,12 +45,12 @@ A major release upcoming these days, <s>have to fix a silly but important bug on
 <b>Please note that after releasing 0.64 I unfortunatly damaged my display so I will stop further development until arrive a new one from china!</b><br>
 
 ##### Description
-A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x and Arduino's (and I hope for other MCU's).
+A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teensy LC and Arduino's (and I hope for other MCU's).
 This is the first attemp to create a library that use all the features of this chip and I'm tring to optimize as much I can.
 Actually it's in early beta stage, working, but only SPI (4 wires), please read the notes in .h file.
 I provide a lot of examples (check video), more coming soon...<br>
 Please note that there's a couple of fragments from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note, not at surprise, it has been writed for starting point, so in that case it's quite difficult talk about copyrights!
-As always, thanks to Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of how bad coded was their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff sign that they read just an early datasheet that has many errors...and MANY features missed!<br>This chip needs a careful reading of his datasheet, it has tons of commands and many timing issues so I spent a lot of my free time hours around this.
+As always, thanks to Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of how bad coded was their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff, sign that they read just an early datasheet that has many errors...and MANY features missed!<br>This chip needs a careful reading of his datasheet, it has tons of commands and many timing issues so I spent a lot of my free time hours around this.
 
 This library will work with the Adafruit board but was mainly coded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising from buydisplay.com, much cheaper than adafruit. I'm not related to EastRising or BuyDisplay, in any way, but I appreciate that I don't have to spend a little fortune for a 2 US $ chip on a board that use the same circuit of the application note plus a level converter.<br>
 
@@ -123,7 +127,7 @@ For **CS** pin you have to choose between these pin on Teensy3:2,6,9,10,15,20,21
 You also need another 2 PINS, **INT** for Touch Screen (I used pin 2) and a **CS** for SD (I used pin 21).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)<br>
 From version 0.6, Energia IDE will be supported so many MCU's can be used but should wait 0.6 and since I have only Stellaris LM4F120XL I cannot be sure of the various MCU's wiring so drop me a note, at list I can add to the documentation!
 
-#### Compatible with PJRC Audio Board! (teensy3.x only)
+#### Compatible with PJRC Audio Board! (teensy3.1 only)
 Current beta has a new designed instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 
 #### SD CS Pin strage issue when alternate SPI pins used...
