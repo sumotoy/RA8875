@@ -123,12 +123,7 @@ Optional!
 
 #undef byte
 #define byte      uint8_t
-//#define PGM_P     const char*
-//#define memcpy_P  memcpy
-//#define prog_char const char
-//#define PROGMEM
-//#define strlen_P  strlen
-//#define PSTR
+
 
   #if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
     #define NEEDS_SET_MODULE
@@ -206,7 +201,7 @@ _SPI_HYPERDRIVE it's a parameter for Teensy3 and it's experimental. Try comment 
 
 */
 #if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1
-	#define _SPI_HYPERDRIVE			//experimental and works only with Teensy3!!!!!
+	//#define _SPI_HYPERDRIVE			//experimental and works only with Teensy3!!!!!
 	#define MAXSPISPEED 			6600000//3300000 in READ
 #elif defined(__MKL26Z64__)							 //teensy LC
 	#define MAXSPISPEED 			6600000//3300000 in READ
@@ -232,7 +227,7 @@ _SPI_HYPERDRIVE it's a parameter for Teensy3 and it's experimental. Try comment 
 #define RA8875_WHITE            0xFFFF
 
 
-enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_800x480,RA8875_640x480 };
+enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480,RA8875_640x480 };
 enum RA8875modes { GRAPHIC,TEXT };
 enum RA8875tcursor { NORMAL,BLINK };
 enum RA8875tsize { X16,X24,X32 };

@@ -121,7 +121,7 @@ void RA8875::begin(const enum RA8875sizes s) {
 		_height = 272;
 		initIndex = 1;
 		_maxLayers = 2;
-	} else if (_size == RA8875_640x480) {//still not supported! Wait next version
+	} else if (_size == RA8875_640x480 || _size == Adafruit_640x480) {//still not supported! Wait next version
 		_width = 640;
 		_height = 480;
 		initIndex = 2;
@@ -345,7 +345,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	
     //now starts the first time setting up
 	displayOn(true);//turn On Display
-	if (_size == Adafruit_480x272 || _size == Adafruit_800x480) GPIOX(true);//only for adafruit stuff 
+	if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(true);//only for adafruit stuff 
 	PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
 	PWMout(1,255);//turn on PWM1
 	setCursorBlinkRate(DEFAULTCURSORBLINKRATE);//set default blink rate
