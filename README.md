@@ -50,7 +50,7 @@ This is the first attemp to create a library that use all the features of this c
 Actually it's in early beta stage, working, but only SPI (4 wires), please read the notes in .h file.
 I provide a lot of examples (check video), more coming soon...<br>
 Please note that there's a couple of fragments from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note, not at surprise, it has been writed for starting point, so in that case it's quite difficult talk about copyrights!
-As always, thanks to Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of how bad coded was their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff, sign that they read just an early datasheet that has many errors...and MANY features missed!<br>This chip needs a careful reading of his datasheet, it has tons of commands and many timing issues so I spent a lot of my free time hours around this.
+As always, thanks to Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of how bad coded was their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff, sign that they read just an early datasheet that has many errors...and MANY features missed!<br>This chip needs a careful reading of  datasheet, it has tons of commands and timing tricks so I spent a lot of my free time hours around this.
 
 This library will work with the Adafruit board but was mainly coded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising from buydisplay.com, much cheaper than adafruit. I'm not related to EastRising or BuyDisplay, in any way, but I appreciate that I don't have to spend a little fortune for a 2 US $ chip on a board that use the same circuit of the application note plus a level converter.<br>
 
@@ -73,10 +73,7 @@ Thanks for your attention....
   - Correct use of setCursor to mimic LiquidCrystal library
   - Compatibility with alternative SPI pinouts on Teensy 3.x,Teensy LC, this will let you use it with Audio board!
 
-This beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and <s>will be prolly</s> adapted for Arduino 1.5.8 as well <s>pretty soon</s>, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.<br>
-The beta release will use a main section for all chip stuff and several other libs for the protocols (as my LiquidCrystalNew).<br>
-I should have a stable and workable version in a couple of days with many examples included...<br>
-The last beta introduces some SPI optimizations from Paul Stoffregen that let me able to optimize transfer of data/commands in many drawing functions. I've also introduced compatibility with Audio Shield.<br>
+This beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and Arduino 1.5.8/1.6.x as well, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.<br>
 
 
 #### About RA8875 chip
