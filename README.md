@@ -3,7 +3,7 @@ RA8875 library
 
 [![video test](http://i.ytimg.com/vi/WbFOsxjFCL8/mqdefault.jpg)](http://www.youtube.com/embed/WbFOsxjFCL8)
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
-**Wiki added!**
+**Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
 ##### Current Version: 0.68 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
