@@ -115,9 +115,7 @@ Register **0x10** (SYSR), setting bit 3 to 1 should set the 65K color feature.<b
 In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.<br>
 Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br>
 _The chip it's prone to freeze if you send out-of-range data_, this forced me to surrond code by data-limits-check.<br>
-Looks like there's a Hardware bug in MISO as described here http://forum.pjrc.com/threads/24668-Teensy-3-*-Text-rendering-issue-with-RA8875-TFT-display<br> and unfortunatly it's not the only one, I first discovered some problem in SCLK as well. This happen when I try to use the SD library that get stuck together with RA8875 no matter MISO connected or not. I'm trying to find a solution for that.<br>
-NEWS! Solved this issue!<br>
-For MISO pin you need a 74HC125 port with EN connected to the CS pin (that should be pullup with a 10K resistor with 3V3), for SCLK you will need another 74HC125 with EN tied to ground (or in my case I connected to CS as well!).
+The most annoyng bugs are hardware issue on MISO and SCLK that are not visible if you are not planning to use any SPI devices together with RA8875 (example, the SD card holder!)
 https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices
 
 #### Wiring with your MCU
@@ -131,12 +129,6 @@ From version 0.6, Energia IDE will be supported so many MCU's can be used but sh
 #### Compatible with PJRC Audio Board! (teensy3.1 only)
 Current beta has a new designed instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 
-#### SD CS Pin strage issue when alternate SPI pins used...
-I have an issue with the Paul Stoffregen's optimized SD library, still figuring out what's breaking out. One reason it's the really high speed that forces wires to be really short! This is impossible with the display connected but can also be something in the SD library so I still looking for an solution.
-<br><b>UPDATE:</b><br>
-The problem it's the RA chip that has MISO not tristate. You will need to wire an extra chip (a 74HCT125 will work) to
-use this display with SD holder. Another caution, DO NOT USE chinese SD holder with level changer chip mounted or you
-will go directly into problems! Those chip have pullup resistor that interfere also with speed so in the best case it will work but really slow.
 
 
 ![An FFT snapshot](https://github.com/sumotoy/RA8875/blob/master/documentation/CIMG1886.JPG)
