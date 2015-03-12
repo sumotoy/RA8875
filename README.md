@@ -107,19 +107,20 @@ Since it's not a great advantage to use it with 8/16 parallel interface I choose
 
 
 #### RA8875 chip bugs!
-I discovered several bugs in the chip.<br>
-Register **0x10** (SYSR), setting bit 3 to 1 should set the 65K color feature.<br>
+I discovered several bugs in the chip.<br><br>
+Register **0x10** (SYSR). Changing bit 3 to 1 should set (accordly datasheet) the 65K color feature.<br>
 In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.<br><br>
 Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br><br>
-The most annoing bugs are hardware issue on MISO (and SCLK in some display vendors) that are an issue only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!)
+The most annoing bugs are **hardware issue on MISO (and SCLK in some display vendors)** that are an issue only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!)<br>
+Paul Stoffregen discover the MISO bug that it's not tristate as it should but I discovered (at list in some chinese vendor products) that SCK has a pulldown when chip it's inactive, a solution was found:<br>
 https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices<br><br>
 The chip it's **NOT out-of-range-values tolerant!** (in contrast of the 90% of the other commercial drivers) If a value it's out of range you can experience various screen weirdness like garbage, white screen or chip freeze! This forced me to carefully surround many function with data range checks.
 
 #### Wiring with your MCU
 It's an Early beta, only SPI for now so it uses _native SPI_.<br>
 **MOSI,MISO,SCK** pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)<br>
-For **RST** it's your choice, it's really possible use _any_ pin.<br>
-For **CS** pin you have to choose between these pin on Teensy3:2,6,9,10,15,20,21,22,23. On UNO or DUE refer to they documents.<br>
+For **RST** it's your choice, it's really possible use _any_ pin. Apparently only Adafruit board need this, the 2 chinese boards I've tested have internal reset circuit that cause problems if you connect this line<br>
+For **CS** pin you have to choose between these pin on **Teensy3: 2,6,9,10,15,20,21,22,23**. Arduino UNO,MEGA and almost all 8 bit variants can use any pin, DUE maybe need special pins (please check DUE datasheet)<br>
 You also need another 2 PINS, **INT** for Touch Screen (I used pin 2) and a **CS** for SD (I used pin 21).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)<br>
 From version 0.6, Energia IDE will be supported so many MCU's can be used but should wait 0.6 and since I have only Stellaris LM4F120XL I cannot be sure of the various MCU's wiring so drop me a note, at list I can add to the documentation!
 
