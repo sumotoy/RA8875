@@ -45,14 +45,13 @@ A major release upcoming these days, <s>have to fix a silly but important bug on
 <b>Please note that after releasing 0.64 I unfortunatly damaged my display so I will stop further development until arrive a new one from china!</b><br>
 
 ##### Description
-A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teensy LC and Arduino's (and I hope for other MCU's).
-This is the first attemp to create a library that use all the features of this chip and I'm tring to optimize as much I can.
-Actually it's in early beta stage, working, but only SPI (4 wires), please read the notes in .h file.
-I provide a lot of examples (check video), more coming soon...<br>
-Please note that there's a couple of fragments from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note, not at surprise, it has been writed for starting point, so in that case it's quite difficult talk about copyrights!
-As always, thanks to Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of how bad coded was their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff, sign that they read just an early datasheet that has many errors...and MANY features missed!<br>This chip needs a careful reading of  datasheet, it has tons of commands and timing tricks so I spent a lot of my free time hours around this.
+A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teensy LC and Arduino's (and I hope for other MCU's).<br>
+This is the first attemp to create a library that use all the features of this chip _from scratch_ and I'm tring to optimize as much I can.<br>
+Actually it's in beta stage, working, but only SPI (4 wires), please read the notes in .h file.<br>
+As always I provide a lot of examples (check video), more coming soon...<br>
+Please note that there's a couple of fragments from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note, not at surprise, it has been writed for get something workable and never optimized, but I like to thanks Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of the code in their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff ...and MANY features missed!<br>I was so excited to work with this chip but I soon realized that it's a nightmare, even read the datasheet (full of errors) doesn't saved me from the hours I spent around this library.<br>
 
-This library will work with the Adafruit board but was mainly coded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising from buydisplay.com, much cheaper than adafruit. I'm not related to EastRising or BuyDisplay, in any way, but I appreciate that I don't have to spend a little fortune for a 2 US $ chip on a board that use the same circuit of the application note plus a level converter.<br>
+This library will work also with the Adafruit board but was mainly coded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising from buydisplay.com, much cheaper than adafruit.<br>I'm not related to EastRising or BuyDisplay, in any way, but I appreciate that I don't have to spend a little fortune for DIY stuff.<br>
 
 ### PLEASE, READ THIS
 Until I reached a stable beta (around version 0.9) it's normal that something doesn't work as expected!
