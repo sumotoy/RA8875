@@ -109,11 +109,11 @@ Since it's not a great advantage to use it with 8/16 parallel interface I choose
 #### RA8875 chip bugs!
 I discovered several bugs in the chip.<br>
 Register **0x10** (SYSR), setting bit 3 to 1 should set the 65K color feature.<br>
-In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.<br>
-Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br>
-_The chip it's prone to freeze if you send out-of-range data_, this forced me to surrond code by data-limits-check.<br>
-The most annoyng bugs are hardware issue on MISO and SCLK that are not visible if you are not planning to use any SPI devices together with RA8875 (example, the SD card holder!)
-https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices
+In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.<br><br>
+Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br><br>
+The most annoing bugs are hardware issue on MISO (and SCLK in some display vendors) that are an issue only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!)
+https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices<br><br>
+The chip it's **NOT out-of-range-values tolerant!** (in contrast of the 90% of the other commercial drivers) If a value it's out of range you can experience various screen weirdness like garbage, white screen or chip freeze! This forced me to carefully surround many function with data range checks.
 
 #### Wiring with your MCU
 It's an Early beta, only SPI for now so it uses _native SPI_.<br>
