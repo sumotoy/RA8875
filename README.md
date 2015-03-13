@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.68 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69-pre release (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -38,6 +38,9 @@ I love Teensy 3 MCU's, so every library has special features for this micro. Thi
 * 0.66: Github app gived me some code sincronization problems so code online failed to update. The actual fix for DUE should works (Thanks DrewJaworskiRIS to point me this issue).
 * 0.67:Added compatibility with Teensyduino 1.21b and IDE 1.6.x
 * 0.68:Again changes for Teensyduino 1.22b, in theory it should work as is in Teensyduino 1.20.
+* 0.69 (pre-release): A lot of changes, dropped useless alternative SPI pins config (can be easily done in setup),
+corrected some errors in drawFastVLine,drawFastHLine,drawRect,fillRect,drawRoundRect,fillRoundRect, dropped hyperdrive since it's useless for a 6.6Mhz SPI,support for 16 bit transfer, starting support for alternate SPI1 for Teensy LC, etc. etc. This version has major changes so if you currently using an old version you probably have small differences.
+If you have troubles the old version it's in the folder OldVersions.
 
 ###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
