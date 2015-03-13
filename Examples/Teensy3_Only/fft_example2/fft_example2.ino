@@ -25,7 +25,9 @@
 #define BUZ        5  //out - pwm
 #define VIB        32 //out
 
-static inline uint8_t floatToInt(float x){return (int)(x * 255.0f);}
+static inline uint8_t floatToInt(float x){
+  return (int)(x * 255.0f);
+}
 
 //VARS ------------------------------
 #define  STDBARWIDTH  1
@@ -50,7 +52,7 @@ elapsedMillis chgFsec=0;
 volatile uint8_t fftdata[(SCREENWIDE/2)];
 //INSTANCES -------------------------
 
-RA8875 tft = RA8875(RA_CS,RA_RST,true,true);
+RA8875 tft = RA8875(RA_CS);
 #if defined(USEINTERNALSINE) || defined(USELINE)
 const int myInput = AUDIO_INPUT_LINEIN;
 #else
@@ -76,12 +78,12 @@ AudioControlSGTL5000 audioShield;
 
 void setup() {
   Serial.begin(9600);
-//while (!Serial) ;
+  while (!Serial) ;
   delay(50);
   SPI.setMOSI(7);  // Audio shield has MOSI on pin 7
   SPI.setSCK(14);  // Audio shield has SCK on pin 14
- 
-  // Audio connections require memory to work.  For more
+
+    // Audio connections require memory to work.  For more
   // detailed information, see the MemoryAndCpuUsage example
   AudioMemory(12);
 
@@ -90,18 +92,18 @@ void setup() {
   audioShield.inputSelect(myInput);
   audioShield.volume(0.5);
   audioShield.inputLevel(0.9);
- 
+
   //SD card init
-//   if (!(SD.begin(SD_CS))) {
-//
-//   while (1) {
-//   Serial.println("Unable to access the SD card");
-//   delay(500);
-//   }
-//   } else {
-//     Serial.println("SD card ok");
-//   }
- tft.begin(RA8875_480x272);
+  if (!(SD.begin(SD_CS))) {
+    while (1) {
+      Serial.println("Unable to access the SD card");
+      delay(500);
+    }
+  } 
+  else {
+    Serial.println("SD card ok");
+  }
+  tft.begin(RA8875_480x272);
   // Configure the window algorithm to use
   myFFT.windowFunction(AudioWindowHanning1024);
   //myFFT.windowFunction(NULL);

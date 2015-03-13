@@ -29,7 +29,7 @@ const uint8_t bands = 119;
 uint8_t fftdata[bands];
 //INSTANCES -------------------------
 
-RA8875 tft = RA8875(RA_CS,RA_RST,true,true);
+RA8875 tft = RA8875(RA_CS,RA_RST);
 
 const int myInput = AUDIO_INPUT_LINEIN;
 //const int myInput = AUDIO_INPUT_MIC;

@@ -15,14 +15,14 @@ You are using 4 wire SPI here, so:
  SCK:   13//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
  the rest of pin below:
  */
-#define RA8875_INT 2 //any pin
-#define RA8875_CS 10 //see below...
+#define RA8875_INT 3 //any pin
+#define RA8875_CS 2 //see below...
 /*
 Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 Arduino's 8 bit: any
 DUE: should be any but not sure
 */
-#define RA8875_RESET 9//any pin or nothing!
+#define RA8875_RESET 29//any pin or nothing!
 
 #if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
 

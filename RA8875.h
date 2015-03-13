@@ -3,9 +3,7 @@
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
 
-	Version:0.68 compile with teensyduino 1.22b
-	High Optimizations for Teensy 3 SPI & Drawings
-	Fixed a typo for DUE. (Thanks DrewJaworskiRIS)
+	Version:0.69 (correct various geometric functions!!!)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -114,16 +112,11 @@ Optional!
 #ifndef _RA8875MC_H_
 #define _RA8875MC_H_
 
-
-
-
-
 #if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
-#include "Energia.h"
+	#include "Energia.h"
 
-#undef byte
-#define byte      uint8_t
-
+	#undef byte
+	#define byte      uint8_t
 
   #if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
     #define NEEDS_SET_MODULE
@@ -143,21 +136,66 @@ Optional!
 	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
 	#define SPI_SPEED_READ SPI_CLOCK_DIV4
   #endif
-
 	static uint8_t SPImodule;
 	static uint8_t SPDR;
-	
 #else
-#include "Arduino.h"
+	#include "Arduino.h"
 #endif
-#include "Print.h"
 
+#include "Print.h"
 #ifdef __AVR__
   #include <math.h>
 #endif
 
+// Colors preset (RGB565)
+#define	RA8875_BLACK            0x0000
+#define	RA8875_BLUE             0x001F
+#define	RA8875_RED              0xF800
+#define	RA8875_GREEN            0x07E0
+#define RA8875_CYAN             0x07FF
+#define RA8875_MAGENTA          0xF81F
+#define RA8875_YELLOW           0xFFE0  
+#define RA8875_WHITE            0xFFFF
+
+/* SPI MAX SPEED it's ONLY used in SPI Transaction mode +++++++++++++++++++
+it ensure the max and correct speed for accessing RA8875 in Read/Write...
+Datasheet it's clear:
+
+System clock/3(only write cycle), System clock/6(with read cycle)
+
+My TFT uses a 20Mhz xtal so...
+Write:	6.67Mhz, Read: 	3.34Mhz
+
+MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
+Not all MCU are capable to work at those speeds. Those parameters should work fine.
+
+*/
+#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1
+	#define MAXSPISPEED 			6600000//3300000 in READ
+#elif defined(__MKL26Z64__)							 //teensy LC
+	#define MAXSPISPEED 			6600000//3300000 in READ
+#elif defined(__SAM3X8E__)							 // due
+	#define MAXSPISPEED 			6600000
+#else												 //rest of the world
+	#define MAXSPISPEED 			4000000//2000000 in READ
+#endif
+
+enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480,RA8875_640x480 };
+enum RA8875modes { GRAPHIC,TEXT };
+enum RA8875tcursor { NORMAL,BLINK };
+enum RA8875tsize { X16,X24,X32 };
+enum RA8875fontSource { INT, EXT };
+enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
+enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, ER3303_1 };
+enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
+enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
+enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
+enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
+
 /* ---------------------------- USER SETTINGS ---------------------*/
 
+/* SPI TRANSACTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++*/
+//#define COMPATIBILITY_PIN 30
 /* SPI TRANSACTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++
 If you have an SPI library that support SPI TRANSACTIONS
 this library will use it, however if you vant to use the old one for compatibility
@@ -184,60 +222,17 @@ please look at RA8875 datasheet and choose the correct one for your language!
 The default one it's the most common one and should work in most situations */
 #define DEFAULTINTENCODING			ISO_IEC_8859_1//ISO_IEC_8859_2,ISO_IEC_8859_3,ISO_IEC_8859_4
 
-/* SPI MAX SPEED it's ONLY used in SPI Transaction mode +++++++++++++++++++
-it ensure the max and correct speed for accessing RA8875 in Read/Write...
-Datasheet it's clear:
-
-System clock/3(only write cycle), System clock/6(with read cycle)
-
-My TFT uses a 20Mhz xtal so...
-Write:	6.67Mhz, Read: 	3.34Mhz
-
-MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
-Not all MCU are capable to work at those speeds. Those parameters should work fine.
-
-_SPI_HYPERDRIVE it's a parameter for Teensy3 and it's experimental. Try comment it if you have troubles.
+/* STARTUP SETTINGS ++++++++++++++++++++++++++++++++++++++++++++ */
+#define _DFT_RA8875_TEXTWRAP		true//
+#define	_DFT_RA8875_EXTFONTROMTYPE		GT21L16T1W//see RA8875extRomType
+#define	_DFT_RA8875_EXTFONTROMCODING	GB2312//see RA8875extRomCoding
 
 
-*/
-#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1
-	//#define _SPI_HYPERDRIVE			//experimental and works only with Teensy3!!!!!
-	#define MAXSPISPEED 			6600000//3300000 in READ
-#elif defined(__MKL26Z64__)							 //teensy LC
-	#define MAXSPISPEED 			6600000//3300000 in READ
-#elif defined(__SAM3X8E__)							 // due
-	#define MAXSPISPEED 			6600000
-#else												 //rest of the world
-	#define MAXSPISPEED 			4000000//2000000 in READ
-#endif
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
 #include "_utility/RA8875Registers.h"
 #if !defined(USE_EXTERNALTOUCH)
 #include "_utility/RA8875Calibration.h"
 #endif
-
-// Colors (RGB565)
-#define	RA8875_BLACK            0x0000
-#define	RA8875_BLUE             0x001F
-#define	RA8875_RED              0xF800
-#define	RA8875_GREEN            0x07E0
-#define RA8875_CYAN             0x07FF
-#define RA8875_MAGENTA          0xF81F
-#define RA8875_YELLOW           0xFFE0  
-#define RA8875_WHITE            0xFFFF
-
-
-enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480,RA8875_640x480 };
-enum RA8875modes { GRAPHIC,TEXT };
-enum RA8875tcursor { NORMAL,BLINK };
-enum RA8875tsize { X16,X24,X32 };
-enum RA8875fontSource { INT, EXT };
-enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
-enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, ER3303_1 };
-enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
-enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
-enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
-enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
 
 // Touch screen cal structs
 typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
@@ -247,10 +242,10 @@ typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fi
 class RA8875 : public Print {
  public:
 //------------- Instance -------------------------
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
-	RA8875(const uint8_t CS,const uint8_t RST=255,const boolean altSCLK=false,const boolean altMOSI=false,const boolean altMISO=false);
-	#else
-	RA8875(const uint8_t CS, const uint8_t RST=255);
+	#if defined(__MKL26Z64__)
+		RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);
+	#else	
+		RA8875(const uint8_t CS, const uint8_t RST=255);
 	#endif
 //------------- Setup -------------------------
 	void 		begin(const enum RA8875sizes s);
@@ -307,9 +302,9 @@ class RA8875 : public Print {
 	//void    	pushPixels(uint32_t num, uint16_t p);//push large number of pixels
 	//void    	fillRect(void);
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
-	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
-	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
-	void    	fillScreen(uint16_t color);
+	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);//ok
+	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);//ok
+	void    	fillScreen(uint16_t color);//ok
 	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
@@ -321,7 +316,7 @@ class RA8875 : public Print {
 	void    	fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color);
 	void    	drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
 	void    	fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
-	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
+	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);//ok
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 //--------------- SCROLL ----------------------------------------
 	void 		setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);
@@ -359,6 +354,7 @@ class RA8875 : public Print {
 	//void    	writeData(uint8_t data);
 	void  		writeData16(uint16_t data);
 	//void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
+	//void 		forceCompatibility(const uint8_t pin = 255);
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -411,6 +407,7 @@ using Print::write;
 	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
 
 	//		functions --------------------------
+	void 	_disableHandle(uint8_t state);
 	void 	initialize(uint8_t initIndex);
 	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
 	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
@@ -435,99 +432,18 @@ using Print::write;
     // Low level access  commands ----------------------
 	void    	writeReg(uint8_t reg, uint8_t val);
 	uint8_t 	readReg(uint8_t reg);
-	//void    	writeCommand(uint8_t d);
 	void    	writeData(uint8_t data);
-	//void  		writeData16(uint16_t data);
 	uint8_t 	readData(bool stat=false);
 	
-#if defined _SPI_HYPERDRIVE && (defined(__MK20DX128__) || defined(__MK20DX256__))
-	uint8_t pcs_command;
-	
-	void waitFifoNotFull(void) {
-		uint32_t sr;
-		uint32_t tmp __attribute__((unused));
-		do {
-			#if ARDUINO >= 160 || TEENSYDUINO > 120
-			sr = KINETISK_SPI0.SR;
-			#else
-			sr = SPI0.SR;
-			#endif
-			if (sr & 0xF0) tmp = SPI0_POPR;  // drain RX FIFO
-		} while ((sr & (15 << 12)) > (3 << 12));
-	}
 
-	void waitFifoEmpty(void) {
-		uint32_t sr;
-		uint32_t tmp __attribute__((unused));
-		do {
-			#if ARDUINO >= 160 || TEENSYDUINO > 120
-			sr = KINETISK_SPI0.SR;
-			#else
-			sr = SPI0.SR;
-			#endif
-			if (sr & 0xF0) tmp = SPI0_POPR;  // drain RX FIFO
-		} while ((sr & 0xF0F0) > 0);             // wait both RX & TX empty
-	}
-	
-	void waitTransmitComplete(void) __attribute__((always_inline)) {
-		uint32_t tmp __attribute__((unused));
-		#if ARDUINO >= 160 || TEENSYDUINO > 120
-		while (!(KINETISK_SPI0.SR & SPI_SR_TCF)) ; // wait until final output done
-		#else
-		while (!(SPI0.SR & SPI_SR_TCF)) ; // wait until final output done
-		#endif
-		tmp = SPI0_POPR;                  // drain the final RX FIFO word
-	}
-	
-	void writecommand_cont(uint8_t c) __attribute__((always_inline)) {
-		#if ARDUINO >= 160 || TEENSYDUINO > 120
-		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
-		#else
-		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
-		#endif
-		waitFifoNotFull();
-	}
-	void writecommand16_cont(uint16_t c) __attribute__((always_inline)) {
-		#if ARDUINO >= 160 || TEENSYDUINO > 120
-		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(1) | SPI_PUSHR_CONT;
-		#else
-		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(1) | SPI_PUSHR_CONT;
-		#endif
-		waitFifoNotFull();
-	}
-	void writecommand16_last(uint16_t d) __attribute__((always_inline)) {
-		waitFifoEmpty();
-		#if ARDUINO >= 160 || TEENSYDUINO > 120
-		KINETISK_SPI0.SR = SPI_SR_TCF;
-		KINETISK_SPI0.PUSHR = d | (pcs_command << 16) | SPI_PUSHR_CTAS(1);
-		#else
-		SPI0.SR = SPI_SR_TCF;
-		SPI0.PUSHR = d | (pcs_command << 16) | SPI_PUSHR_CTAS(1);
-		#endif
-		waitTransmitComplete();
-	}
-	void writecommand_last(uint8_t c) __attribute__((always_inline)) {
-		waitFifoEmpty();
-		#if ARDUINO >= 160 || TEENSYDUINO > 120
-		KINETISK_SPI0.SR = SPI_SR_TCF;
-		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0);
-		#else
-		SPI0.SR = SPI_SR_TCF;
-		SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0);
-		#endif
-		waitTransmitComplete();
-	}
-	void setMultipleRegisters(uint8_t reg[],uint8_t data[],uint8_t len);
-	
-#endif
-	
 	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
 	void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
-	#if !defined _SPI_HYPERDRIVE
+
 	void 		startSend();
 	void 		endSend();
 	uint8_t 	SPItranfer(uint8_t data);
-	#endif
+	uint16_t 	SPItranfer16(uint16_t data);
+
 	#if defined(NEEDS_SET_MODULE)
 	void 		selectCS(uint8_t module);
 	#endif
@@ -541,11 +457,10 @@ using Print::write;
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
 	// test -----------------------------------------
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
-	boolean altMosiPin;
-	boolean altMisoPin;
-	boolean altSclkPin;
+	#if defined(__MKL26Z64__)
+		uint8_t _SPIint;
 	#endif
+		uint8_t _disablePin;
 };
 
 #endif
