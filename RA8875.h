@@ -3,7 +3,8 @@
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
 
-	Version:0.69b2 Full 8 bit color support!
+	Version:0.69b3 Full 8 bit color support!
+	Added some code from The Experimentalist
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -156,6 +157,11 @@ Optional!
 #define RA8875_MAGENTA          0xF81F
 #define RA8875_YELLOW           0xFFE0  
 #define RA8875_WHITE            0xFFFF
+#define RA8875_LIGHT_GREY 		0xB5B2 // the experimentalist
+#define RA8875_LIGHT_ORANGE 	0xFC80 // the experimentalist
+#define RA8875_DARK_ORANGE 		0xFB60 // the experimentalist
+#define RA8875_PINK 			0xF806 // the experimentalist
+#define RA8875_PURPLE 			0x281E // the experimentalist
 
 /* SPI MAX SPEED it's ONLY used in SPI Transaction mode +++++++++++++++++++
 it ensure the max and correct speed for accessing RA8875 in Read/Write...
@@ -186,7 +192,7 @@ enum RA8875tcursor { NORMAL,BLINK };
 enum RA8875tsize { X16,X24,X32 };
 enum RA8875fontSource { INT, EXT };
 enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
-enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, ER3303_1 };
+enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1 };
 enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
 enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
@@ -312,6 +318,7 @@ class RA8875 : public Print {
 	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);//ok
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 //--------------- SCROLL ----------------------------------------
+	void 		enableBufferScroll(); // The experimentalist
 	void 		setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);
 	void 		scroll(uint16_t x,uint16_t y);
 //-------------- DMA -------------------------------

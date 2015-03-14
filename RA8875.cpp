@@ -613,6 +613,8 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		break;
 		case GT23L32S4W:
 		case GT30H32S4W:
+		case GT30L32S4W:
+		case ER3304_1://thanks the Experimentalist
 			temp &= 0x1F; temp |= 0x80;
 		break;
 		default:
@@ -1187,6 +1189,20 @@ void RA8875::setY(uint16_t y) {
 	endSend();
 }
  */
+
+ 
+/**************************************************************************/
+/*!	
+Enable concatenated scrolling, creates one large area from both
+layers
+Author: The Experimentalist
+
+*/
+/**************************************************************************/
+void RA8875::enableBufferScroll() {
+	uint8_t temp = readReg(RA8875_LTPR0);
+	writeReg(RA8875_LTPR0, temp | 0xC0);
+}
 /**************************************************************************/
 /*!		
 		Define a window for perform scroll
