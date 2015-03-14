@@ -116,7 +116,7 @@ Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA st
 
 **IF YOU OWN A EASTRISING from BuyDisplay please read this!!**<br>
 Thanks to the help of The Experimentalist was discovered that those display have pullups on any SPI output! This cause any type of malfunction or error and can possibly damage processor pin in extreme case. The display affected are the 5" and 7", black PCB, on the back there's 3 resistors (R1,R2,R3) and just under 2 capacitors (C1 and C2), the best thing you can do it's desolder all those components, I will add a wiki page to do that.<br>
-There's another **hardware issue on MISO ** that's a problem only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!), Paul Stoffregen discover the MISO bug that it's not tristate:<br>
+There's another **hardware issue on MISO** that's a problem only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!), Paul Stoffregen discover the MISO bug that it's not tristate:<br>
 https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices<br><br>
 The chip it's **NOT out-of-range-values tolerant!** (in contrast of the 90% of the other commercial drivers) If a value it's out of range you can experience various screen weirdness like garbage, white screen or chip freeze! This forced me to carefully surround many function with data range checks.
 
