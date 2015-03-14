@@ -45,9 +45,6 @@ corrected some errors in drawFastVLine,drawFastHLine,drawRect,fillRect,drawRound
 If you have troubles the old version it's in the folder OldVersions.
 * 0.69b2: Full 8 bit color support! This allow user with screen over 272*480 size to use layers!.
 
-###### Upcoming beta 0.7 release
-A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
-<br>
 
 ##### Description
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teensy LC and Arduino's (and I hope for other MCU's).<br>
@@ -62,7 +59,8 @@ This library will work also with the Adafruit board but was mainly coded for the
 ####  The goals...
   
   - All features supported
-  - Layer support
+  - 8 bit and 16 bit color depth support
+  - Layer support (now support large screen but only at 256 colors)
   - Scalable complexity, start with basics but you can go trough...
   - All communication protocols supported
   - Support for the many external ROM Font chip
@@ -71,8 +69,6 @@ This library will work also with the Adafruit board but was mainly coded for the
   - Correct use of Print, Write and Println
   - Correct use of setCursor to mimic LiquidCrystal library
   - Compatibility with alternative SPI pinouts on Teensy 3.x,Teensy LC, this will let you use it with Audio board!
-
-This beta version uses the new SPI Transaction library from Paul Stoffregen that it's included in Teensy 3 1.0.5 R20/2 IDE and Arduino 1.5.8/1.6.x as well, but can automatically downgrade to normal SPI library if not supported or force disable inside RA8875.h file.<br>
 
 
 #### About RA8875 chip
