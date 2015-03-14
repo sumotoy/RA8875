@@ -22,6 +22,8 @@ I love Teensy 3 MCU's, so every library has special features for this micro. Thi
 
 ##### Beta changes:
 
+Be careful since until beta 0.70 things will change a lot so you better not use in your project or you will forced to modify your code! This is necessary because this library use a lot of command (RA8875 it's a really complex chip)<br><br>
+
 * 0.49b1:<s>Fixed 800x480 initialization</s>
 * 0.49b7:Complete rebuilded touch screen stuff, now much easier and super easy to calibrate
 (note: this version have different Touch Screen approach so commands changed! Examples where updated to reflect changes)
@@ -46,7 +48,6 @@ If you have troubles the old version it's in the folder OldVersions.
 ###### Upcoming beta 0.7 release
 A major release upcoming these days, <s>have to fix a silly but important bug on drawPixel color weirdness</s> then I will release the next beta that support SD, full BTE, full DMA, lot of examples, better cursor tracking, almost finished text support and much more!<br>
 <br>
-<b>Please note that after releasing 0.64 I unfortunatly damaged my display so I will stop further development until arrive a new one from china!</b><br>
 
 ##### Description
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teensy LC and Arduino's (and I hope for other MCU's).<br>
@@ -57,11 +58,6 @@ Please note that there's a couple of fragments from the Adafruit_RA8875 that I'v
 
 This library will work also with the Adafruit board but was mainly coded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising from buydisplay.com, much cheaper than adafruit.<br>I'm not related to EastRising or BuyDisplay, in any way, but I appreciate that I don't have to spend a little fortune for DIY stuff.<br>
 
-### PLEASE, READ THIS
-Until I reached a stable beta (around version 0.9) it's normal that something doesn't work as expected!
-At this time I'm also redesign the entire library so functions can change name, parameters or disappear, it's not
-a good idea to use in an project at that stage!!!! Help me by testing it would be great, I'm actually working with Teensy3 and buyDisplay version of the TFT (not the adafruit) so Im not sure about compatibility with other MCU.
-Thanks for your attention....
 
 ####  The goals...
   
