@@ -3,7 +3,7 @@
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
 
-	Version:0.69 (correct various geometric functions!!!)
+	Version:0.69b2 Full 8 bit color support!
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -170,9 +170,9 @@ MAXSPISPEED parameters it's also related to MCU features so it probably need to 
 Not all MCU are capable to work at those speeds. Those parameters should work fine.
 
 */
-#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1
+#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1 (30Mhz max)
 	#define MAXSPISPEED 			6600000//3300000 in READ
-#elif defined(__MKL26Z64__)							 //teensy LC
+#elif defined(__MKL26Z64__)							 //teensy LC	 (12 or 24 Mhz max)
 	#define MAXSPISPEED 			6600000//3300000 in READ
 #elif defined(__SAM3X8E__)							 // due
 	#define MAXSPISPEED 			6600000
@@ -194,14 +194,6 @@ enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
 
 /* ---------------------------- USER SETTINGS ---------------------*/
 
-/* SPI TRANSACTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++*/
-//#define COMPATIBILITY_PIN 30
-/* SPI TRANSACTIONS ++++++++++++++++++++++++++++++++++++++++++++++++++
-If you have an SPI library that support SPI TRANSACTIONS
-this library will use it, however if you vant to use the old one for compatibility
-just comment the following line */
-#define USESPITRANSACTIONS//uncomment will force to use the standard SPI library
-
 /* EXTERNAL TOUCH CONTROLLER ++++++++++++++++++++++++++++++++++++++++++
 Some TFT come with capacitive touch screen or you may decide to use a better
 controller for that, decomment the following line to save resources */
@@ -215,15 +207,15 @@ with several functions, otherwise de-comment it! */
 //#define USE_RA8875_KEYMATRIX
 /* DEFAULT CURSOR BLINK RATE ++++++++++++++++++++++++++++++++++++++++++++
 Nothing special here, you can set the default blink rate */
-#define DEFAULTCURSORBLINKRATE		10
+#define DEFAULTCURSORBLINKRATE			10
 /* DEFAULT INTERNAL FONT ENCODING ++++++++++++++++++++++++++++++++++++++++++++
 RA8875 has 4 different font set, same shape but suitable for most languages
 please look at RA8875 datasheet and choose the correct one for your language!
 The default one it's the most common one and should work in most situations */
-#define DEFAULTINTENCODING			ISO_IEC_8859_1//ISO_IEC_8859_2,ISO_IEC_8859_3,ISO_IEC_8859_4
+#define DEFAULTINTENCODING				ISO_IEC_8859_1//ISO_IEC_8859_2,ISO_IEC_8859_3,ISO_IEC_8859_4
 
 /* STARTUP SETTINGS ++++++++++++++++++++++++++++++++++++++++++++ */
-#define _DFT_RA8875_TEXTWRAP		true//
+#define _DFT_RA8875_TEXTWRAP			true//
 #define	_DFT_RA8875_EXTFONTROMTYPE		GT21L16T1W//see RA8875extRomType
 #define	_DFT_RA8875_EXTFONTROMCODING	GB2312//see RA8875extRomCoding
 
@@ -237,18 +229,18 @@ The default one it's the most common one and should work in most situations */
 // Touch screen cal structs
 typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
 typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fix for DUE
-
+static const uint8_t _RA8875colorMask[4] = {11,5,13,8};//for color masking, first 2 byte for 65K
 
 class RA8875 : public Print {
  public:
 //------------- Instance -------------------------
 	#if defined(__MKL26Z64__)
-		RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);
+		RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);//only Teensy LC
 	#else	
-		RA8875(const uint8_t CS, const uint8_t RST=255);
+		RA8875(const uint8_t CS, const uint8_t RST=255);//all the others
 	#endif
 //------------- Setup -------------------------
-	void 		begin(const enum RA8875sizes s);
+	void 		begin(const enum RA8875sizes s,uint8_t colors=16);
 //------------- Hardware related -------------------------
 	//void    	softReset(void);
 	void    	displayOn(boolean on);
@@ -258,15 +250,17 @@ class RA8875 : public Print {
 	uint8_t 	readStatus(void);
 	void		clearMemory(boolean full);
 	void 		scanDirection(boolean invertH,boolean invertV);
+	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
+	uint8_t 	getColorBpp();//get the current display color space (return 8 or 16)
 //--------------area & color -------------------------
 	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);
 	uint16_t 	width(void);
 	uint16_t 	height(void);
-	void		setForegroundColor(uint16_t color);
+	void		setForegroundColor(uint16_t color);//OK
 	void		setForegroundColor(uint8_t R,uint8_t G,uint8_t B);
-	void		setBackgroundColor(uint16_t color);
+	void		setBackgroundColor(uint16_t color);//OK
 	void		setBackgroundColor(uint8_t R,uint8_t G,uint8_t B);
-	void 		setTrasparentColor(uint16_t color);
+	void 		setTrasparentColor(uint16_t color);//OK
 	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);
 //--------------Text functions ------------------------- 
 	//----------cursor stuff................
@@ -300,7 +294,6 @@ class RA8875 : public Print {
 	void 		showGraphicCursor(boolean cur);//show graphic cursor
 	//--------------- DRAW -------------------------
 	//void    	pushPixels(uint32_t num, uint16_t p);//push large number of pixels
-	//void    	fillRect(void);
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);//ok
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);//ok
@@ -354,7 +347,6 @@ class RA8875 : public Print {
 	//void    	writeData(uint8_t data);
 	void  		writeData16(uint16_t data);
 	//void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
-	//void 		forceCompatibility(const uint8_t pin = 255);
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -403,11 +395,13 @@ using Print::write;
 	uint8_t					_maxLayers;
 	bool					_useMultiLayers;
 	uint8_t					_currentLayer;
+	uint8_t 				_displayType;//helper
 	//scroll vars ----------------------------
 	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
+	//color space-----------------------------
+	uint8_t					_color_bpp;//8=256, 16=64K colors
 
 	//		functions --------------------------
-	void 	_disableHandle(uint8_t state);
 	void 	initialize(uint8_t initIndex);
 	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
 	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
@@ -441,8 +435,7 @@ using Print::write;
 
 	void 		startSend();
 	void 		endSend();
-	uint8_t 	SPItranfer(uint8_t data);
-	uint16_t 	SPItranfer16(uint16_t data);
+	//uint16_t 	SPItranfer16(uint16_t data);
 
 	#if defined(NEEDS_SET_MODULE)
 	void 		selectCS(uint8_t module);
@@ -460,7 +453,23 @@ using Print::write;
 	#if defined(__MKL26Z64__)
 		uint8_t _SPIint;
 	#endif
-		uint8_t _disablePin;
 };
 
 #endif
+/*
+Register affected by color
+REG[10h] System Configuration Register (SYSR) bit 3,2//OK
+REG[41h] Memory Write Control Register1 (MWCR1) bit 0//OK
+REG[60h] Background Color Register 0 (BGCR0) bit 4..0//OK
+REG[61h] Background Color Register 1 (BGCR1) bit 5..0//OK
+REG[62h] Background Color Register 2 (BGCR2) bit 4..0//OK
+REG[63h] Foreground Color Register 0 (FGCR0) bit 4..0//OK
+REG[64h] Foreground Color Register 1 (FGCR1) bit 5..0//OK
+REG[65h] Foreground Color Register 2 (FGCR2) bit 4..0//OK
+REG[67h] Background Color Register for Transparent 0 (BGTR0) bit 4..0//OK
+REG[68h] Background Color Register for Transparent 1 (BGTR1) bit 4..0//OK
+REG[69h] Background Color Register for Transparent 2 (BGTR2) bit 4..0//OK
+REG[84h] Graphic Cursor Color 0 (GCC0) bit 7..0
+REG[85h] Graphic Cursor Color 1 (GCC1) bit 7..0
+
+*/

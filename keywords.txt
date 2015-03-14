@@ -16,6 +16,8 @@ displayOn	KEYWORD2
 sleep	KEYWORD2
 brightness	KEYWORD2
 changeMode	KEYWORD2
+setColorBpp	KEYWORD2
+getColorBpp	KEYWORD2
 setActiveWindow	KEYWORD2
 setForegroundColor	KEYWORD2
 setBackgroundColor	KEYWORD2

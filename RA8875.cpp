@@ -6,7 +6,6 @@ static SPISettings settings;
 #endif
 
 
-
 /**************************************************************************/
 /*!
 	Contructor
@@ -28,7 +27,6 @@ RA8875::RA8875(const uint8_t CS,const uint8_t RST){
 	_cs = CS;
 	_rst = 255;
 	if (_rst != 255) _rst = RST;
-	_disablePin = 255;
 }
 #else
 #if defined(NEEDS_SET_MODULE)
@@ -48,7 +46,6 @@ RA8875::RA8875(const uint8_t CS, const uint8_t RST) {
 #endif
 	_rst = 255;
 	if (RST != 255) _rst = RST;
-	_disablePin = 255;
 }
 
 #endif
@@ -80,75 +77,72 @@ void RA8875::selectCS(uint8_t module) {
 }
 #endif
 
-/**************************************************************************/
-/*!
-	The Compatibility with other SPI devices in the same wires
-	it's greatly reduced with this chip, some chinese vendor (and not!)
-	have issues in MOSI but SCLK it's affected too! This workaround
-	need the use of an external hardware (see wiki)
-	Parameters: The pin  that force disable of the display SCLK
-	Note: This pin it's connected to a special external circuit as wiki expose!!!!
-	
-*/
-/**************************************************************************/
-// void RA8875::forceCompatibility(const uint8_t pin){
-	// _disablePin = pin;
-// }
-
-
 
 /**************************************************************************/
 /*!
 	Initialize library and SPI
 	Parameter:
+	(display type)
 	RA8875_320x240 (exists?)
     RA8875_480x272 (4.3" displays)
     RA8875_800x480 (5" and 7" displays)
 	Adafruit_480x272 (4.3" Adafruit displays)
 	Adafruit_680x480 (4.3" exists?)
 	Adafruit_800x480 (5" and 7" Adafruit displays)
+	(colors) - The color depth (default COLORS_65K)
+	COLORS_256 or COLORS_65K
+	-------------------------------------------------------------
 	UPDATE! in Energia IDE some devices needs an extra parameter!
 	module: sets the SPI interface (it depends from MCU). Default:0
 */
 /**************************************************************************/
-void RA8875::begin(const enum RA8875sizes s) {
+void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_size = s;
 	uint8_t initIndex;
-	//_size = s;
-	#if defined(COMPATIBILITY_PIN)
-	_disablePin = COMPATIBILITY_PIN;
-	pinMode(_disablePin,OUTPUT);
-	_disableHandle(1);
-	#else
-		_disablePin = 255;
-	#endif
+	if (colors != 16) {//255
+		_color_bpp = 8;
+	} else {
+		_color_bpp = 16;
+	}
 	if (_size == RA8875_320x240) {//still not supported! Need tweaking
 		_width = 320;
 		_height = 240;
 		initIndex = 0;
 		_maxLayers = 2;
+		_displayType = 0;
 	} else if (_size == RA8875_480x272 || _size == Adafruit_480x272) {
 		_width = 480;
 		_height = 272;
 		initIndex = 1;
 		_maxLayers = 2;
+		_displayType = 0;
 	} else if (_size == RA8875_640x480 || _size == Adafruit_640x480) {//still not supported! Need tweaking
 		_width = 640;
 		_height = 480;
 		initIndex = 2;
-		_maxLayers = 1;
+		if (_color_bpp < 16){
+			_maxLayers = 2;
+		} else {
+			_maxLayers = 1;
+		}
+		_displayType = 1;
 	} else if (_size == RA8875_800x480 || _size == Adafruit_800x480) {
 		_width = 800;
 		_height = 480;
 		initIndex = 3;
-		_maxLayers = 1;
+		if (_color_bpp < 16){
+			_maxLayers = 2;
+		} else {
+			_maxLayers = 1;
+		}
+		_displayType = 1;
 	} else {//falldown to RA8875_480x272
 		_width = 480;
 		_height = 272;
 		initIndex = 1;
 		_maxLayers = 2;
+		_displayType = 0;
 	}
-	
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
 	_currentMode = GRAPHIC;
@@ -189,7 +183,7 @@ void RA8875::begin(const enum RA8875sizes s) {
 	  2: (Vertical Scan direction) 0: COM0 to COM(n-1), 1: COM(n-1) to COM0
 	  1,0: (na) */
 	_DPCRReg = 0b00000000;
-/*	Memory Write Control Register 0
+/*	Memory Write Control Register 0 [0x40]
 	7: 0(graphic mode), 1(textx mode)
 	6: 0(font-memory cursor not visible), 1(visible)
 	5: 0(normal), 1(blinking)
@@ -258,7 +252,9 @@ void RA8875::begin(const enum RA8875sizes s) {
 	6,5,4:TP Sample Time Adjusting (000...111)
 	3:Touch Panel Wakeup Enable 0(disable),1(enable)
 	2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
+	#if !defined(USE_EXTERNALTOUCH)//thanks the experimentalist
 	_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
+	#endif
 	#if defined(__MKL26Z64__)//ready for the multi SPI
 		#if !defined(SPI1_BR)
 			#error you need to update SPI library!
@@ -276,7 +272,7 @@ void RA8875::begin(const enum RA8875sizes s) {
 	pinMode(_cs, OUTPUT);
 	digitalWrite(_cs, HIGH);
 	#endif
-
+	//time for hardware reset screen
 	if (_rst < 255){
 		pinMode(_rst, OUTPUT);
 		digitalWrite(_rst, HIGH);
@@ -291,12 +287,9 @@ void RA8875::begin(const enum RA8875sizes s) {
 #endif
 
 	
-#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
-	//_spiSpeed = MAXSPISPEED;//go back to full speed
+#if defined(SPI_HAS_TRANSACTION)
 	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE0);
-	//SPI.begin();
 #else//do not use SPItransactons
-	//SPI.begin();
 	#if defined(ENERGIA)
 		SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
 		delay(50);
@@ -342,7 +335,13 @@ void RA8875::initialize(uint8_t initIndex) {
 	
 	writeReg(RA8875_PCSR,initStrings[initIndex][2]);//Pixel Clock Setting Register
 	delay(1);
-	writeReg(RA8875_SYSR,0x0C);//we are working ALWAYS at 65K color space!!!!
+	//color space setup
+	if (_color_bpp < 16){//256
+		writeReg(RA8875_SYSR,0x00);
+	} else {
+		writeReg(RA8875_SYSR,0x0C);
+	}
+	//writeReg(RA8875_SYSR,0x0C);//we are working ALWAYS at 65K color space!!!!
 	writeReg(RA8875_HDWR,initStrings[initIndex][3]);//LCD Horizontal Display Width Register
 	writeReg(RA8875_HNDFTR,initStrings[initIndex][4]);//Horizontal Non-Display Period Fine Tuning Option Register
 	writeReg(RA8875_HNDR,initStrings[initIndex][5]);////LCD Horizontal Non-Display Period Register
@@ -375,16 +374,40 @@ void RA8875::initialize(uint8_t initIndex) {
 
 /**************************************************************************/
 /*!
-      Software Reset
+      Set the display Color Space
+	  Parameters:
+	  Bit per Pixel color (colors): 8 or 16 bit
+	  NOTE:
+	  For display over 272*480 give automatically the ability to use
+	  Layers that at 16 bit it's not possible.
 */
 /**************************************************************************/
-/* void RA8875::softReset(void) {
-	writeCommand(RA8875_PWRR);
-	writeData(RA8875_PWRR_SOFTRESET);
-	writeData(RA8875_PWRR_NORMAL);
-	delay(200);
+void RA8875::setColorBpp(uint8_t colors){
+	if (colors != _color_bpp){//only if necessary
+		if (colors < 16) {//255
+			_color_bpp = 8;
+			writeReg(RA8875_SYSR,0x00);
+			if (_displayType > 0) _maxLayers = 2;
+		} else if (colors > 8) {//65K
+			_color_bpp = 16;
+			writeReg(RA8875_SYSR,0x0C);
+			if (_displayType > 0) _maxLayers = 1;
+			_currentLayer = 0;
+		}
+	}
 }
- */
+
+/**************************************************************************/
+/*!
+      Return current Color Space (8 or 16)
+*/
+/**************************************************************************/
+uint8_t RA8875::getColorBpp(){
+	return _color_bpp;
+}
+
+
+
 /**************************************************************************/
 /*!		
 		Clear memory
@@ -457,13 +480,13 @@ uint16_t RA8875::height(void) { return _height; }
 void RA8875::changeMode(enum RA8875modes m) {
 	writeCommand(RA8875_MWCR0);
 	if (m == GRAPHIC){
-		if (_currentMode == TEXT){//avoid useless consecutive calls
+		if (_currentMode == TEXT){//avoid consecutive calls
 			 _MWCR0Reg &= ~(1 << 7);
 			 _currentMode = GRAPHIC;
 			writeData(_MWCR0Reg);
 		}
 	} else {
-		if (_currentMode == GRAPHIC){//avoid useless consecutive calls
+		if (_currentMode == GRAPHIC){//avoid consecutive calls
 			_MWCR0Reg |= (1 << 7);
 			_currentMode = TEXT;
 			writeData(_MWCR0Reg);
@@ -969,8 +992,10 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 */
 /**************************************************************************/
 void RA8875::setForegroundColor(uint16_t color){
-	writeReg(RA8875_FGCR0,((color & 0xF800) >> 11));
-	writeReg(RA8875_FGCR1,((color & 0x07E0) >> 5));
+	uint8_t idx = 0;
+	if (_color_bpp < 16) idx = 2;//65K
+	writeReg(RA8875_FGCR0,((color & 0xF800) >> _RA8875colorMask[idx]));
+	writeReg(RA8875_FGCR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));
 	writeReg(RA8875_FGCR2,(color & 0x001F));
 }
 /**************************************************************************/
@@ -995,8 +1020,10 @@ void RA8875::setForegroundColor(uint8_t R,uint8_t G,uint8_t B){
 */
 /**************************************************************************/
 void RA8875::setBackgroundColor(uint16_t color){
-	writeReg(RA8875_BGCR0,((color & 0xF800) >> 11));
-	writeReg(RA8875_BGCR1,((color & 0x07E0) >> 5));
+	uint8_t idx = 0;
+	if (_color_bpp < 16) idx = 2;//65K
+	writeReg(RA8875_BGCR0,((color & 0xF800) >> _RA8875colorMask[idx]));//11
+	writeReg(RA8875_BGCR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));//5
 	writeReg(RA8875_BGCR2,(color & 0x001F));
 }
 /**************************************************************************/
@@ -1009,6 +1036,7 @@ void RA8875::setBackgroundColor(uint16_t color){
 */
 /**************************************************************************/
 void RA8875::setBackgroundColor(uint8_t R,uint8_t G,uint8_t B){
+	//_color_bpp > 8
 	writeReg(RA8875_BGCR0,R);
 	writeReg(RA8875_BGCR1,G);
 	writeReg(RA8875_BGCR2,B);
@@ -1021,8 +1049,10 @@ void RA8875::setBackgroundColor(uint8_t R,uint8_t G,uint8_t B){
 */
 /**************************************************************************/
 void RA8875::setTrasparentColor(uint16_t color){
-	writeReg(RA8875_BGTR0,((color & 0xF800) >> 11));
-	writeReg(RA8875_BGTR1,((color & 0x07E0) >> 5));
+	uint8_t idx = 0;
+	if (_color_bpp < 16) idx = 2;//65K
+	writeReg(RA8875_BGTR0,((color & 0xF800) >> _RA8875colorMask[idx]));
+	writeReg(RA8875_BGTR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));
 	writeReg(RA8875_BGTR2,(color & 0x001F));
 }
 /**************************************************************************/
@@ -1035,6 +1065,7 @@ void RA8875::setTrasparentColor(uint16_t color){
 */
 /**************************************************************************/
 void RA8875::setTrasparentColor(uint8_t R,uint8_t G,uint8_t B){
+	//_color_bpp > 8
 	writeReg(RA8875_BGTR0,R);
 	writeReg(RA8875_BGTR1,G);
 	writeReg(RA8875_BGTR2,B);
@@ -1148,10 +1179,10 @@ void RA8875::setY(uint16_t y) {
 /**************************************************************************/
 /* void RA8875::pushPixels(uint32_t num, uint16_t p) {
 	startSend();
-	SPItranfer(RA8875_DATAWRITE);
+	SPI.tranfer(RA8875_DATAWRITE);
 	while (num--) {
-		SPItranfer(p >> 8);
-		SPItranfer(p);
+		SPI.tranfer(p >> 8);
+		SPI.tranfer(p);
 	}
 	endSend();
 }
@@ -1477,10 +1508,6 @@ void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 	
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
-	//} else if (w < 2 && h > 1){   //render as vline
-		//drawLine(x,y,x,(y+h),color);
-	//} else if (h < 2 && w > 1){   //render as hline
-		//drawLine(x,y,(x+w),y,color);
 	} else {			 //render as rect
 		rectHelper(x,y,(x+w)-1,(y+h)-1,color,false);//thanks the experimentalist
 	}
@@ -1504,10 +1531,6 @@ void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 	
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
-	//} else if (w < 2 && h > 1){   //render as vline
-		//drawLine(x,y,x,(y+h),color);
-	//} else if (h < 2 && w > 1){   //render as hline
-		//drawLine(x,y,(x+w),y,color);
 	} else {			 //render as rect
 		rectHelper(x,y,(x+w)-1,(y+h)-1,color,true);//thanks the experimentalist
 	}
@@ -1592,7 +1615,8 @@ void RA8875::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_
 */
 /**************************************************************************/
 void RA8875::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color){
-	triangleHelper(x0, y0, x1, y1, x2, y2, color, true);
+	//triangleHelper(x0, y0, x1, y1, x2, y2, color, true);
+	triangleHelper(x0, y0-1, x1-1, y1, x2-1, y2-1, color, true);
 }
 
 /**************************************************************************/
@@ -1608,6 +1632,7 @@ void RA8875::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_
 /**************************************************************************/
 void RA8875::drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color){
 	ellipseHelper(xCenter, yCenter, longAxis, shortAxis, color, false);
+	//TODO: correct dimensions?
 }
 
 /**************************************************************************/
@@ -1623,6 +1648,7 @@ void RA8875::drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 /**************************************************************************/
 void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color){
 	ellipseHelper(xCenter, yCenter, longAxis, shortAxis, color, true);
+	//TODO: correct dimensions?
 }
 
 /**************************************************************************/
@@ -1639,6 +1665,7 @@ void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 /**************************************************************************/
 void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color){
 	curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, false);
+	//TODO: correct dimensions?
 }
 
 /**************************************************************************/
@@ -1655,6 +1682,7 @@ void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16
 /**************************************************************************/
 void RA8875::fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color){
 	curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, true);
+	//TODO: correct dimensions?
 }
 
 /**************************************************************************/
@@ -1740,13 +1768,9 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 	if (w < 1) w = 1;
 	if (h < 1) h = 1;
 	
-	if (w < 2 && h < 2) {//1 pixel, cannot draw a rect, draw Pixel instead
-		//drawPixel(x,y,color);
-	//} else if (w < 2 && h > 1){// w = 1
-		//drawLine(x,y,x,(y+h),color);
-	//} else if (h < 2 && w > 1){// h = 1
-		//drawLine(x,y,(x+w),y,color);
-	} else {//safe to draw a rect
+	//if (w < 2 && h < 2) {//1 pixel, cannot draw a rect, draw Pixel instead
+	//	drawPixel(x,y,color);
+	//} else {//safe to draw a rect
 		lineAddressing(x,y,w,h);
 	
 		setForegroundColor(color);
@@ -1754,7 +1778,7 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 		writeCommand(RA8875_DCR);
 		filled == true ? writeData(0xB0) : writeData(0x90);
 		waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
-	}
+	//}
 }
 
 
@@ -1837,7 +1861,11 @@ void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t
 	checkLimitsHelper(x,y);
 	checkLimitsHelper(w,h);
 	if (r < 1 || (w <= (2*r)) || (h <= (2*r))) {
-		rectHelper(x,y,w,h,color,filled);//it's classical rec
+		if (w < 2 && h < 2) {//1 pixel, cannot draw a rect, draw Pixel instead
+			drawPixel(x,y,color);
+		} else {
+			rectHelper(x,y,w,h,color,filled);//it's classical rec
+		}
 	} else {
 		lineAddressing(x,y,w,h);
 
@@ -2388,8 +2416,8 @@ uint8_t  RA8875::readReg(uint8_t reg) {
 /**************************************************************************/
 void  RA8875::writeData(uint8_t data) {
 	startSend();
-	SPItranfer(RA8875_DATAWRITE);
-	SPItranfer(data);
+	SPI.transfer(RA8875_DATAWRITE);
+	SPI.transfer(data);
 	endSend();
 }
 
@@ -2402,10 +2430,16 @@ void  RA8875::writeData(uint8_t data) {
 /**************************************************************************/
 void  RA8875::writeData16(uint16_t data) {
 	startSend();
-	SPItranfer(RA8875_DATAWRITE);
-	SPItranfer16(data);//TESTING
-	//SPItranfer(data >> 8);
-	//SPItranfer(data);
+	SPI.transfer(RA8875_DATAWRITE);
+	#if (ARDUINO >= 160) || TEENSYDUINO > 120
+	//SPItranfer16(data);//TESTING
+		SPI.transfer16(data);
+	#else
+		SPI.transfer(data >> 8);
+		SPI.transfer(data);
+	//SPI.transfer(data >> 8);
+	//SPI.transfer(data);
+	#endif
 	endSend();
 }
 
@@ -2416,7 +2450,7 @@ void  RA8875::writeData16(uint16_t data) {
 /**************************************************************************/
 uint8_t  RA8875::readData(bool stat) {
 
-	#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
+	#if defined(SPI_HAS_TRANSACTION)
 		//_spiSpeed = MAXSPISPEED/2;
 		settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE0);
 	#else
@@ -2429,13 +2463,13 @@ uint8_t  RA8875::readData(bool stat) {
 	#endif
 	startSend();
 	if (stat){
-		SPItranfer(RA8875_CMDREAD);
+		SPI.transfer(RA8875_CMDREAD);
 	} else {
-		SPItranfer(RA8875_DATAREAD);
+		SPI.transfer(RA8875_DATAREAD);
 	}
-	uint8_t x = SPItranfer(0x0);
+	uint8_t x = SPI.transfer(0x0);
 	endSend();
-	#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
+	#if defined(SPI_HAS_TRANSACTION)
 	//_spiSpeed = MAXSPISPEED;
 	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE0);
 	#else
@@ -2468,33 +2502,11 @@ uint8_t  RA8875::readStatus(void) {
 /**************************************************************************/
 void RA8875::writeCommand(uint8_t d) {
 	startSend();
-	SPItranfer(RA8875_CMDWRITE);
-	SPItranfer(d);
+	SPI.transfer(RA8875_CMDWRITE);
+	SPI.transfer(d);
 	endSend();
 }
 
-/**************************************************************************/
-/*! PRIVATE
-		temp workaround
-*/
-/**************************************************************************/
-
-uint8_t RA8875::SPItranfer(uint8_t data){
-	return SPI.transfer(data);
-}
-
-
-uint16_t RA8875::SPItranfer16(uint16_t data){
-	#if (ARDUINO >= 160) || TEENSYDUINO > 120
-	//a new feature of IDE 160
-		return SPI.transfer16(data);
-	#else
-		uint16_t out = 0;
-		out =  SPI.transfer(data>>8);
-		out =  SPI.transfer(data);
-		return out;
-	#endif
-}
 
 /**************************************************************************/
 /*! PRIVATE
@@ -2502,8 +2514,7 @@ uint16_t RA8875::SPItranfer16(uint16_t data){
 */
 /**************************************************************************/
 void RA8875::startSend(){
-	_disableHandle(0);
-#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
+#if defined(SPI_HAS_TRANSACTION)
 	SPI.beginTransaction(settings);
 #elif !defined(ENERGIA)
 	cli();//protect from interrupts
@@ -2526,22 +2537,11 @@ void RA8875::endSend(){
 #else
 	digitalWrite(_cs, HIGH);
 #endif
-#if defined(SPI_HAS_TRANSACTION) && defined(USESPITRANSACTIONS)
+#if defined(SPI_HAS_TRANSACTION)
 	SPI.endTransaction();
-	_disableHandle(1);
 #elif !defined(ENERGIA)
 	sei();//enable interrupts
-	_disableHandle(1);
 #endif
 }
 
 
-void RA8875::_disableHandle(uint8_t state){
-	if (_disablePin != 255){
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
-		digitalWriteFast(_disablePin, state);
-	#else
-		digitalWrite(_disablePin, state);
-	#endif
-	}
-}
