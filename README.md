@@ -45,7 +45,7 @@ corrected some errors in drawFastVLine,drawFastHLine,drawRect,fillRect,drawRound
 If you have troubles the old version it's in the folder OldVersions.
 * 0.69b2: Full 8 bit color support! This allow user with screen over 272*480 size to use layers!.
 * 0.69b3: Small fixes.
-* 0.69b4: (Probably) better 800x600 initialization (someone confirm, please!), fixed 640x480 compatibility.
+* 0.69b4: (Probably) better 800x480 initialization (someone confirm, please!), fixed 640x480 compatibility.
 
 
 ##### Description
