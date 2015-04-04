@@ -99,49 +99,56 @@ void RA8875::selectCS(uint8_t module) {
 void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_size = s;
 	uint8_t initIndex;
+	_unsupported = false;
 	if (colors != 16) {//255
 		_color_bpp = 8;
 	} else {
 		_color_bpp = 16;
 	}
-	if (_size == RA8875_320x240) {//still not supported! Need tweaking
-		_width = 320;
-		_height = 240;
-		initIndex = 0;
-		_maxLayers = 2;
-		_displayType = 0;
-	} else if (_size == RA8875_480x272 || _size == Adafruit_480x272) {
-		_width = 480;
-		_height = 272;
-		initIndex = 1;
-		_maxLayers = 2;
-		_displayType = 0;
-	} else if (_size == RA8875_640x480 || _size == Adafruit_640x480) {//still not supported! Need tweaking
-		_width = 640;
-		_height = 480;
-		initIndex = 2;
-		if (_color_bpp < 16){
+	switch (_size){
+		case RA8875_320x240:
+			_width = 320;
+			_height = 240;
 			_maxLayers = 2;
-		} else {
-			_maxLayers = 1;
-		}
-		_displayType = 1;
-	} else if (_size == RA8875_800x480 || _size == Adafruit_800x480) {
-		_width = 800;
-		_height = 480;
-		initIndex = 3;
-		if (_color_bpp < 16){
+			_displayType = 0;
+			initIndex = 0;
+		break;
+		case RA8875_480x272:
+		case Adafruit_480x272:
+			_width = 480;
+			_height = 272;
 			_maxLayers = 2;
-		} else {
-			_maxLayers = 1;
-		}
-		_displayType = 1;
-	} else {//falldown to RA8875_480x272
-		_width = 480;
-		_height = 272;
-		initIndex = 1;
-		_maxLayers = 2;
-		_displayType = 0;
+			_displayType = 0;
+			initIndex = 1;
+		break;
+		case RA8875_640x480:
+		case Adafruit_640x480:
+			_width = 640;
+			_height = 480;
+			if (_color_bpp < 16){
+				_maxLayers = 2;
+			} else {
+				_maxLayers = 1;
+			}
+			_displayType = 1;
+			initIndex = 2;
+		break;
+		case RA8875_800x480:
+		case Adafruit_800x480:
+			_width = 800;
+			_height = 480;
+			if (_color_bpp < 16){
+				_maxLayers = 2;
+			} else {
+				_maxLayers = 1;
+			}
+			_displayType = 1;
+			initIndex = 3;
+		break;
+		default:
+		//error, not supported
+		_unsupported = true;
+		return;
 	}
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
@@ -288,7 +295,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 
 	
 #if defined(SPI_HAS_TRANSACTION)
-	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE0);
+	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
 #else//do not use SPItransactons
 	#if defined(ENERGIA)
 		SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
@@ -297,7 +304,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 		SPI.setClockDivider(SPI_CLOCK_DIV4);//4Mhz (6.6Mhz Max)
 		delay(50);
 	#endif
-	SPI.setDataMode(SPI_MODE0);
+	SPI.setDataMode(SPI_MODE3);
 #endif
 	#if defined(ENERGIA)//dunno why but energia wants this here or not work!
 	pinMode(_cs, OUTPUT);
@@ -315,24 +322,30 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 */
 /**************************************************************************/
 void RA8875::initialize(uint8_t initIndex) {
+	if (_unsupported) return;
 	if (_rst == 255) {//soft reset
 		writeCommand(RA8875_PWRR);
 		writeData(RA8875_PWRR_SOFTRESET);
 		writeData(RA8875_PWRR_NORMAL);
 		delay(200);
 	}
+	/*
+	0x10,0x02//56,7Mhz /18.9Mhz(max SPI teorical speed)
+	0x0A,0x02//36,7Mhz /12.2Mhz(max SPI teorical speed)
+	0x0B,0x02//40Mhz   /13.4Mhz(max SPI teorical speed)
+	0x0B,0x02
+	*/
 	const uint8_t initStrings[4][15] = {
-	{0x0A,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240
-	{0x0A,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
+	{0x10,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
+	{0x10,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
 	{0x0B,0x02,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
 	//{0x0B,0x02,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01}// 3 -> 800x480 (10)
 	{0x0B,0x02,0x81,0x63,0x03,0x03,0x02,0x00,0xDF,0x01,0x14,0x00,0x06,0x00,0x01} //3 -> 800x480 (fixed?)
 	};
 
 	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);////PLL Control Register 1
-	delay(1);
 	writeReg(RA8875_PLLC2,initStrings[initIndex][1]);////PLL Control Register 2
-	delay(1);
+	delay(10);
 	
 	writeReg(RA8875_PCSR,initStrings[initIndex][2]);//Pixel Clock Setting Register
 	delay(1);
@@ -2468,7 +2481,7 @@ uint8_t  RA8875::readData(bool stat) {
 
 	#if defined(SPI_HAS_TRANSACTION)
 		//_spiSpeed = MAXSPISPEED/2;
-		settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE0);
+		settings = SPISettings(SPIREAD_SPEED, MSBFIRST, SPI_MODE3);
 	#else
 		#if defined(ENERGIA)
 			SPI.setClockDivider(SPI_SPEED_READ);//2Mhz (3.3Mhz max)
@@ -2487,7 +2500,7 @@ uint8_t  RA8875::readData(bool stat) {
 	endSend();
 	#if defined(SPI_HAS_TRANSACTION)
 	//_spiSpeed = MAXSPISPEED;
-	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE0);
+	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
 	#else
 		#if defined(ENERGIA)
 			SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)

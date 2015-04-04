@@ -3,7 +3,7 @@
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
 
-	Version:0.69b3 Full 8 bit color support!
+	Version:0.69b5 Corrected SPI mode for this chip! (now SPI_MODE3)
 	Added some code from The Experimentalist
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
@@ -170,6 +170,10 @@ Datasheet it's clear:
 System clock/3(only write cycle), System clock/6(with read cycle)
 
 My TFT uses a 20Mhz xtal so...
+RA8875_PLLC1 = 0x0A
+RA8875_PLLC2 = 0x02
+SysClock = (20000000 * (10+1)) / ((2+1) * 2) = 36.7Mhz
+
 Write:	6.67Mhz, Read: 	3.34Mhz
 
 MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
@@ -177,14 +181,15 @@ Not all MCU are capable to work at those speeds. Those parameters should work fi
 
 */
 #if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1 (30Mhz max)
-	#define MAXSPISPEED 			6600000//3300000 in READ
+	#define MAXSPISPEED 			8000000//
 #elif defined(__MKL26Z64__)							 //teensy LC	 (12 or 24 Mhz max)
-	#define MAXSPISPEED 			6600000//3300000 in READ
+	#define MAXSPISPEED 			8000000//
 #elif defined(__SAM3X8E__)							 // due
-	#define MAXSPISPEED 			6600000
+	#define MAXSPISPEED 			8000000
 #else												 //rest of the world
-	#define MAXSPISPEED 			4000000//2000000 in READ
+	#define MAXSPISPEED 			8000000//
 #endif
+#define SPIREAD_SPEED				round(MAXSPISPEED/2)
 
 enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480,RA8875_640x480 };
 enum RA8875modes { GRAPHIC,TEXT };
@@ -248,7 +253,6 @@ class RA8875 : public Print {
 //------------- Setup -------------------------
 	void 		begin(const enum RA8875sizes s,uint8_t colors=16);
 //------------- Hardware related -------------------------
-	//void    	softReset(void);
 	void    	displayOn(boolean on);
 	void    	sleep(boolean sleep);
 	void 		brightness(uint8_t val);//ok
@@ -381,6 +385,7 @@ using Print::write;
 	bool					_keyMatrixEnabled;
 	#endif
 	//----------------------------------------
+	bool					_unsupported;
 	uint16_t 		 		_width, _height;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	uint8_t 		 		_textScale;
