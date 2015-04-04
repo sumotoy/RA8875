@@ -99,7 +99,7 @@ Since it's not a great advantage to use it with 8/16 parallel interface I choose
 * 256 user configurable fonts.
 * Patterns support.
 * user configurable graphic cursors.
-* Layers support (not for screen larger than 480x272).
+* Layers support <s>(not for screen larger than 480x272)</s> (limited to 256 colors for screens > 480x272).
 * configurable INT pin.
 
 
