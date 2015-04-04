@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b2 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b4 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -44,6 +44,8 @@ Be careful since until beta 0.70 things will change a lot so you better not use 
 corrected some errors in drawFastVLine,drawFastHLine,drawRect,fillRect,drawRoundRect,fillRoundRect, dropped hyperdrive since it's useless for a 6.6Mhz SPI,support for 16 bit transfer, starting support for alternate SPI1 for Teensy LC, etc. etc. This version has major changes so if you currently using an old version you probably have small differences.
 If you have troubles the old version it's in the folder OldVersions.
 * 0.69b2: Full 8 bit color support! This allow user with screen over 272*480 size to use layers!.
+* 0.69b3: Small fixes.
+* 0.69b4: (Probably) better 800x600 initialization (someone confirm, please!), fixed 640x480 compatibility.
 
 
 ##### Description
