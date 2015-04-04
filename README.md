@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b4 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b6 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -46,6 +46,8 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b2: Full 8 bit color support! This allow user with screen over 272*480 size to use layers!.
 * 0.69b3: Small fixes.
 * 0.69b4: (Probably) better 800x480 initialization (someone confirm, please!), fixed 640x480 compatibility.
+* 0.69b5: RA8875 needs SPIMode3 and not SPIMode0, I've fixed this.
+* 0.69b6: Another fix on 800x480 initialization sequence.
 
 
 ##### Description
