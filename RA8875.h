@@ -3,7 +3,8 @@
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
 
-	Version:0.69b5 Corrected SPI mode for this chip! (now SPI_MODE3)
+	Version:0.69b6 Corrected SPI mode for this chip! (now SPI_MODE3)
+	Minor fixes to 480x800 initializations
 	Added some code from The Experimentalist
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
