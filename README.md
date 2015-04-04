@@ -79,7 +79,7 @@ Do you think that driving with 8 or 16 bit interface will be much faster than Se
 The problem is that chip needs time to perform a command! In brief, the scenario it's something like this:<br>
 You tell it to draw a rect by send rect macros command and colors, the chip starts it's job but you cannot send another command until has finished it's job so you have to check it's register or the WAIT pin before send another command.<br>
 This almost for every command. Also drawing bitmap images it's a slow job, there's not a way to send chunks of data, at list I haven't find a working way, the only fast way to get a picture fast on screen is use internal DMA and a optional SPI Flash memory pre-programmed and controlled directly by the chip!<br>
-Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip, with datasheet on hand this chip have a limit of 6.6Mhz for write and 3.2Mhz for read so it's perfectly for SPI Transactions (thanks to Paul Stoffregen for this) that is supported officially in the last IDE for Teensy (1.0.6 release 1.20) and Arduino (1.6.x).<br>
+Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip, with datasheet on hand this chip have a limit <s>of 6.6Mhz for write and 3.2Mhz</s>(I'm actually removing this limit thanks to <b>Christoph</b>) for read so it's perfectly for SPI Transactions (thanks to Paul Stoffregen for this) that is supported officially in the last IDE for Teensy (1.0.6 release 1.20) and Arduino (1.6.x).<br>
 
 #### RA8875 in short
 
