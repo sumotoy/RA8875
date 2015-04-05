@@ -2,10 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-
-	Version:0.69b6 Corrected SPI mode for this chip! (now SPI_MODE3)
-	Minor fixes to 480x800 initializations
-	Added some code from The Experimentalist
+	Version:0.69b7 Great Performance speedup and new init trick
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -170,27 +167,34 @@ Datasheet it's clear:
 
 System clock/3(only write cycle), System clock/6(with read cycle)
 
-My TFT uses a 20Mhz xtal so...
-RA8875_PLLC1 = 0x0A
-RA8875_PLLC2 = 0x02
-SysClock = (20000000 * (10+1)) / ((2+1) * 2) = 36.7Mhz
-
-Write:	6.67Mhz, Read: 	3.34Mhz
+I was sure that systemClock it's the xtal but I was wrong, there's a PLL inside chip
+that can act as multiplier. SO the formula to calculate the system clock is:
+SysClock = (20000000 * (RA8875_PLLC1(value)+1)) / ((RA8875_PLLC2(value)+1) * 2);
 
 MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
 Not all MCU are capable to work at those speeds. Those parameters should work fine.
 
+SPI_MULT parameter it was just introduced and it's a multiplier, the purpose it's multiply
+the MAXSPISPEED so you can have faster SPI performances, however this depends of many factors
+like the lenght of cables, soldering, etc. so you may need to tune this!
+Remember that you cannot go over the max SPI speed supported by chip that is 20Mhz!
+
+
 */
 #if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1 (30Mhz max)
 	#define MAXSPISPEED 			8000000//
+	#define SPI_MULT				2.7
 #elif defined(__MKL26Z64__)							 //teensy LC	 (12 or 24 Mhz max)
-	#define MAXSPISPEED 			8000000//
+	#define MAXSPISPEED 			6000000//
+	#define SPI_MULT				2
 #elif defined(__SAM3X8E__)							 // due
 	#define MAXSPISPEED 			8000000
+	#define SPI_MULT				2
 #else												 //rest of the world
 	#define MAXSPISPEED 			8000000//
+	#define SPI_MULT				2
 #endif
-#define SPIREAD_SPEED				round(MAXSPISPEED/2)
+
 
 enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480,RA8875_640x480 };
 enum RA8875modes { GRAPHIC,TEXT };
@@ -386,7 +390,8 @@ using Print::write;
 	bool					_keyMatrixEnabled;
 	#endif
 	//----------------------------------------
-	bool					_unsupported;
+	bool					_unsupported;//if true, not supported board
+	bool					_inited;//true when init has been ended
 	uint16_t 		 		_width, _height;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	uint8_t 		 		_textScale;
@@ -448,7 +453,8 @@ using Print::write;
 
 	void 		startSend();
 	void 		endSend();
-	//uint16_t 	SPItranfer16(uint16_t data);
+	uint32_t	_maxspeed_write;//this is the max SPI speed in write
+	uint32_t	_maxspeed_read;//this is the max SPI speed in read
 
 	#if defined(NEEDS_SET_MODULE)
 	void 		selectCS(uint8_t module);

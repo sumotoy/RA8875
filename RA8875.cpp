@@ -100,6 +100,9 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_size = s;
 	uint8_t initIndex;
 	_unsupported = false;
+	_inited = false;
+	_maxspeed_write = round(MAXSPISPEED*SPI_MULT);
+	_maxspeed_read = round((MAXSPISPEED*SPI_MULT)/2);
 	if (colors != 16) {//255
 		_color_bpp = 8;
 	} else {
@@ -153,7 +156,6 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
 	_currentMode = GRAPHIC;
-	//_spiSpeed = MAXSPISPEED;
 	_cursorX = 0; 
 	_cursorY = 0;
 	_scrollXL = 0; 
@@ -295,7 +297,11 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 
 	
 #if defined(SPI_HAS_TRANSACTION)
-	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
+	if (_inited){
+		settings = SPISettings(_maxspeed_write, MSBFIRST, SPI_MODE3);
+	} else {
+		settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
+	}
 #else//do not use SPItransactons
 	#if defined(ENERGIA)
 		SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
@@ -336,14 +342,15 @@ void RA8875::initialize(uint8_t initIndex) {
 	0x0B,0x02
 	*/
 	const uint8_t initStrings[4][15] = {
-	{0x10,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
-	{0x10,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
-	{0x0B,0x02,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
+	{0x17,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
+	{0x17,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
+	{0x17,0x02,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
 	//{0x0B,0x02,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01}// 3 -> 800x480 (10)
-	{0x0B,0x02,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x20,0x00,0x16,0x00,0x01} //3 -> 800x480 (fixed?)
+	{0x17,0x02,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x20,0x00,0x16,0x00,0x01} //3 -> 800x480 (fixed?)
 	};
 
 	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);////PLL Control Register 1
+	delay(1);
 	writeReg(RA8875_PLLC2,initStrings[initIndex][1]);////PLL Control Register 2
 	delay(10);
 	
@@ -384,6 +391,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	setFont(INT);	//set internal font use
 	setTextColor(RA8875_WHITE);//since the blackground it's black...
 	//now tft it's ready to go and in [Graphic mode]
+	_inited = true;
 }
 
 /**************************************************************************/
@@ -2462,13 +2470,12 @@ void  RA8875::writeData16(uint16_t data) {
 	startSend();
 	SPI.transfer(RA8875_DATAWRITE);
 	#if (ARDUINO >= 160) || TEENSYDUINO > 120
-	//SPItranfer16(data);//TESTING
-		SPI.transfer16(data);
+		//SPI.transfer16(data);//until this has been fixed!
+		SPI.transfer(data >> 8);
+		SPI.transfer(data);
 	#else
 		SPI.transfer(data >> 8);
 		SPI.transfer(data);
-	//SPI.transfer(data >> 8);
-	//SPI.transfer(data);
 	#endif
 	endSend();
 }
@@ -2481,8 +2488,11 @@ void  RA8875::writeData16(uint16_t data) {
 uint8_t  RA8875::readData(bool stat) {
 
 	#if defined(SPI_HAS_TRANSACTION)
-		//_spiSpeed = MAXSPISPEED/2;
-		settings = SPISettings(SPIREAD_SPEED, MSBFIRST, SPI_MODE3);
+		if (_inited){
+			settings = SPISettings(_maxspeed_read, MSBFIRST, SPI_MODE3);
+		} else {
+			settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE3);
+		}
 	#else
 		#if defined(ENERGIA)
 			SPI.setClockDivider(SPI_SPEED_READ);//2Mhz (3.3Mhz max)
@@ -2500,8 +2510,11 @@ uint8_t  RA8875::readData(bool stat) {
 	uint8_t x = SPI.transfer(0x0);
 	endSend();
 	#if defined(SPI_HAS_TRANSACTION)
-	//_spiSpeed = MAXSPISPEED;
-	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
+	if (_inited){
+		settings = SPISettings(_maxspeed_write, MSBFIRST, SPI_MODE3);
+	} else {
+		settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
+	}
 	#else
 		#if defined(ENERGIA)
 			SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
