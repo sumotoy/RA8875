@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b6 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b7 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -48,6 +48,7 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b4: (Probably) better 800x480 initialization (someone confirm, please!), fixed 640x480 compatibility.
 * 0.69b5: RA8875 needs SPIMode3 and not SPIMode0, I've fixed this.
 * 0.69b6: Another fix on 800x480 initialization sequence.
+* 0.69b7: Dropped SPI speed bottleneck! Now I can reach the hardware limit of the chip (from 6.6Mhz to 21Mhz!) Thanks Christoph to point me to the SystemClock that I was think is the Xtal but at the end it's not!
 
 
 ##### Description
@@ -55,7 +56,7 @@ A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teen
 This is the first attemp to create a library that use all the features of this chip _from scratch_ and I'm tring to optimize as much I can.<br>
 Actually it's in beta stage, working, but only SPI (4 wires), please read the notes in .h file.<br>
 As always I provide a lot of examples (check video), more coming soon...<br>
-Please note that there's a couple of fragments from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note, not at surprise, it has been writed for get something workable and never optimized, but I like to thanks Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of the code in their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff ...and MANY features missed!<br>I was so excited to work with this chip but I soon realized that it's a nightmare, even read the datasheet (full of errors) doesn't saved me from the hours I spent around this library.<br>
+Please note that there's a couple of fragments from the Adafruit_RA8875 that I've use to test some basic functionalities but it's 100% stealed from the RAiO application note, not at surprise, it has been writed for get something workable and never optimized, but I like to thanks Lady Ada and his team to provide some code for developers, a good start point but unlikely I was very surprised of the code in their library, wrong timings, weird initialization, completely useless include of Adafruit_GFX_library (used only for the Print command!!!), they missed and misplaced a lot of stuff, using the WRONG SPIMode ...and MANY features missed!<br>I was so excited to work with this chip but I soon realized that it's a nightmare, even read the datasheet (full of errors) doesn't saved me from the hours I spent around this library.<br>
 
 This library will work also with the Adafruit board but was mainly coded for the many TFT displays from china makers that use this chip, some are quite good and cheap, like the EastRising from buydisplay.com, much cheaper than adafruit.<br>I'm not related to EastRising or BuyDisplay, in any way, but I appreciate that I don't have to spend a little fortune for DIY stuff.<br>
 
@@ -83,7 +84,7 @@ Do you think that driving with 8 or 16 bit interface will be much faster than Se
 The problem is that chip needs time to perform a command! In brief, the scenario it's something like this:<br>
 You tell it to draw a rect by send rect macros command and colors, the chip starts it's job but you cannot send another command until has finished it's job so you have to check it's register or the WAIT pin before send another command.<br>
 This almost for every command. Also drawing bitmap images it's a slow job, there's not a way to send chunks of data, at list I haven't find a working way, the only fast way to get a picture fast on screen is use internal DMA and a optional SPI Flash memory pre-programmed and controlled directly by the chip!<br>
-Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip, with datasheet on hand this chip have a limit <s>of 6.6Mhz for write and 3.2Mhz</s>(I'm actually removing this limit thanks to <b>Christoph</b>) for read so it's perfectly for SPI Transactions (thanks to Paul Stoffregen for this) that is supported officially in the last IDE for Teensy (1.0.6 release 1.20) and Arduino (1.6.x).<br>
+Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip.<br>
 
 #### RA8875 in short
 
@@ -112,16 +113,15 @@ In real life this set apparently set almost all drawing functions to 65K color B
 Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br><br>
 
 **IF YOU OWN A EASTRISING from BuyDisplay please read this!!**<br>
-Thanks to the help of The Experimentalist was discovered that those display have pullups on any SPI output! This cause any type of malfunction or error and can possibly damage processor pin in extreme case. The display affected are the 5" and 7", black PCB, on the back there's 3 resistors (R1,R2,R3) and just under 2 capacitors (C1 and C2), the best thing you can do it's desolder all those components, I will add a wiki page to do that.<br>
-See this page in the future https://github.com/sumotoy/RA8875/wiki/EastRising-and-Buydisplay-SPI-configuration-and-connections...<br><br>
+Thanks to the help of The Experimentalist was discovered that those display have pullups on any SPI output! This cause any type of malfunction with other SPI devices and even damage processor pin in some case. The display affected are the 5" and 7", black PCB, see this page  https://github.com/sumotoy/RA8875/wiki/EastRising-and-Buydisplay-SPI-configuration-and-connections...<br><br>
 There's another **hardware issue on MISO** that's a problem only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!), Paul Stoffregen discover the MISO bug that it's not tristate:<br>
 https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices<br><br>
 The chip it's **NOT out-of-range-values tolerant!** (in contrast of the 90% of the other commercial drivers) If a value it's out of range you can experience various screen weirdness like garbage, white screen or chip freeze! This forced me to carefully surround many function with data range checks.
 
 #### Wiring with your MCU
-It's an Early beta, only SPI for now so it uses _native SPI_.<br>
+I support only _native SPI_.<br>
 **MOSI,MISO,SCK** pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)<br>
-For **RST** it's your choice, it's really possible use _any_ pin. Apparently only Adafruit board need this, the 2 chinese boards I've tested have internal reset circuit that cause problems if you connect this line<br>
+For **RST** it's your choice, it's really possible use _any_ pin. Apparently only Adafruit board need this, the 2 chinese boards I've tested have internal reset circuit so it's optional<br>
 For **CS** pin you have to choose between these pin on **Teensy3.1: 2,6,9,10,15,20,21,22,23**. Arduino UNO,MEGA and almost all 8 bit variants can use any pin, DUE maybe need special pins (please check DUE datasheet)<br>
 You also need another 2 PINS, **INT** for Touch Screen (I used pin 2) and a **CS** for SD (I used pin 21).<br>If your board don't have SD slot (Adafruit don't) just forget the SD example (btw you can use any SD card holder and use it)<br>
 From version 0.6, Energia IDE will be supported so many MCU's can be used but should wait 0.6 and since I have only Stellaris LM4F120XL I cannot be sure of the various MCU's wiring so drop me a note, at list I can add to the documentation!
