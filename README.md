@@ -18,11 +18,13 @@ A couple of users tested also with:
 * Adafruit RA8875 board w 800x600 and 480x272 displays
 
 ##### Teensy notes:
-I love Teensy 3 MCU's, so every library has special features for this micro. This one works with highly optimized SPI that can works with Audio Board and SD card without interfere and at max speed possible. I'm currently adding support for Teensy LC that seems perfect for use with RA8875 so stay tuned for changes.Please note that Teensy3 and 3.1 cannot use any pin for CS as Arduino!!! You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
+I love Teensy 3 MCU's, so every library has special features for this micro. You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
 
 ##### Beta changes:
 
 Be careful since until beta 0.70 things will change a lot so you better not use in your project or you will forced to modify your code! This is necessary because this library use a lot of command (RA8875 it's a really complex chip)<br><br>
+From *0.68b7* I have finally breaked the SPI speed bottleneck and fixed SPIMode so better you test if it's still working for you, please note that high SPI speeds needs short and firmly soldered cables, if your project have not this needed features you may have to tune the *SPI_MULT* parameter in the R8875.h file from the actual value to a lower one, even at 1 (that act as was before the SPI speedup)<br>
+<br>
 
 * 0.49b1:<s>Fixed 800x480 initialization</s>
 * 0.49b7:Complete rebuilded touch screen stuff, now much easier and super easy to calibrate
