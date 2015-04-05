@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b7 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b8 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -51,6 +51,7 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b5: RA8875 needs SPIMode3 and not SPIMode0, I've fixed this.
 * 0.69b6: Another fix on 800x480 initialization sequence.
 * 0.69b7: Dropped SPI speed bottleneck! Now I can reach the hardware limit of the chip (from 6.6Mhz to 21Mhz!) Thanks Christoph to point me to the SystemClock that I was think is the Xtal but at the end it's not!
+* 0.69b8: Fixed some typo, rst pin not working with Teensy (now yes), cleaned up a little.
 
 
 ##### Description
