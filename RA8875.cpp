@@ -17,22 +17,22 @@ static SPISettings settings;
 /**************************************************************************/
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 
-#if defined(__MKL26Z64__)//this one has 2 SPI
-RA8875::RA8875(const uint8_t CS,const uint8_t RST,uint8_t spiInterface){
-	_SPIint = spiInterface;
-	if (_SPIint > 1) _SPIint = 1;
+	#if defined(__MKL26Z64__)//this one has 2 SPI
+		RA8875::RA8875(const uint8_t CS,const uint8_t RST,uint8_t spiInterface){
+			_SPIint = spiInterface;
+			if (_SPIint > 1) _SPIint = 1;
+	#else
+		RA8875::RA8875(const uint8_t CS,const uint8_t RST){
+	#endif
+			_cs = CS;
+			_rst = 255;
+			if (RST != 255) _rst = RST;
+		}
 #else
-RA8875::RA8875(const uint8_t CS,const uint8_t RST){
-#endif
-	_cs = CS;
-	_rst = 255;
-	if (_rst != 255) _rst = RST;
-}
-#else
-#if defined(NEEDS_SET_MODULE)
-RA8875::RA8875(const uint8_t module, const uint8_t RST) {
-	selectCS(module);
-#else
+	#if defined(NEEDS_SET_MODULE)
+		RA8875::RA8875(const uint8_t module, const uint8_t RST) {
+			selectCS(module);
+	#else
 /**************************************************************************/
 /*!
 	Contructor
@@ -41,13 +41,12 @@ RA8875::RA8875(const uint8_t module, const uint8_t RST) {
 */
 /**************************************************************************/
 
-RA8875::RA8875(const uint8_t CS, const uint8_t RST) {
-	_cs = CS;
-#endif
-	_rst = 255;
-	if (RST != 255) _rst = RST;
-}
-
+		RA8875::RA8875(const uint8_t CS, const uint8_t RST) {
+			_cs = CS;
+	#endif
+			_rst = 255;
+			if (RST != 255) _rst = RST;
+		}
 #endif
 
 /**************************************************************************/
@@ -97,8 +96,8 @@ void RA8875::selectCS(uint8_t module) {
 */
 /**************************************************************************/
 void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
-	_size = s;
 	uint8_t initIndex;
+	_size = s;
 	_unsupported = false;
 	_inited = false;
 	_maxspeed_write = round(MAXSPISPEED*SPI_MULT);
@@ -177,13 +176,20 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 
 	
 	#if !defined(USE_EXTERNALTOUCH)
-	_touchPin = 255;
-	_clearTInt = false;
-	_touchEnabled = false;
-	_tsAdcMinX = 0; _tsAdcMinY = 0; _tsAdcMaxX = 1024; _tsAdcMaxY = 1024;
+		_touchPin = 255;
+		_clearTInt = false;
+		_touchEnabled = false;
+		_tsAdcMinX = 0; _tsAdcMinY = 0; _tsAdcMaxX = 1024; _tsAdcMaxY = 1024;
+	#else
+/*	Touch Panel Control Register 0     [0x70]
+	7: 0(disable, 1:(enable)
+	6,5,4:TP Sample Time Adjusting (000...111)
+	3:Touch Panel Wakeup Enable 0(disable),1(enable)
+	2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
+		_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
 	#endif
 	#if defined(USE_RA8875_KEYMATRIX)
-	_keyMatrixEnabled = false;
+		_keyMatrixEnabled = false;
 	#endif
 /* Display Configuration Register	  [0x20]
 	  7: (Layer Setting Control) 0:one Layer, 1:two Layers
@@ -256,14 +262,6 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	*/
 	_INTC1Reg = 0b00000000;
 	
-	/*	Touch Panel Control Register 0     [0x70]
-	7: 0(disable, 1:(enable)
-	6,5,4:TP Sample Time Adjusting (000...111)
-	3:Touch Panel Wakeup Enable 0(disable),1(enable)
-	2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
-	#if !defined(USE_EXTERNALTOUCH)//thanks the experimentalist
-	_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
-	#endif
 	#if defined(__MKL26Z64__)//ready for the multi SPI
 		#if !defined(SPI1_BR)
 			#error you need to update SPI library!
@@ -274,15 +272,14 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 		} else {
 			SPI.begin();
 		}
-	#else
+	#else//rest of the world
 		SPI.begin();
 	#endif 
-	#if !defined(ENERGIA)
-	pinMode(_cs, OUTPUT);
-	digitalWrite(_cs, HIGH);
+	#if !defined(ENERGIA)//energia needs this here
+		pinMode(_cs, OUTPUT);
+		digitalWrite(_cs, HIGH);
 	#endif
-	//time for hardware reset screen
-	if (_rst < 255){
+	if (_rst < 255){//time for hardware reset RA8875
 		pinMode(_rst, OUTPUT);
 		digitalWrite(_rst, HIGH);
 		delay(5);
@@ -297,11 +294,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 
 	
 #if defined(SPI_HAS_TRANSACTION)
-	if (_inited){
-		settings = SPISettings(_maxspeed_write, MSBFIRST, SPI_MODE3);
-	} else {
-		settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
-	}
+	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);//we start in low speed here!
 #else//do not use SPItransactons
 	#if defined(ENERGIA)
 		SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
@@ -390,8 +383,12 @@ void RA8875::initialize(uint8_t initIndex) {
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
 	setFont(INT);	//set internal font use
 	setTextColor(RA8875_WHITE);//since the blackground it's black...
-	//now tft it's ready to go and in [Graphic mode]
-	_inited = true;
+	//set cursor at 0,0
+	writeReg(RA8875_F_CURXL,(0 & 0xFF));
+	writeReg(RA8875_F_CURXH,(0 >> 8));
+	writeReg(RA8875_F_CURYL,(0 & 0xFF));
+	writeReg(RA8875_F_CURYH,(0 >> 8));
+	_inited = true;//from here we will go at high speed!
 }
 
 /**************************************************************************/
@@ -502,7 +499,7 @@ uint16_t RA8875::height(void) { return _height; }
 void RA8875::changeMode(enum RA8875modes m) {
 	writeCommand(RA8875_MWCR0);
 	if (m == GRAPHIC){
-		if (_currentMode == TEXT){//avoid consecutive calls
+		 if (_currentMode == TEXT){//avoid consecutive calls
 			 _MWCR0Reg &= ~(1 << 7);
 			 _currentMode = GRAPHIC;
 			writeData(_MWCR0Reg);
@@ -525,6 +522,7 @@ void RA8875::changeMode(enum RA8875modes m) {
 /**************************************************************************/
 void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address) {
 	bool modeChanged = false;
+	uint8_t i;
 	if (_currentMode != GRAPHIC) {//was in text!
 		changeMode(GRAPHIC);
 		modeChanged = true;
@@ -532,10 +530,10 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address) {
 	writeReg(RA8875_CGSR,address);
 	writeTo(CGRAM);
 	writeCommand(RA8875_MRWC);
-	for (uint8_t i=0;i<16;i++){
+	for (i=0;i<16;i++){
 		writeData(symbol[i]);
 	}
-	if (modeChanged) changeMode(TEXT);
+	if (modeChanged) changeMode(TEXT);//back to text
 }
 
 /**************************************************************************/
@@ -975,26 +973,25 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 		setCursor(0,ny);
 		start = 2;
 	#if defined(ENERGIA)//oops! Energia 013 seems have a bug here! Should send a \r but only \n given!
-	} else if (len > 0 && ((buffer[0] == '\n'))){
-		//get current y
-		t1 = readReg(RA8875_F_CURYL);
-		t2 = readReg(RA8875_F_CURYH);
-		//calc new line y
-		ny = (t2 << 8) | (t1 & 0xFF);
-		//update y
-		ny = ny + (16 + (16*_textScale))+_fontInterline;//TODO??
-		setCursor(0,ny);
-		start = 1;
-	}
+		} else if (len > 0 && ((buffer[0] == '\n'))){
+			//get current y
+			t1 = readReg(RA8875_F_CURYL);
+			t2 = readReg(RA8875_F_CURYH);
+			//calc new line y
+			ny = (t2 << 8) | (t1 & 0xFF);
+			//update y
+			ny = ny + (16 + (16*_textScale))+_fontInterline;//TODO??
+			setCursor(0,ny);
+			start = 1;
+		}
 	#else
-	}
+		}
 	#endif
 	writeCommand(RA8875_MRWC);
 	for (i=start;i<len;i++){
 		if (buffer[i] == '\n' || buffer[i] == '\r') {
 			//_cursor_y += textsize * 8;
 			//_cursor_x  = 0;
-
 		} else {
 			writeData(buffer[i]);
 			waitBusy(0x80);
@@ -1175,7 +1172,6 @@ void RA8875::waitBusy(uint8_t res) {
 void RA8875::setXY(int16_t x, int16_t y) {
 	if (x < 0) x = 0;
 	if (y < 0) y = 0;
-	
 	setX(x);
 	setY(y);
 }
