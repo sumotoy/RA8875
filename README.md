@@ -117,7 +117,7 @@ Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA st
 **IF YOU OWN A EASTRISING from BuyDisplay please read this!!**<br>
 Thanks to the help of The Experimentalist was discovered that those display have pullups on any SPI output! This cause any type of malfunction with other SPI devices and even damage processor pin in some case. The display affected are the 5" and 7", black PCB, see this page 
 
-https://github.com/sumotoy/RA8875/wiki/EastRising-and-Buydisplay-SPI-configuration-and-connections... 
+https://github.com/sumotoy/RA8875/wiki/EastRising-and-Buydisplay-SPI-configuration-and-connections...
 
 <br><br>
 There's another **hardware issue on MISO** that's a problem only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!), Paul Stoffregen discover the MISO bug that it's not tristate:<br>
