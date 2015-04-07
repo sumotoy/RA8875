@@ -16,7 +16,6 @@ static SPISettings settings;
 */
 /**************************************************************************/
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
-
 	#if defined(__MKL26Z64__)//this one has 2 SPI
 		RA8875::RA8875(const uint8_t CS,const uint8_t RST,uint8_t spiInterface){
 			_SPIint = spiInterface;
@@ -88,70 +87,24 @@ void RA8875::selectCS(uint8_t module) {
 	Adafruit_480x272 (4.3" Adafruit displays)
 	Adafruit_680x480 (4.3" exists?)
 	Adafruit_800x480 (5" and 7" Adafruit displays)
-	(colors) - The color depth (default COLORS_65K)
-	COLORS_256 or COLORS_65K
+	(colors) - The color depth (default 16)
+	8 or 16 (bit)
 	-------------------------------------------------------------
 	UPDATE! in Energia IDE some devices needs an extra parameter!
 	module: sets the SPI interface (it depends from MCU). Default:0
 */
 /**************************************************************************/
 void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
+	#if defined(SPI_HAS_TRANSACTION)
+		_maxspeed_write = round(MAXSPISPEED*SPI_MULT);
+		_maxspeed_read = round((MAXSPISPEED*SPI_MULT)/2);
+	#endif
 	uint8_t initIndex;
 	_size = s;
 	_unsupported = false;
-	_inited = false;
-	_maxspeed_write = round(MAXSPISPEED*SPI_MULT);
-	_maxspeed_read = round((MAXSPISPEED*SPI_MULT)/2);
-	if (colors != 16) {//255
-		_color_bpp = 8;
-	} else {
-		_color_bpp = 16;
-	}
-	switch (_size){
-		case RA8875_320x240:
-			_width = 320;
-			_height = 240;
-			_maxLayers = 2;
-			_displayType = 0;
-			initIndex = 0;
-		break;
-		case RA8875_480x272:
-		case Adafruit_480x272:
-			_width = 480;
-			_height = 272;
-			_maxLayers = 2;
-			_displayType = 0;
-			initIndex = 1;
-		break;
-		case RA8875_640x480:
-		case Adafruit_640x480:
-			_width = 640;
-			_height = 480;
-			if (_color_bpp < 16){
-				_maxLayers = 2;
-			} else {
-				_maxLayers = 1;
-			}
-			_displayType = 1;
-			initIndex = 2;
-		break;
-		case RA8875_800x480:
-		case Adafruit_800x480:
-			_width = 800;
-			_height = 480;
-			if (_color_bpp < 16){
-				_maxLayers = 2;
-			} else {
-				_maxLayers = 1;
-			}
-			_displayType = 1;
-			initIndex = 3;
-		break;
-		default:
-		//error, not supported
-		_unsupported = true;
-		return;
-	}
+	//_inited = false;
+	_hasLayerLimits = false;
+	_maxLayers = 2;
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
 	_currentMode = GRAPHIC;
@@ -173,8 +126,49 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
 	_textCursorStyle = BLINK;
-
-	
+	_color_bpp = 16;
+	if (colors != 16) _color_bpp = 8;
+	switch (_size){
+		case RA8875_320x240:
+			_width = 320;
+			_height = 240;
+			initIndex = 0;
+		break;
+		case RA8875_480x272:
+		case Adafruit_480x272:
+			_width = 480;
+			_height = 272;
+			initIndex = 1;
+		break;
+		case RA8875_640x480:
+		case Adafruit_640x480:
+			_width = 640;
+			_height = 480;
+			if (_color_bpp < 16){
+				_maxLayers = 2;
+			} else {
+				_maxLayers = 1;
+			}
+			_hasLayerLimits = true;
+			initIndex = 2;
+		break;
+		case RA8875_800x480:
+		case Adafruit_800x480:
+			_width = 800;
+			_height = 480;
+			if (_color_bpp < 16){
+				_maxLayers = 2;
+			} else {
+				_maxLayers = 1;
+			}
+			_hasLayerLimits = true;
+			initIndex = 3;
+		break;
+		default:
+		//error, not supported
+		_unsupported = true;
+		return;
+	}
 	#if !defined(USE_EXTERNALTOUCH)
 		_touchPin = 255;
 		_clearTInt = false;
@@ -262,7 +256,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	*/
 	_INTC1Reg = 0b00000000;
 	
-	#if defined(__MKL26Z64__)//ready for the multi SPI
+	#if defined(__MKL26Z64__) && defined(SPI_HAS_TRANSACTION)//ready for the multi SPI
 		#if !defined(SPI1_BR)
 			#error you need to update SPI library!
 		#endif
@@ -294,7 +288,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 
 	
 #if defined(SPI_HAS_TRANSACTION)
-	settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);//we start in low speed here!
+	settings = SPISettings(4000000, MSBFIRST, SPI_MODE3);//we start in low speed here!
 #else//do not use SPItransactons
 	#if defined(ENERGIA)
 		SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
@@ -309,6 +303,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	pinMode(_cs, OUTPUT);
 	digitalWrite(_cs, HIGH);
 	#endif
+	Serial.println(F("start init"));
 	initialize(initIndex);
 }
 
@@ -322,30 +317,34 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 /**************************************************************************/
 void RA8875::initialize(uint8_t initIndex) {
 	if (_unsupported) return;
+	_inited = false;
+	const static uint8_t initStrings[4][15] = {
+	{0x0A,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
+	{0x0A,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
+	{0x0B,0x02,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
+	{0x0B,0x02,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01} //3 -> 800x480 (fixed?)
+	};
+	// christoph settings = 60Mhz
+	const static uint8_t sysClockPar[4][2] = {
+	{0b1011,0b010},//0 -> 320x240
+	{0b1011,0b010},//1 -> 480x272
+	{0b1011,0b010},//2 -> 640x480
+	{0b1011,0b010} //3 -> 800x480
+	};
+	
 	if (_rst == 255) {//soft reset
 		writeCommand(RA8875_PWRR);
 		writeData(RA8875_PWRR_SOFTRESET);
 		writeData(RA8875_PWRR_NORMAL);
 		delay(200);
 	}
-	/*
-	0x10,0x02//56,7Mhz /18.9Mhz(max SPI teorical speed)
-	0x0A,0x02//36,7Mhz /12.2Mhz(max SPI teorical speed)
-	0x0B,0x02//40Mhz   /13.4Mhz(max SPI teorical speed)
-	0x0B,0x02
-	*/
-	const uint8_t initStrings[4][15] = {
-	{0x17,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
-	{0x17,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
-	{0x17,0x02,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
-	//{0x0B,0x02,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01}// 3 -> 800x480 (10)
-	{0x17,0x02,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x20,0x00,0x16,0x00,0x01} //3 -> 800x480 (fixed?)
-	};
+	
 
+	//set the sysClock
 	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);////PLL Control Register 1
 	delay(1);
 	writeReg(RA8875_PLLC2,initStrings[initIndex][1]);////PLL Control Register 2
-	delay(10);
+	delay(1);
 	
 	writeReg(RA8875_PCSR,initStrings[initIndex][2]);//Pixel Clock Setting Register
 	delay(1);
@@ -388,6 +387,12 @@ void RA8875::initialize(uint8_t initIndex) {
 	writeReg(RA8875_F_CURXH,(0 >> 8));
 	writeReg(RA8875_F_CURYL,(0 & 0xFF));
 	writeReg(RA8875_F_CURYH,(0 >> 8));
+	
+	//now raiseup the sysClock!
+	writeReg(RA8875_PLLC1,sysClockPar[initIndex][0]);////PLL Control Register 1
+	delay(1);
+	writeReg(RA8875_PLLC2,sysClockPar[initIndex][1]);////PLL Control Register 2
+	delay(1);
 	_inited = true;//from here we will go at high speed!
 }
 
@@ -406,11 +411,11 @@ void RA8875::setColorBpp(uint8_t colors){
 		if (colors < 16) {//255
 			_color_bpp = 8;
 			writeReg(RA8875_SYSR,0x00);
-			if (_displayType > 0) _maxLayers = 2;
+			if (_hasLayerLimits) _maxLayers = 2;
 		} else if (colors > 8) {//65K
 			_color_bpp = 16;
 			writeReg(RA8875_SYSR,0x0C);
-			if (_displayType > 0) _maxLayers = 1;
+			if (_hasLayerLimits) _maxLayers = 1;
 			_currentLayer = 0;
 		}
 	}
@@ -1134,15 +1139,17 @@ void RA8875::showGraphicCursor(boolean cur) {
 
 /**************************************************************************/
 /*!
-	From Adafruit_RA8875, need to be fixed!!!!!!!!!
+	Origin from Adafruit but modified for better exit.
 */
 /**************************************************************************/
 boolean RA8875::waitPoll(uint8_t regname, uint8_t waitflag) {
+	unsigned long timeout = millis();
 	while (1) {
 		uint8_t temp = readReg(regname);
 		if (!(temp & waitflag)) return true;
+		if ((millis() - timeout) > 100) return false;//emergency exit!
 	}  
-	return false; // MEMEFIX: yeah i know, unreached! - add timeout?
+	return false;
 }
 
 /**************************************************************************/
@@ -1209,18 +1216,38 @@ void RA8875::setY(uint16_t y) {
  */
 
  
-/**************************************************************************/
-/*!	
-Enable concatenated scrolling, creates one large area from both
-layers
-Author: The Experimentalist
 
+/**************************************************************************/
+/*!     
+        Sets the scroll mode. This is controlled by bits 6 and 7 of  
+        REG[52h] Layer Transparency Register0 (LTPR0)
+		Author: The Experimentalist
 */
 /**************************************************************************/
-void RA8875::enableBufferScroll() {
-	uint8_t temp = readReg(RA8875_LTPR0);
-	writeReg(RA8875_LTPR0, temp | 0xC0);
+void RA8875::setScrollMode(enum RA8875scrollMode mode){
+    uint8_t reg = readReg(RA8875_LTPR0);
+    reg &= 0x3F;            // Clear bits 6 and 7 to zero
+    switch(mode){           // bit 7,6 of LTPR0
+        case SIMULTANEOUS:  // 00b : Layer 1/2 scroll simultaneously.
+            // Do nothing
+        break;
+        case LAYER1ONLY:        // 01b : Only Layer 1 scroll.
+            reg |= 0x40;
+        break;
+        case LAYER2ONLY:        // 10b : Only Layer 2 scroll.
+            reg |= 0x80;
+        break;
+        case BUFFERED:      	// 11b: Buffer scroll (using Layer 2 as scroll buffer)
+            reg |= 0xC0;
+        break;
+        default:
+            return;         	//do nothing
+    }
+    //TODO: Should this be conditional on multi layer?
+    //if (_useMultiLayers) writeReg(RA8875_LTPR0,reg);
+    writeReg(RA8875_LTPR0,reg);
 }
+
 /**************************************************************************/
 /*!		
 		Define a window for perform scroll
@@ -1587,6 +1614,11 @@ void RA8875::fillScreen(uint16_t color){
 	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 }
 
+//legacy
+void RA8875::clearScreen(uint16_t color){  
+	fillScreen(color);
+}
+
 /**************************************************************************/
 /*!
       Draw circle
@@ -1631,8 +1663,8 @@ void RA8875::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color){
 */
 /**************************************************************************/
 void RA8875::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color){
-	//triangleHelper(x0, y0, x1, y1, x2, y2, color, false);
-	triangleHelper(x0, y0-1, x1-1, y1, x2-1, y2-1, color, false);
+	triangleHelper(x0, y0, x1, y1, x2, y2, color, false);
+	//triangleHelper(x0, y0-1, x1-1, y1, x2-1, y2-1, color, false);
 }
 
 /**************************************************************************/
@@ -1649,8 +1681,8 @@ void RA8875::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_
 */
 /**************************************************************************/
 void RA8875::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color){
-	//triangleHelper(x0, y0, x1, y1, x2, y2, color, true);
-	triangleHelper(x0, y0-1, x1-1, y1, x2-1, y2-1, color, true);
+	triangleHelper(x0, y0, x1, y1, x2, y2, color, true);
+	//triangleHelper(x0, y0-1, x1-1, y1, x2-1, y2-1, color, true);
 }
 
 /**************************************************************************/
@@ -2482,13 +2514,8 @@ void  RA8875::writeData16(uint16_t data) {
 */
 /**************************************************************************/
 uint8_t  RA8875::readData(bool stat) {
-
 	#if defined(SPI_HAS_TRANSACTION)
-		if (_inited){
-			settings = SPISettings(_maxspeed_read, MSBFIRST, SPI_MODE3);
-		} else {
-			settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE3);
-		}
+		if (_inited) settings = SPISettings(_maxspeed_read, MSBFIRST, SPI_MODE3);
 	#else
 		#if defined(ENERGIA)
 			SPI.setClockDivider(SPI_SPEED_READ);//2Mhz (3.3Mhz max)
@@ -2506,11 +2533,7 @@ uint8_t  RA8875::readData(bool stat) {
 	uint8_t x = SPI.transfer(0x0);
 	endSend();
 	#if defined(SPI_HAS_TRANSACTION)
-	if (_inited){
-		settings = SPISettings(_maxspeed_write, MSBFIRST, SPI_MODE3);
-	} else {
-		settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
-	}
+	if (_inited) settings = SPISettings(_maxspeed_write, MSBFIRST, SPI_MODE3);
 	#else
 		#if defined(ENERGIA)
 			SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)

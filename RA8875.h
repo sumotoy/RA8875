@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b8 Fixed a couple of typo
+	Version:0.69b9 Many fixes!, ext. settings file, ext. color file
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -76,36 +76,23 @@ SD CS:		pin 2  (selectable 3*)
 SD CARD ID: pin xx (selectable and optional)
 *(3) On Teensy3.x not all pin are usable for CS's! 
 can be used: 2,6,9,10,15,20,21,22,23
--------------------------------------------------------------------------------------
-				 >>>>>> SUPPORTED EXTERNAL FONT CHIP <<<<<<<<<
-Optional!
--------------------------------------------------------------------------------------
-East Rising
-	ER3300-1
-	ER3302-1
-	ER3303-1 <--- tested
-	ER3304-1
-	ER3301-1
-	ER3303-1
-Genicomp
-	GT21L16T1W
-	GT23L16U2W
-	GT23L24T3Y
-	GT23L24M1Z
-	GT23L32S4W
-Note: East Rising and Genicomp looks the same chip! Just named different
--------------------------------------------------------------------------------------
-			   >>>>> SUPPORTED EXTERNAL FONT ENCODING <<<<<<
-Optional!
--------------------------------------------------------------------------------------
-	GB2312
-	GB12345
-	BIG5
-	UNICODE
-	ASCII
-	UNIJIS
-	JIS0208
-	LATIN/GREEK/ARABIC
+
+	-----------------------------------------------
+	in ms
+Screen fill              37380 	25140
+Text                     36828	36626
+Lines                    54186	40914
+Horiz/Vert Lines         39910	32280
+Rectangles (outline)     66329	45956
+Rectangles (filled)      70788	48744
+Circles (filled)         90466	67567
+Circles (outline)        96677	72260
+Triangles (outline)      12743	9848
+Triangles (filled)       22655	16359
+Rounded rects (outline)  10198	9045
+Rounded rects (filled)   42062	30125
+
+
 */
 
 #ifndef _RA8875MC_H_
@@ -146,56 +133,6 @@ Optional!
   #include <math.h>
 #endif
 
-// Colors preset (RGB565)
-#define	RA8875_BLACK            0x0000
-#define	RA8875_BLUE             0x001F
-#define	RA8875_RED              0xF800
-#define	RA8875_GREEN            0x07E0
-#define RA8875_CYAN             0x07FF
-#define RA8875_MAGENTA          0xF81F
-#define RA8875_YELLOW           0xFFE0  
-#define RA8875_WHITE            0xFFFF
-#define RA8875_LIGHT_GREY 		0xB5B2 // the experimentalist
-#define RA8875_LIGHT_ORANGE 	0xFC80 // the experimentalist
-#define RA8875_DARK_ORANGE 		0xFB60 // the experimentalist
-#define RA8875_PINK 			0xF806 // the experimentalist
-#define RA8875_PURPLE 			0x281E // the experimentalist
-
-/* SPI MAX SPEED it's ONLY used in SPI Transaction mode +++++++++++++++++++
-it ensure the max and correct speed for accessing RA8875 in Read/Write...
-Datasheet it's clear:
-
-System clock/3(only write cycle), System clock/6(with read cycle)
-
-I was sure that systemClock it's the xtal but I was wrong, there's a PLL inside chip
-that can act as multiplier. SO the formula to calculate the system clock is:
-SysClock = (20000000 * (RA8875_PLLC1(value)+1)) / ((RA8875_PLLC2(value)+1) * 2);
-
-MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
-Not all MCU are capable to work at those speeds. Those parameters should work fine.
-
-SPI_MULT parameter it was just introduced and it's a multiplier, the purpose it's multiply
-the MAXSPISPEED so you can have faster SPI performances, however this depends of many factors
-like the lenght of cables, soldering, etc. so you may need to tune this!
-Remember that you cannot go over the max SPI speed supported by chip that is 20Mhz!
-
-
-*/
-#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3, 3.1 (30Mhz max)
-	#define MAXSPISPEED 			8000000//
-	#define SPI_MULT				2.7
-#elif defined(__MKL26Z64__)							 //teensy LC	 (12 or 24 Mhz max)
-	#define MAXSPISPEED 			6000000//
-	#define SPI_MULT				2
-#elif defined(__SAM3X8E__)							 // due
-	#define MAXSPISPEED 			8000000
-	#define SPI_MULT				2
-#else												 //rest of the world
-	#define MAXSPISPEED 			8000000//
-	#define SPI_MULT				2
-#endif
-
-
 enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480,RA8875_640x480 };
 enum RA8875modes { GRAPHIC,TEXT };
 enum RA8875tcursor { NORMAL,BLINK };
@@ -207,37 +144,12 @@ enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208
 enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
 enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
 enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
-
-/* ---------------------------- USER SETTINGS ---------------------*/
-
-/* EXTERNAL TOUCH CONTROLLER ++++++++++++++++++++++++++++++++++++++++++
-Some TFT come with capacitive touch screen or you may decide to use a better
-controller for that, decomment the following line to save resources */
-//#define USE_EXTERNALTOUCH
-
-
-/* INTERNAL KEY MATRIX ++++++++++++++++++++++++++++++++++++++++++
-RA8875 has a 5x6 Key Matrix controller onboard, if you are not plan to use it
-better leave commented the following define since it will share some registers
-with several functions, otherwise de-comment it! */
-//#define USE_RA8875_KEYMATRIX
-/* DEFAULT CURSOR BLINK RATE ++++++++++++++++++++++++++++++++++++++++++++
-Nothing special here, you can set the default blink rate */
-#define DEFAULTCURSORBLINKRATE			10
-/* DEFAULT INTERNAL FONT ENCODING ++++++++++++++++++++++++++++++++++++++++++++
-RA8875 has 4 different font set, same shape but suitable for most languages
-please look at RA8875 datasheet and choose the correct one for your language!
-The default one it's the most common one and should work in most situations */
-#define DEFAULTINTENCODING				ISO_IEC_8859_1//ISO_IEC_8859_2,ISO_IEC_8859_3,ISO_IEC_8859_4
-
-/* STARTUP SETTINGS ++++++++++++++++++++++++++++++++++++++++++++ */
-#define _DFT_RA8875_TEXTWRAP			true//
-#define	_DFT_RA8875_EXTFONTROMTYPE		GT21L16T1W//see RA8875extRomType
-#define	_DFT_RA8875_EXTFONTROMCODING	GB2312//see RA8875extRomCoding
-
+enum RA8875scrollMode{ SIMULTANEOUS, LAYER1ONLY, LAYER2ONLY, BUFFERED };
 
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
 #include "_utility/RA8875Registers.h"
+#include "_utility/RA8875ColorPresets.h"
+#include "_utility/RA8875UserSettings.h"
 #if !defined(USE_EXTERNALTOUCH)
 #include "_utility/RA8875Calibration.h"
 #endif
@@ -313,6 +225,7 @@ class RA8875 : public Print {
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);//ok
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);//ok
 	void    	fillScreen(uint16_t color);//ok
+	void		clearScreen(uint16_t color=RA8875_BLACK);
 	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
@@ -327,7 +240,7 @@ class RA8875 : public Print {
 	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);//ok
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 //--------------- SCROLL ----------------------------------------
-	void 		enableBufferScroll(); // The experimentalist
+	void        setScrollMode(enum RA8875scrollMode mode); // The experimentalist
 	void 		setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);
 	void 		scroll(uint16_t x,uint16_t y);
 //-------------- DMA -------------------------------
@@ -377,7 +290,14 @@ using Print::write;
 
  private:
 	//------------- VARS ----------------------------
-	volatile uint32_t		_spiSpeed;//for SPI transactions
+
+	#if defined(SPI_HAS_TRANSACTION)
+		uint32_t	_maxspeed_write;//this is the max SPI speed in write
+		uint32_t	_maxspeed_read;//this is the max SPI speed in read
+		#if defined(__MKL26Z64__)
+			uint8_t _SPIint;
+		#endif
+	#endif
 	uint8_t 		 		_cs, _rst;
 	// Touch Screen vars ---------------------
 	#if !defined(USE_EXTERNALTOUCH)
@@ -413,7 +333,7 @@ using Print::write;
 	uint8_t					_maxLayers;
 	bool					_useMultiLayers;
 	uint8_t					_currentLayer;
-	uint8_t 				_displayType;//helper
+	bool 					_hasLayerLimits;//helper
 	//scroll vars ----------------------------
 	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
 	//color space-----------------------------
@@ -453,8 +373,7 @@ using Print::write;
 
 	void 		startSend();
 	void 		endSend();
-	uint32_t	_maxspeed_write;//this is the max SPI speed in write
-	uint32_t	_maxspeed_read;//this is the max SPI speed in read
+
 
 	#if defined(NEEDS_SET_MODULE)
 	void 		selectCS(uint8_t module);
@@ -469,9 +388,7 @@ using Print::write;
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
 	// test -----------------------------------------
-	#if defined(__MKL26Z64__)
-		uint8_t _SPIint;
-	#endif
+
 };
 
 #endif
