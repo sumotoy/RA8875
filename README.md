@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b10 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b12 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -54,6 +54,8 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b8: Fixed some typo, rst pin not working with Teensy (now yes), cleaned up a little.
 * 0.69b9:b8 was broken, b9 have many fixes and separate user settings file, still try to fix 8 bit layers on 800x480
 * 0.69b10: text it's faster than ever, changed useLayer (now not needed to be called), rebuilded showCursors (now easier with 4 different cursors, check demo basicTextFunctions,fixed Triangle, faster SPI.
+* 0.69b11: internal changes
+* 0.69b12: changeMode function it's now automatic and will be private soon.
 
 
 ##### Description
