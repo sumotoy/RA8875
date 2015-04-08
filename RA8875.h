@@ -184,7 +184,7 @@ class RA8875 : public Print {
 	void    	displayOn(boolean on);
 	void    	sleep(boolean sleep);
 	void 		brightness(uint8_t val);//ok
-	void 		changeMode(enum RA8875modes m);//GRAPHIC,TEXT
+	void 		changeMode(enum RA8875modes m);//GRAPHIC,TEXT (this soon will be private!)
 	uint8_t 	readStatus(void);
 	void		clearMemory(boolean full);
 	void 		scanDirection(boolean invertH,boolean invertV);
