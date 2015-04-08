@@ -20,10 +20,9 @@
 #define RA_RST     29 //out/28
 #define RA_INT     3  //in
 #define SD_CS      10 //out 
-#define SD_DEC     29 //in
 #define MEM_CS     6  //out
-#define BUZ        5  //out - pwm
-#define VIB        32 //out
+//#define BUZ        5  //out - pwm
+//#define VIB        32 //out
 
 static inline uint8_t floatToInt(float x){
   return (int)(x * 255.0f);
@@ -77,6 +76,10 @@ AudioConnection patchCord1(sinewave, 0, myFFT, 0);
 AudioControlSGTL5000 audioShield;
 
 void setup() {
+  pinMode(SD_CS,OUTPUT);
+  digitalWrite(SD_CS,HIGH);
+  pinMode(RA_CS,OUTPUT);
+  digitalWrite(RA_CS,HIGH);
   Serial.begin(9600);
   while (!Serial) ;
   delay(50);
@@ -92,7 +95,8 @@ void setup() {
   audioShield.inputSelect(myInput);
   audioShield.volume(0.5);
   audioShield.inputLevel(0.9);
-
+  tft.begin(RA8875_480x272);
+  Serial.println("TFT inited!");
   //SD card init
   if (!(SD.begin(SD_CS))) {
     while (1) {
@@ -103,7 +107,7 @@ void setup() {
   else {
     Serial.println("SD card ok");
   }
-  tft.begin(RA8875_480x272);
+  
   // Configure the window algorithm to use
   myFFT.windowFunction(AudioWindowHanning1024);
   //myFFT.windowFunction(NULL);
@@ -243,7 +247,6 @@ void loop() {
 #endif
 
 }
-
 
 
 

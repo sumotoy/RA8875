@@ -1,7 +1,6 @@
 
 uint8_t createBar(uint16_t origX,uint16_t origY){
-  uint8_t spacer = 2;
-  if (bandRange == 4) spacer = 1;
+
   //the real bar height
   uint16_t barHeight = origY + (_segHeight * _segments) + (_segments * 2);
   if (barHeight >= tft.height()) return 0;//siamo fuori misura, exit
@@ -33,11 +32,11 @@ void createBars(uint16_t vbands,uint16_t origX,uint16_t origY){
     if (!createBar(origX+(_barWidth*i)+(i*spacer),origY)) return;
   }
   
-  tft.changeMode(TEXT);
+  //tft.changeMode(TEXT);
   tft.setTextColor(RA8875_WHITE);
   tft.setCursor(0,253);
   tft.print("<100");
-  tft.changeMode(GRAPHIC);
+  //tft.changeMode(GRAPHIC);
   tft.writeTo(L2);//from this point we write on layer 2
   tft.layerEffect(AND);//apply AND effect between layer 1 and 2
   tft.fillRect(0,251,tft.width()-1,tft.height()-1-251,0xFFFF);//bar

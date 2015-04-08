@@ -63,7 +63,7 @@ void setup()
   Serial.println("RA8875 start");
   tft.begin(RA8875_480x272);
 
-  tft.changeMode(TEXT);
+  //tft.changeMode(TEXT);
   tft.setTextColor(RA8875_WHITE);
   //now set the external rom font ER3303_1 an unified chinese font chip,
   //it contains also some ASCII char and use GB12345 encoding. 

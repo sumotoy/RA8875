@@ -129,7 +129,7 @@ void drawClockHands(uint8_t h,uint8_t m,uint8_t s){
 
 
 void drawPrintTime(uint16_t x,uint16_t y, uint8_t h,uint8_t m,uint8_t s){
-  tft.changeMode(TEXT);
+  //tft.changeMode(TEXT);
   tft.setCursor (x, y);
   tft.print(__DATE__);
   tft.setCursor (x, y-13);
@@ -153,7 +153,7 @@ void drawPrintTime(uint16_t x,uint16_t y, uint8_t h,uint8_t m,uint8_t s){
   else { 
     tft.print (" am");
   } 
-  tft.changeMode(GRAPHIC);
+  //tft.changeMode(GRAPHIC);
 }
 
 void loop() {
@@ -173,6 +173,5 @@ void loop() {
     drawPrintTime(34,151,hh,mm,ss);
   }
 }
-
 
 

@@ -1,14 +1,14 @@
 /*
 Basic Text Functions
-Here's an example of how to use text commands on RA8875
-It show also ho to use cursor options...
-*/
+ Here's an example of how to use text commands on RA8875
+ It show also ho to use cursor options...
+ */
 #include <SPI.h>
 #include <RA8875.h>
 
 /*
 Teensy3.x and Arduino's
-You are using 4 wire SPI here, so:
+ You are using 4 wire SPI here, so:
  MOSI:  11//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
  MISO:  12//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
  SCK:   13//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
@@ -18,9 +18,9 @@ You are using 4 wire SPI here, so:
 #define RA8875_CS 10 //see below...
 /*
 Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
-Arduino's 8 bit: any
-DUE: should be any but not sure
-*/
+ Arduino's 8 bit: any
+ DUE: should be any but not sure
+ */
 #define RA8875_RESET 9//any pin or nothing!
 
 #if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
@@ -28,11 +28,11 @@ DUE: should be any but not sure
 RA8875 tft = RA8875(3);//select SPI module 3
 /*
 for module 3 (stellaris)
-SCLK:  PD_0
-MOSI:  PD_3
-MISO:  PD_2
-SS:    PD_1
-*/
+ SCLK:  PD_0
+ MOSI:  PD_3
+ MISO:  PD_2
+ SS:    PD_1
+ */
 #else
 
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
@@ -54,7 +54,7 @@ void setup()
 
   //RA8875 it's capable to draw graphic but also Text
   //here we switch to TEXT mode
-  tft.changeMode(TEXT);
+  //tft.changeMode(TEXT);//from version 0.96b12 it's automatic!
   //now set a text color, background transparent
   tft.setTextColor(RA8875_WHITE);
   Serial.println(tft.getFontWidth(true));
@@ -84,6 +84,8 @@ void setup()
   tft.drawPixel(currentX,currentY,RA8875_WHITE);//did you see the white dot?
   tft.changeMode(TEXT);//go back to text mode
   tft.setFontScale(0);//font x1
+  //here's an alternative...
+  //tft.setFontScale(0,1);vScale,hScale arbitrary v & h scaling
   tft.setCursor(0,50);
   tft.setTextColor(RA8875_YELLOW);
   tft.println("ABCDEF 1 2 3 4");//this time println!
@@ -103,8 +105,8 @@ void setup()
   tft.print("Cursor Example: UNDER");
   tft.showCursor(UNDER,true);//activate cursor iBeam blinking
   delay(5000);
-   tft.setCursor(50,100);
-   tft.print("Cursor Example: BLOCK");
+  tft.setCursor(50,100);
+  tft.print("Cursor Example: BLOCK");
   tft.showCursor(BLOCK,true);//activate cursor iBeam blinking
   delay(5000);
   tft.setCursor(50,100);

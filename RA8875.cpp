@@ -502,7 +502,7 @@ uint16_t RA8875::height(void) { return _height; }
 */
 /**************************************************************************/
 void RA8875::changeMode(enum RA8875modes m) {
-	if (m == _currentMode) return;
+	//if (m == _currentMode) return;
 	writeCommand(RA8875_MWCR0);
 	if (m == GRAPHIC){
 		 if (_currentMode == TEXT){//avoid consecutive calls
@@ -929,7 +929,19 @@ void RA8875::setFontScale(uint8_t scale){
 	_FNCR1Reg |= scale << 2;
 	_FNCR1Reg |= scale;
 	writeReg(RA8875_FNCR1,_FNCR1Reg);
-	_textScale = scale; 
+	_textHScale = scale;
+	_textVScale = scale;
+}
+
+void RA8875::setFontScale(uint8_t vscale,uint8_t hscale){
+	if (vscale > 3) vscale = 3;
+	if (hscale > 3) hscale = 3;
+ 	_FNCR1Reg &= ~(0xF); // clear bits from 0 to 3
+	_FNCR1Reg |= hscale << 2;
+	_FNCR1Reg |= vscale;
+	writeReg(RA8875_FNCR1,_FNCR1Reg);
+	_textHScale = hscale;
+	_textVScale = vscale;
 }
 
 /**************************************************************************/
@@ -971,12 +983,12 @@ void RA8875::setFontSize(enum RA8875tsize ts,boolean halfSize){
 uint8_t RA8875::getFontWidth(boolean inColums) {
     uint8_t temp = (((_FNCR0Reg >> 2) & 0x3) + 1) * 8;
 	if (inColums){
-		if (_textScale < 1) return width() / temp;
-		temp = temp * (_textScale+1);
+		if (_textHScale < 1) return width() / temp;
+		temp = temp * (_textHScale+1);
 		return width() / temp;
 	} else {
-		if (_textScale < 1) return temp;
-		temp = temp * (_textScale+1);
+		if (_textHScale < 1) return temp;
+		temp = temp * (_textHScale+1);
 		return temp;
 	}
 }
@@ -993,12 +1005,12 @@ uint8_t RA8875::getFontWidth(boolean inColums) {
 uint8_t RA8875::getFontHeight(boolean inRows) {
     uint8_t temp = (((_FNCR0Reg >> 0) & 0x3) + 1) * 16;
 	if (inRows){
-		if (_textScale < 1) return height() / temp;
-		temp = temp * (_textScale+1);
+		if (_textVScale < 1) return height() / temp;
+		temp = temp * (_textVScale+1);
 		return height() / temp;
 	} else {
-		if (_textScale < 1) return temp;
-		temp = temp * (_textScale+1);
+		if (_textVScale < 1) return temp;
+		temp = temp * (_textVScale+1);
 		return temp;
 	}
 }
@@ -1026,13 +1038,13 @@ void RA8875::setFontSpacing(uint8_t spc){//ok
 */
 /**************************************************************************/
 void RA8875::textWrite(const char* buffer, uint16_t len) {
-	bool goBack = false;
+	//bool goBack = false;
 	uint8_t start = 0;
 	uint16_t i,ny;
 	uint8_t t1,t2;
 	if (_currentMode == GRAPHIC){
 		changeMode(TEXT);
-		goBack = true;
+		//goBack = true;
 	}
 	if (len == 0) len = strlen(buffer);
 	if (len > 0 && ((buffer[0] == '\r') && (buffer[1] == '\n'))){//got a println?
@@ -1042,7 +1054,7 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 		//calc new line y
 		ny = (t2 << 8) | (t1 & 0xFF);
 		//update y
-		ny = ny + (16 + (16*_textScale))+_fontInterline;//TODO??
+		ny = ny + (16 + (16*_textVScale))+_fontInterline;//TODO??
 		setCursor(0,ny);
 		start = 2;
 	#if defined(ENERGIA)//oops! Energia 013 seems have a bug here! Should send a \r but only \n given!
@@ -1053,7 +1065,7 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 			//calc new line y
 			ny = (t2 << 8) | (t1 & 0xFF);
 			//update y
-			ny = ny + (16 + (16*_textScale))+_fontInterline;//TODO??
+			ny = ny + (16 + (16*_textVScale))+_fontInterline;//TODO??
 			setCursor(0,ny);
 			start = 1;
 		}
@@ -1075,7 +1087,7 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 		if (_textScale > 0) delay(1);//Teensy3 
 #endif */
 	}
-	if (goBack) changeMode(GRAPHIC);
+	//if (goBack) changeMode(GRAPHIC);
 }
 
 /**************************************************************************/
@@ -1401,6 +1413,7 @@ void RA8875::DMA_startAddress(unsigned long adrs){
 */
 /**************************************************************************/
 void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum){  
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	checkLimitsHelper(x,y);
 	checkLimitsHelper(w,h);
 	
@@ -1561,6 +1574,7 @@ void RA8875::writeTo(enum RA8875writes d){
 */
 /**************************************************************************/
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color){
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	//checkLimitsHelper(x,y);
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
@@ -1579,6 +1593,7 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color){
 */
 /**************************************************************************/
 void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color){
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	checkLimitsHelper(x0,y0);
 	if (x1 >= _width) x1 = _width-1;
 	if (y1 >= _height) y1 = _height-1;
@@ -1675,13 +1690,11 @@ void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 /**************************************************************************/
 void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color){
 	//RA8875 it's not out-of-range tolerant so this is a workaround
-	
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
 	} else {			 //render as rect
 		rectHelper(x,y,(x+w)-1,(y+h)-1,color,true);//thanks the experimentalist
 	}
-	
 	//rectHelper(x,y,(x+w)-1,(y+h)-1,color,true);//thanks the experimentalist
 }
 
@@ -1850,10 +1863,8 @@ void RA8875::fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16
 */
 /**************************************************************************/
 void RA8875::drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color){
-	
 	if (w < 1 || h < 1) return;//it cannot be!
 	//RA8875 it's not out-of-range tolerant so this is a workaround
-	
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
 	} else {			 //render as rect
@@ -1877,7 +1888,6 @@ void RA8875::drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color){
 	//roundRectHelper(x, y, x+w, y+h, r, color, true);
 	//RA8875 it's not out-of-range tolerant so this is a workaround
-	
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
 	} else {			 //render as rect
@@ -1893,6 +1903,7 @@ void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 */
 /**************************************************************************/
 void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled){
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	checkLimitsHelper(x0,y0);
 	if (r < 1) r = 1;
 	writeReg(RA8875_DCHR0,x0);
@@ -1916,6 +1927,7 @@ void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, boo
 */
 /**************************************************************************/
 void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled){
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	checkLimitsHelper(x,y);
 	if (w < 1) w = 1;
 	if (h < 1) h = 1;
@@ -1953,6 +1965,7 @@ void RA8875::checkLimitsHelper(int16_t &x,int16_t &y){
 */
 /**************************************************************************/
 void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled){
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	checkLimitsHelper(x0,y0);
 	checkLimitsHelper(x1,y1);
 	checkLimitsHelper(x2,y2);
@@ -1978,6 +1991,7 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 */
 /**************************************************************************/
 void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled){
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	//TODO:limits!
 	curveAddressing(xCenter,yCenter,longAxis,shortAxis);
 	
@@ -1994,6 +2008,7 @@ void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, i
 */
 /**************************************************************************/
 void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled){
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	//TODO:limits!
 	curveAddressing(xCenter,yCenter,longAxis,shortAxis);
 	
@@ -2010,6 +2025,7 @@ void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 */
 /**************************************************************************/
 void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled){
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	checkLimitsHelper(x,y);
 	checkLimitsHelper(w,h);
 	if (r < 1 || (w <= (2*r)) || (h <= (2*r))) {

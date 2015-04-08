@@ -214,7 +214,7 @@ void setup()
   tft.uploadUserChar(battery6c,7);//
   //now custom char are stored in CGRAM
   //to recall, first switch to TEXT
-  tft.changeMode(TEXT);
+  //tft.changeMode(TEXT);
   
   tft.setTextColor(RA8875_WHITE,RA8875_BLACK);
   //custom char are managed as text but need to be called

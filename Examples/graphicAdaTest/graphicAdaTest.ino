@@ -69,7 +69,7 @@ void mediabuttons() {
 
 void tftPrintTest() {
   //tft.setTextWrap(false);
-  tft.changeMode(TEXT);
+  //tft.changeMode(TEXT);
   tft.fillScreen(RA8875_BLACK);
   tft.setCursor(0, 30);
   tft.setTextColor(RA8875_RED);
@@ -105,7 +105,7 @@ void tftPrintTest() {
   tft.print(millis() / 1000);
   tft.setTextColor(RA8875_WHITE);
   tft.print(" seconds.");
-  tft.changeMode(GRAPHIC);
+  //tft.changeMode(GRAPHIC);
 }
 
 void testroundrects() {

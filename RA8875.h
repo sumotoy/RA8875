@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b11 Added a function...
+	Version:0.69b12 introduced Automatic text/graphic mode (to be stested deeply)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -213,7 +213,7 @@ class RA8875 : public Print {
 	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);
 	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//0...255
 	void    	setFontScale(uint8_t scale);//0..3
-	//void    	setFontScale(uint8_t vscale,uint8_t hscale);//0..3
+	void    	setFontScale(uint8_t vscale,uint8_t hscale);//0..3
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
 	void 		setFontRotate(boolean rot);//true = 90 degrees
@@ -322,7 +322,8 @@ using Print::write;
 	bool					_inited;//true when init has been ended
 	uint16_t 		 		_width, _height;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
-	uint8_t 		 		_textScale;
+	uint8_t 		 		_textHScale;
+	uint8_t 		 		_textVScale;
 	bool					_textWrap;
 	uint8_t					_fontSpacing;
 	bool					_fontFullAlig;

@@ -71,13 +71,14 @@ bool proceed = true;
 
 void setup() 
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
+  Serial.begin(38400);
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
   tft.begin(RA8875_480x272);//initialize RA8875
   tft.touchBegin(RA8875_INT);//enable touch support for RA8875
 
 
-  tft.changeMode(TEXT);
+  //tft.changeMode(TEXT);
 
   if (tft.touchCalibrated()){
     Serial.println("You have old calibration data present!\n");
@@ -109,7 +110,7 @@ void setup()
     tft.setTextColor(RA8875_WHITE);
     tft.print("Please press the TOP/LEFT angle of your screen now!");
   }
-  tft.changeMode(GRAPHIC);
+  //tft.changeMode(GRAPHIC);
   if (proceed) tft.fillCircle(5,5,5,RA8875_RED);
 }
 
@@ -142,7 +143,7 @@ void loop()
       switch(scount){
       case 1:// TOP/LEFT
         tft.fillScreen(RA8875_BLACK);
-        tft.changeMode(TEXT);
+        //tft.changeMode(TEXT);
         tft.setCursor(20,tft.height()/2);
         tft.setTextColor(RA8875_WHITE);
         tft.print("Top/Left done. Please do not touch screen...");
@@ -151,7 +152,7 @@ void loop()
         tft.setCursor(20,tft.height()/2+40);
         tft.print("Please do not touch screen!");
         tft.setFontScale(0);
-        tft.changeMode(GRAPHIC);
+        //tft.changeMode(GRAPHIC);
         Serial.print("Top/Left done...");
         Serial.print("Please do not touch screen...");
         _XLOW_VAR = valx;
@@ -159,18 +160,18 @@ void loop()
         delay(3000);
         tft.fillScreen(RA8875_BLACK);
         tft.fillCircle(tft.width()-5,tft.height()-5,5,RA8875_RED);
-        tft.changeMode(TEXT);
+        //tft.changeMode(TEXT);
         tft.setCursor(20,tft.height()/2);
         tft.setTextColor(RA8875_WHITE);
         tft.print("ok, Now Touch Bottom/Right angle!");
-        tft.changeMode(GRAPHIC);
+        //tft.changeMode(GRAPHIC);
         Serial.println("\nok, Now Touch Bottom/Right angle!");
         tft.touchEnable(true);
         count = -1;//it prevents a spurious read after touch enable
         break;
       case 2:// BOTTOM/RIGHT
         tft.fillScreen(RA8875_BLACK);
-        tft.changeMode(TEXT);
+        //tft.changeMode(TEXT);
         tft.setCursor(0,0);
         tft.setTextColor(RA8875_WHITE);
         tft.print("Calibration done...watch results!");
@@ -205,7 +206,7 @@ void loop()
         tft.setTextColor(RA8875_WHITE);
         tft.println(" ");
         tft.println("...then save file and you are calibrated!");
-        tft.changeMode(GRAPHIC);
+        //tft.changeMode(GRAPHIC);
         Serial.println("#define TOUCSRCAL_XLOW	0");
         Serial.println("#define TOUCSRCAL_YLOW	0");
         Serial.println("#define TOUCSRCAL_XHIGH	0");
@@ -238,4 +239,3 @@ void loop()
     }
   }
 }
-
