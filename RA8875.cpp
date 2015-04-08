@@ -1479,9 +1479,27 @@ void RA8875::BTE_enable(void) {
 	writeReg(RA8875_BECR0,temp);  
 }
 
+/**************************************************************************/
+/*! return the current drawing layer. If layers are OFF, return 255
+
+*/
+/**************************************************************************/
+uint8_t RA8875::getCurrentLayer(void){
+	if (!_useMultiLayers) return 255;
+	return _currentLayer;
+}
 
 /**************************************************************************/
-/*! TESTING
+/*! This is the most important function to write on:
+	LAYERS
+	CGRAM
+	PATTERN
+	CURSOR
+	Parameter:
+	d (L1, L2, CGRAM, PATTERN, CURSOR)
+	When writing on layers 0 or 1, if the layers are not enable it will enable automatically
+	If the display doesn't support layers, it will automatically switch to 8bit color
+	Remember that when layers are ON you need to disable manually, once that only Layer 1 will be visible
 
 */
 /**************************************************************************/

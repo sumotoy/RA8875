@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b10 Speedup!
+	Version:0.69b11 Added a function...
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -213,7 +213,7 @@ class RA8875 : public Print {
 	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);
 	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//0...255
 	void    	setFontScale(uint8_t scale);//0..3
-	void    	setFontScale(uint8_t vscale,uint8_t hscale);//0..3
+	//void    	setFontScale(uint8_t vscale,uint8_t hscale);//0..3
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
 	void 		setFontRotate(boolean rot);//true = 90 degrees
@@ -266,9 +266,10 @@ class RA8875 : public Print {
 	
 //-------------- LAYERS -----------------------------------------
 	void 		useLayers(boolean on);
-	void		writeTo(enum RA8875writes d);//TESTING
-	void 		layerEffect(enum RA8875boolean efx);
+	void		writeTo(enum RA8875writes d);//L1, L2, CGRAM, PATTERN, CURSOR
+	void 		layerEffect(enum RA8875boolean efx);//LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING
 	void 		layerTransparency(uint8_t layer1,uint8_t layer2);
+	uint8_t		getCurrentLayer(void); //return the current drawing layer. If layers are OFF, return 255
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
@@ -381,11 +382,11 @@ using Print::write;
 	void 		startSend();
 	void 		endSend();
 
-
-	#if defined(NEEDS_SET_MODULE)
+	#if defined(NEEDS_SET_MODULE)//for Energia
 	void 		selectCS(uint8_t module);
 	#endif
 	// Register containers -----------------------------------------
+	// this needed to  prevent readRegister from chip that it's slow.
 	uint8_t		_MWCR0Reg; //keep track of the register 		  [0x40]
 	uint8_t		_DPCRReg;  ////Display Configuration		  	  [0x20]
 	uint8_t		_FNCR0Reg; //Font Control Register 0 		  	  [0x21]
@@ -394,7 +395,6 @@ using Print::write;
 	uint8_t		_SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
-	// test -----------------------------------------
 
 };
 
