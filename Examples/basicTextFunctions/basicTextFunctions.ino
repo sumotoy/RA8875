@@ -1,8 +1,7 @@
 /*
 Basic Text Functions
- Tested and worked with:
- Teensy3,Teensy3.1,Arduino UNO,Arduino YUN,Arduino Leonardo,Stellaris
- Works with Arduino 1.0.6 IDE, Arduino 1.5.8 IDE, Energia 0013 IDE
+Here's an example of how to use text commands on RA8875
+It show also ho to use cursor options...
 */
 #include <SPI.h>
 #include <RA8875.h>
@@ -42,8 +41,9 @@ RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
 
 void setup() 
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
+  Serial.begin(38400);
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
   Serial.println("RA8875 start");
   //initialization routine
   tft.begin(RA8875_480x272);
@@ -57,6 +57,8 @@ void setup()
   tft.changeMode(TEXT);
   //now set a text color, background transparent
   tft.setTextColor(RA8875_WHITE);
+  Serial.println(tft.getFontWidth(true));
+  Serial.println(tft.getFontHeight(true));
   //use the classic print an println command
   tft.print("Hello World");
   //by default the text location is set to 0,0
@@ -68,6 +70,8 @@ void setup()
   //by default we using the internal font
   //so some manipulation it's possible
   tft.setFontScale(1);//font x2
+  Serial.println(tft.getFontWidth());
+  Serial.println(tft.getFontHeight());
   tft.setTextColor(RA8875_RED);
   tft.print("Hello World");
   //You notice that font location has been 
@@ -77,8 +81,7 @@ void setup()
   tft.getCursor(&currentX,&currentY);
   //now we have the location, lets draw a white pixel
   tft.changeMode(GRAPHIC);//first we swith in graphic mode
-  tft.drawPixel(currentX,currentY,RA8875_WHITE);
-  //did you see the white dot?
+  tft.drawPixel(currentX,currentY,RA8875_WHITE);//did you see the white dot?
   tft.changeMode(TEXT);//go back to text mode
   tft.setFontScale(0);//font x1
   tft.setCursor(0,50);
@@ -90,7 +93,24 @@ void setup()
   tft.setFontRotate(true);
   tft.println("ABCDEF 1 2 3 4");
   tft.setFontRotate(false);
-  tft.setFontScale(2);//font x1
+  tft.setFontScale(0);//font x3
+  tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
+  tft.setCursor(50,100);
+  tft.print("Cursor Example: IBEAM");
+  tft.showCursor(IBEAM,true);//activate cursor iBeam blinking
+  delay(5000);
+  tft.setCursor(50,100);
+  tft.print("Cursor Example: UNDER");
+  tft.showCursor(UNDER,true);//activate cursor iBeam blinking
+  delay(5000);
+   tft.setCursor(50,100);
+   tft.print("Cursor Example: BLOCK");
+  tft.showCursor(BLOCK,true);//activate cursor iBeam blinking
+  delay(5000);
+  tft.setCursor(50,100);
+  tft.print("                        ");
+  tft.showCursor(NOCURSOR,false);//deactivate cursor
+  tft.setFontScale(2);//font x3
   tft.setTextColor(RA8875_BLUE,RA8875_BLACK);
 }
 
@@ -99,9 +119,17 @@ unsigned long i = 0;
 void loop() 
 {
   tft.setCursor(50,100);
-  if (i > 99) tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
-  if (i > 999) tft.setTextColor(RA8875_MAGENTA,RA8875_BLACK);
+  if (i > 999) {
+    tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
+  }
+  if (i > 9999) {
+    tft.setTextColor(RA8875_MAGENTA,RA8875_BLACK);
+  }
+  if (i > 99999) {
+    tft.setTextColor(RA8875_RED,RA8875_BLACK);
+  }
+  if (i > 999999) i = 0;
   tft.print(i,DEC);
-  delay(10);
+  delay(1);
   i++;
 }

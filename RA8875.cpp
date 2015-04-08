@@ -95,25 +95,16 @@ void RA8875::selectCS(uint8_t module) {
 */
 /**************************************************************************/
 void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
-	#if defined(SPI_HAS_TRANSACTION)
-		_maxspeed_write = round(MAXSPISPEED*SPI_MULT);
-		_maxspeed_read = round((MAXSPISPEED*SPI_MULT)/2);
-	#endif
 	uint8_t initIndex;
 	_size = s;
 	_unsupported = false;
-	//_inited = false;
+	_inited = false;
 	_hasLayerLimits = false;
 	_maxLayers = 2;
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
 	_currentMode = GRAPHIC;
-	_cursorX = 0; 
-	_cursorY = 0;
-	_scrollXL = 0; 
-	_scrollXR = 0; 
-	_scrollYT = 0; 
-	_scrollYB = 0;
+	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
 	_textWrap = _DFT_RA8875_TEXTWRAP;
 	_textSize = X16;
 	_fontSpacing = 0;
@@ -125,7 +116,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_fontRotation = false;
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
-	_textCursorStyle = BLINK;
+	_textCursorStyle = NOCURSOR;
 	_color_bpp = 16;
 	if (colors != 16) _color_bpp = 8;
 	switch (_size){
@@ -139,6 +130,14 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 			_width = 480;
 			_height = 272;
 			initIndex = 1;
+	//FOR TESTING---------
+/* 	_hasLayerLimits = true;
+	if (_color_bpp < 16){
+		_maxLayers = 2;
+	} else {
+		_maxLayers = 1;
+	} */
+	//end--------------
 		break;
 		case RA8875_640x480:
 		case Adafruit_640x480:
@@ -303,7 +302,6 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	pinMode(_cs, OUTPUT);
 	digitalWrite(_cs, HIGH);
 	#endif
-	Serial.println(F("start init"));
 	initialize(initIndex);
 }
 
@@ -316,23 +314,23 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 */
 /**************************************************************************/
 void RA8875::initialize(uint8_t initIndex) {
-	if (_unsupported) return;
+	if (_unsupported) return;//better stop here!
 	_inited = false;
 	const static uint8_t initStrings[4][15] = {
-	{0x0A,0x02,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
-	{0x0A,0x02,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
-	{0x0B,0x02,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
-	{0x0B,0x02,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01} //3 -> 800x480 (fixed?)
+	{0x07,0x03,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
+	{0x07,0x03,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
+	{0x07,0x03,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
+	{0x07,0x03,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01} //3 -> 800x480 (fixed?)
 	};
 	// christoph settings = 60Mhz
 	const static uint8_t sysClockPar[4][2] = {
-	{0b1011,0b010},//0 -> 320x240
-	{0b1011,0b010},//1 -> 480x272
-	{0b1011,0b010},//2 -> 640x480
-	{0b1011,0b010} //3 -> 800x480
+	{0x0B,0x02},//0 -> 320x240
+	{0x0B,0x02},//1 -> 480x272
+	{0x0B,0x02},//2 -> 640x480
+	{0x0B,0x02} //3 -> 800x480
 	};
 	
-	if (_rst == 255) {//soft reset
+	if (_rst > 254) {//soft reset
 		writeCommand(RA8875_PWRR);
 		writeData(RA8875_PWRR_SOFTRESET);
 		writeData(RA8875_PWRR_NORMAL);
@@ -369,8 +367,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	setActiveWindow(0,(_width-1),0,(_height-1));//set the active winsow
 	clearMemory(true);//clear FULL memory
 	//end of hardware initialization
-	delay(100); 
-	
+	delay(10); //100
     //now starts the first time setting up
 	displayOn(true);//turn On Display
 	delay(10);
@@ -378,7 +375,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
 	PWMout(1,255);//turn on PWM1
 	setCursorBlinkRate(DEFAULTCURSORBLINKRATE);//set default blink rate
-	if (_textCursorStyle == BLINK) showCursor(false,BLINK); //set default text cursor type and turn off
+	//if (_textCursorStyle == BLINK) showCursor(false,BLINK); //set default text cursor type and turn off
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
 	setFont(INT);	//set internal font use
 	setTextColor(RA8875_WHITE);//since the blackground it's black...
@@ -387,11 +384,14 @@ void RA8875::initialize(uint8_t initIndex) {
 	writeReg(RA8875_F_CURXH,(0 >> 8));
 	writeReg(RA8875_F_CURYL,(0 & 0xFF));
 	writeReg(RA8875_F_CURYH,(0 >> 8));
-	
+	delay(1);
 	//now raiseup the sysClock!
+
 	writeReg(RA8875_PLLC1,sysClockPar[initIndex][0]);////PLL Control Register 1
 	delay(1);
 	writeReg(RA8875_PLLC2,sysClockPar[initIndex][1]);////PLL Control Register 2
+	delay(1);
+	writeReg(RA8875_HDWR,initStrings[initIndex][3]);// TESTTT
 	delay(1);
 	_inited = true;//from here we will go at high speed!
 }
@@ -502,6 +502,7 @@ uint16_t RA8875::height(void) { return _height; }
 */
 /**************************************************************************/
 void RA8875::changeMode(enum RA8875modes m) {
+	if (m == _currentMode) return;
 	writeCommand(RA8875_MWCR0);
 	if (m == GRAPHIC){
 		 if (_currentMode == TEXT){//avoid consecutive calls
@@ -837,20 +838,43 @@ void RA8875::getCursor(uint16_t *x, uint16_t *y) {
 /**************************************************************************/
 /*!     Show/Hide text cursor
 		Parameters:
-		cur:(true/false) true:visible, false:not visible
-		c: cursor type (NORMAL, BLINK)
+		c: cursor type (NOCURSOR,IBEAM,UNDER,BLOCK)
+		blink: true=blink cursor
 */
 /**************************************************************************/
-void RA8875::showCursor(boolean cur,enum RA8875tcursor c){
-	if (c == BLINK){
-		_textCursorStyle = c;
-		_MWCR0Reg |= (1 << 5);
+void RA8875::showCursor(enum RA8875tcursor c,bool blink){
+    uint8_t MWCR1Reg = readReg(RA8875_MWCR1) & 0x01;
+    uint8_t cW = 0;
+    uint8_t cH = 0;
+	_textCursorStyle = c;
+    if (c != NOCURSOR) {
+		bitSet(_MWCR0Reg,6);
 	} else {
-		_textCursorStyle = NORMAL;
-		_MWCR0Reg &= ~(1 << 5);
+		bitClear(_MWCR0Reg,6);
 	}
-	bitWrite(_MWCR0Reg,6,cur);//set cursor visibility flag
-	writeReg(RA8875_MWCR0,_MWCR0Reg);
+    if (blink) _MWCR0Reg |= 0x20;//blink or not?
+    writeReg(RA8875_MWCR0, _MWCR0Reg);//set cursor
+    writeReg(RA8875_MWCR1, MWCR1Reg);//close graphic cursor
+    switch (c) {
+        case IBEAM:
+            cW = 0x01;
+            cH = 0x1F;
+            break;
+        case UNDER:
+            cW = 0x07;
+            cH = 0x01;
+            break;
+        case BLOCK:
+            cW = 0x07;
+            cH = 0x1F;
+            break;
+        case NOCURSOR:
+        default:
+            break;
+    }
+	//set cursor size
+    writeReg(RA8875_CURHS, cW);
+    writeReg(RA8875_CURVS, cH);
 }
 
 /**************************************************************************/
@@ -937,6 +961,50 @@ void RA8875::setFontSize(enum RA8875tsize ts,boolean halfSize){
 
 /**************************************************************************/
 /*!		
+		return the current width of the font in pixel
+		If font it's scaled, it will multiply.
+		It's a fast business since the register it's internally tracked
+		It can also return the usable rows based on the actual fontWidth
+		Parameters: inColums (true:returns max colums)
+*/
+/**************************************************************************/
+uint8_t RA8875::getFontWidth(boolean inColums) {
+    uint8_t temp = (((_FNCR0Reg >> 2) & 0x3) + 1) * 8;
+	if (inColums){
+		if (_textScale < 1) return width() / temp;
+		temp = temp * (_textScale+1);
+		return width() / temp;
+	} else {
+		if (_textScale < 1) return temp;
+		temp = temp * (_textScale+1);
+		return temp;
+	}
+}
+
+/**************************************************************************/
+/*!		
+		return the current heigh of the font in pixel
+		If font it's scaled, it will multiply.
+		It's a fast business since the register it's internally tracked
+		It can also return the usable rows based on the actual fontHeight
+		Parameters: inRowss (true:returns max rows)
+*/
+/**************************************************************************/
+uint8_t RA8875::getFontHeight(boolean inRows) {
+    uint8_t temp = (((_FNCR0Reg >> 0) & 0x3) + 1) * 16;
+	if (inRows){
+		if (_textScale < 1) return height() / temp;
+		temp = temp * (_textScale+1);
+		return height() / temp;
+	} else {
+		if (_textScale < 1) return temp;
+		temp = temp * (_textScale+1);
+		return temp;
+	}
+}
+
+/**************************************************************************/
+/*!		
 		Choose space in pixels between chars
 		Parameters:
 		spc:0...63pix (default 0=off)
@@ -1001,11 +1069,11 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 			writeData(buffer[i]);
 			waitBusy(0x80);
 		}
-#if defined(__AVR__)
+/* #if defined(__AVR__)
 		if (_textScale > 1) delay(1);
 #elif defined(__arm__)
 		if (_textScale > 0) delay(1);//Teensy3 
-#endif
+#endif */
 	}
 	if (goBack) changeMode(GRAPHIC);
 }
@@ -1420,18 +1488,18 @@ void RA8875::BTE_enable(void) {
 void RA8875::writeTo(enum RA8875writes d){
 	uint8_t temp = readReg(RA8875_MWCR1);
 	switch(d){
-		if (_useMultiLayers){
 		case L1:
+			if (!_useMultiLayers) useLayers(true);//turn on multiple layers if it's off
 			temp &= ~((1<<3) | (1<<2));// Clear bits 3 and 2
 			temp &= ~(1 << 0); //clear bit 0
 			_currentLayer = 0;
 		break;
 		case L2:
+			if (!_useMultiLayers) useLayers(true);//turn on multiple layers if it's off
 			temp &= ~((1<<3) | (1<<2));// Clear bits 3 and 2
 			temp |= (1 << 0); //bit set 0
 			_currentLayer = 1;
 		break;
-		}
 		case CGRAM: 
 			temp &= ~(1 << 3); //clear bit 3
 			temp |= (1 << 2); //bit set 2
@@ -2274,36 +2342,36 @@ void RA8875::clearTouchInt(void) {
 #endif
 /**************************************************************************/
 /*!
-		Instruct the RA8875 chip to use 2 layers (if it's possible)
-		Return false if not possible, true if possible
+		Instruct the RA8875 chip to use 2 layers
+		If resolution bring to restrictions it will switch to 8 bit
+		so you can always use layers.
 		Parameters:
-		on:enable multiple layers (2)
+		on:true (enable multiple layers), false (disable)
       
 */
 /**************************************************************************/
-boolean RA8875::useLayers(boolean on) {
+void RA8875::useLayers(boolean on) {
+	if (_useMultiLayers == on) return; //no reason to do change that it's already as desidered.
 	bool clearBuffer = false;
-	if (_maxLayers > 1){
-		if (on){
-			_useMultiLayers = true;
-			_DPCRReg |= (1 << 7);
-			clearBuffer = true;
-		} else {
-			_useMultiLayers = false;
-			_DPCRReg &= ~(1 << 7);
-		}
-		writeReg(RA8875_DPCR,_DPCRReg);
-		if (clearBuffer) { 
-			//for some reason if you switch to multilayer the layer 2 has garbage
-			//better clear
-			writeTo(L2);//switch to layer 2
-			clearMemory(false);//clear memory of layer 2
-			writeTo(L1);//switch to layer 1
-		}
-		return true;//it's possible with current conf
+	if (_hasLayerLimits && _color_bpp > 8) { //try to set up 8bit color space
+		setColorBpp(8);
+		_maxLayers = 2;
 	}
-	_useMultiLayers = false;
-	return false;//not possible with current conf
+	if (on){
+		_useMultiLayers = true;
+		_DPCRReg |= (1 << 7);
+		clearBuffer = true;
+	} else {
+		_useMultiLayers = false;
+		_DPCRReg &= ~(1 << 7);
+	}
+	writeReg(RA8875_DPCR,_DPCRReg);
+	if (clearBuffer) { 
+		//for some reason if you switch to multilayer the layer 2 has garbage better clear
+		writeTo(L2);//switch to layer 2
+		clearMemory(false);//clear memory of layer 2
+		writeTo(L1);//switch to layer 1
+	}
 }
 
 
@@ -2316,6 +2384,7 @@ boolean RA8875::useLayers(boolean on) {
 void RA8875::layerEffect(enum RA8875boolean efx){
 	uint8_t	reg = 0b00000000;
 	//reg &= ~(0x07);//clear bit 2,1,0
+	if (!_useMultiLayers) useLayers(true);//turn on multiple layers if it's off
 	switch(efx){//                       bit 2,1,0 of LTPR0
 		case LAYER1: //only layer 1 visible  [000]
 			//do nothing
@@ -2342,7 +2411,7 @@ void RA8875::layerEffect(enum RA8875boolean efx){
 			//do nothing
 		break;
 	}
-	if (_useMultiLayers) writeReg(RA8875_LTPR0,reg);
+	writeReg(RA8875_LTPR0,reg);
 }
 
 /**************************************************************************/
@@ -2354,7 +2423,8 @@ void RA8875::layerEffect(enum RA8875boolean efx){
 void RA8875::layerTransparency(uint8_t layer1,uint8_t layer2){
 	if (layer1 > 8) layer1 = 8;
 	if (layer2 > 8) layer2 = 8;
-	
+	if (!_useMultiLayers) useLayers(true);//turn on multiple layers if it's off
+	//if (_useMultiLayers) writeReg(RA8875_LTPR1, ((layer2 & 0x0F) << 4) | (layer1 & 0x0F));
 	uint8_t res = 0b00000000;//RA8875_LTPR1
 	//reg &= ~(0x07);//clear bit 2,1,0
 	switch (layer1){
@@ -2410,7 +2480,8 @@ void RA8875::layerTransparency(uint8_t layer1,uint8_t layer2){
 			res |= (1 << 4);
 		break;
 	}
-	if (_useMultiLayers) writeReg(RA8875_LTPR1,res);
+	writeReg(RA8875_LTPR1,res);
+
 }
 
 /**************************************************************************/
@@ -2515,7 +2586,7 @@ void  RA8875::writeData16(uint16_t data) {
 /**************************************************************************/
 uint8_t  RA8875::readData(bool stat) {
 	#if defined(SPI_HAS_TRANSACTION)
-		if (_inited) settings = SPISettings(_maxspeed_read, MSBFIRST, SPI_MODE3);
+		if (_inited) settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE3);
 	#else
 		#if defined(ENERGIA)
 			SPI.setClockDivider(SPI_SPEED_READ);//2Mhz (3.3Mhz max)
@@ -2533,7 +2604,7 @@ uint8_t  RA8875::readData(bool stat) {
 	uint8_t x = SPI.transfer(0x0);
 	endSend();
 	#if defined(SPI_HAS_TRANSACTION)
-	if (_inited) settings = SPISettings(_maxspeed_write, MSBFIRST, SPI_MODE3);
+	if (_inited) settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
 	#else
 		#if defined(ENERGIA)
 			SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)

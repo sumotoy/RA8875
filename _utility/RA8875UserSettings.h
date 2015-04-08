@@ -20,7 +20,10 @@ Nothing special here, you can set the default blink rate */
 /* DEFAULT INTERNAL FONT ENCODING ++++++++++++++++++++++++++++++++++++++++++++
 RA8875 has 4 different font set, same shape but suitable for most languages
 please look at RA8875 datasheet and choose the correct one for your language!
-ISO_IEC_8859_1 (default), ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4
+ISO_IEC_8859_1 (default), 
+ISO_IEC_8859_2, 
+ISO_IEC_8859_3, 
+ISO_IEC_8859_4
 The default one it's the most common one and should work in most situations */
 #define DEFAULTINTENCODING				ISO_IEC_8859_1
 
@@ -47,7 +50,14 @@ ER3304_1 	(Eastrising) */
 /* DEFAULT EXTERNAL FONT-ROM ENCODING ++++++++++++++++++++++++++++++++++++++++++++
 Having an external FONT-ROM mean choose the desidered encoding (supported by ROM-CHIP!)
 Possible solutions:
-GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN/GREEK/ARABIC */
+GB2312, 
+GB12345, 
+BIG5, 
+UNICODE, 
+ASCII, 
+UNIJIS, 
+JIS0208, 
+LATIN/GREEK/ARABIC */
 #define	_DFT_RA8875_EXTFONTROMCODING	GB2312
 
 /* SPI MAX SPEED it's ONLY used in SPI Transaction mode +++++++++++++++++++
@@ -58,24 +68,51 @@ System clock/3(only write cycle), System clock/6(with read cycle)
 
 MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
 Not all MCU are capable to work at those speeds. Those parameters should work fine.
-
-SPI_MULT parameter it was just introduced and it's a multiplier, the purpose it's multiply
-the MAXSPISPEED so you can have faster SPI performances, however this depends of many factors
-like the lenght of cables, soldering, and (most important) the SysClock (in initialization function).
-You cannot go over the max SPI speed supported by chip that is 20Mhz!
 */
-#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3 , 3.1
-	#define MAXSPISPEED 			8000000
-	#define SPI_MULT				1
-#elif defined(__MKL26Z64__)							 //teensy LC	 (12 or 24 Mhz max)
-	#define MAXSPISPEED 			6000000
-	#define SPI_MULT				1
-#elif defined(__SAM3X8E__)							 // due
-	#define MAXSPISPEED 			6600000
-	#define SPI_MULT				1
-#else												 //rest of the world
-	#define MAXSPISPEED 			4000000
-	#define SPI_MULT				1
+#if defined(SPI_HAS_TRANSACTION)
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3 , 3.1
+		#define MAXSPISPEED 			14000000//14000000 it's the max SPI freq without artifacts
+	#elif defined(__MKL26Z64__)							 //teensy LC	 (12 or 24 Mhz max)
+		#define MAXSPISPEED 			12000000
+	#elif defined(__SAM3X8E__)							 // due
+		#define MAXSPISPEED 			6600000
+	#else												 //rest of the world
+		#define MAXSPISPEED 			4000000
+	#endif
+#else
+/* SPI MAX SPEED (old legacy SPI) +++++++++++++++++++
+	it ensure the max and correct speed for accessing RA8875 in Read/Write...
+*/
+	#if defined(__SAM3X8E__)							 // due
+		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+		#define SPI_SPEED_READ SPI_CLOCK_DIV8
+	#else												 //rest of the world
+		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+		#define SPI_SPEED_READ SPI_CLOCK_DIV8
+	#endif
 #endif
+
+/* SPI MAX SPEED (Energia IDE doesn't have SPI Transaction) +++++++++++++++++++
+	it ensure the max and correct speed for accessing RA8875 in Read/Write...
+*/
+#if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
+	#if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
+		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+		#define SPI_SPEED_READ SPI_CLOCK_DIV8
+	#elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
+		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+		#define SPI_SPEED_READ SPI_CLOCK_DIV8
+	#elif defined(__MSP430MCU__)//MSP430???
+		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+		#define SPI_SPEED_READ SPI_CLOCK_DIV4
+	#elif defined(TMS320F28069)//C2000???
+		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+		#define SPI_SPEED_READ SPI_CLOCK_DIV4
+	#elif defined(__CC3200R1M1RGC__)//CC3200???
+		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
+		#define SPI_SPEED_READ SPI_CLOCK_DIV4
+	#endif
+#endif
+
 
 #endif

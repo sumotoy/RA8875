@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b9 Many fixes!, ext. settings file, ext. color file
+	Version:0.69b10 Speedup!
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -93,6 +93,24 @@ Rounded rects (outline)  10198	9045
 Rounded rects (filled)   42062	30125
 
 
+Benchmark                Time (microseconds)
+Screen fill              4949
+Test Pixel               42
+Test Pixels              19779
+Text                     20717 4696
+Lines                    39317
+Horiz/Vert Lines         30758
+Rectangles (outline)     45341
+Rectangles (filled)      213002
+Circles (filled)         66797
+Circles (outline)        66202
+Triangles (outline)      9335
+Triangles (filled)       15968
+Rounded rects (outline)  8298
+Rounded rects (filled)   29468
+--------------------------------
+
+
 */
 
 #ifndef _RA8875MC_H_
@@ -104,24 +122,17 @@ Rounded rects (filled)   42062	30125
 	#undef byte
 	#define byte      uint8_t
 
-  #if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
-    #define NEEDS_SET_MODULE
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-	#define SPI_SPEED_READ SPI_CLOCK_DIV8
-  #elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
-    #define NEEDS_SET_MODULE
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-	#define SPI_SPEED_READ SPI_CLOCK_DIV8
-  #elif defined(__MSP430MCU__)//MSP430???
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-	#define SPI_SPEED_READ SPI_CLOCK_DIV4
-  #elif defined(TMS320F28069)//C2000???
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-	#define SPI_SPEED_READ SPI_CLOCK_DIV4
-  #elif defined(__CC3200R1M1RGC__)//CC3200???
-	#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-	#define SPI_SPEED_READ SPI_CLOCK_DIV4
-  #endif
+	#if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
+		#define NEEDS_SET_MODULE
+	#elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
+		#define NEEDS_SET_MODULE
+	#elif defined(__MSP430MCU__)//MSP430???
+		// don't know
+	#elif defined(TMS320F28069)//C2000???
+		// don't know
+	#elif defined(__CC3200R1M1RGC__)//CC3200???
+		// don't know
+	#endif
 	static uint8_t SPImodule;
 	static uint8_t SPDR;
 #else
@@ -135,7 +146,7 @@ Rounded rects (filled)   42062	30125
 
 enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480,RA8875_640x480 };
 enum RA8875modes { GRAPHIC,TEXT };
-enum RA8875tcursor { NORMAL,BLINK };
+enum RA8875tcursor { NOCURSOR,IBEAM,UNDER,BLOCK };
 enum RA8875tsize { X16,X24,X32 };
 enum RA8875fontSource { INT, EXT };
 enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
@@ -191,10 +202,9 @@ class RA8875 : public Print {
 	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);
 //--------------Text functions ------------------------- 
 	//----------cursor stuff................
-	//to calculate max column. (screenWidth/fontWidth)-1
-	//to calculate max row.    (screenHeight/fontHeight)-1
-	void		showCursor(boolean cur,enum RA8875tcursor c=BLINK);//show text cursor, select cursor typ (NORMAL,BLINK)
+	//void		showCursor(boolean cur,enum RA8875tcursor c=BLINK);//show text cursor, select cursor typ (NORMAL,BLINK)
 	void 		setCursorBlinkRate(uint8_t rate);//0...255 0:faster
+	void 		showCursor(enum RA8875tcursor c,bool blink);
 	void    	setCursor(uint16_t x, uint16_t y);
 	void 		getCursor(uint16_t *x, uint16_t *y);//update the library _cursorX,_cursorY internally
 				//and get the current data, this is useful sometime because the chip track cursor internally only
@@ -203,11 +213,14 @@ class RA8875 : public Print {
 	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);
 	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//0...255
 	void    	setFontScale(uint8_t scale);//0..3
+	void    	setFontScale(uint8_t vscale,uint8_t hscale);//0..3
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
 	void 		setFontRotate(boolean rot);//true = 90 degrees
 	void 		setFontInterline(uint8_t pix);//0...63 pix
 	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
+	uint8_t 	getFontWidth(boolean inColums=false);
+	uint8_t 	getFontHeight(boolean inRows=false);
 	//----------Font Selection and related..............................
 	void		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
@@ -252,7 +265,7 @@ class RA8875 : public Print {
 	void 		BTE_enable(void);//TESTING
 	
 //-------------- LAYERS -----------------------------------------
-	boolean 	useLayers(boolean on);
+	void 		useLayers(boolean on);
 	void		writeTo(enum RA8875writes d);//TESTING
 	void 		layerEffect(enum RA8875boolean efx);
 	void 		layerTransparency(uint8_t layer1,uint8_t layer2);
@@ -273,9 +286,7 @@ class RA8875 : public Print {
 	//thanks to Adafruit for this!
     inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
 	void    	writeCommand(uint8_t d);
-	//void    	writeData(uint8_t data);
 	void  		writeData16(uint16_t data);
-	//void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -291,12 +302,8 @@ using Print::write;
  private:
 	//------------- VARS ----------------------------
 
-	#if defined(SPI_HAS_TRANSACTION)
-		uint32_t	_maxspeed_write;//this is the max SPI speed in write
-		uint32_t	_maxspeed_read;//this is the max SPI speed in read
-		#if defined(__MKL26Z64__)
-			uint8_t _SPIint;
-		#endif
+	#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)
+		uint8_t _SPIint;
 	#endif
 	uint8_t 		 		_cs, _rst;
 	// Touch Screen vars ---------------------
