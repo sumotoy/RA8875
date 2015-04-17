@@ -18,6 +18,8 @@ brightness	KEYWORD2
 changeMode	KEYWORD2
 setColorBpp	KEYWORD2
 getColorBpp	KEYWORD2
+setRotation	KEYWORD2
+getRotation	KEYWORD2
 setActiveWindow	KEYWORD2
 setForegroundColor	KEYWORD2
 setBackgroundColor	KEYWORD2
@@ -83,6 +85,7 @@ writeCommand	KEYWORD2
 writeData16	KEYWORD2
 setX	KEYWORD2
 setY	KEYWORD2
+Color565	KEYWORD2
 
 
 #######################################

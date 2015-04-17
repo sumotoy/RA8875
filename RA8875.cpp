@@ -114,6 +114,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_fontSource = INT;
 	_fontFullAlig = false;
 	_fontRotation = false;
+	_rotation = 0;
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
 	_textCursorStyle = NOCURSOR;
@@ -172,7 +173,20 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 		_touchPin = 255;
 		_clearTInt = false;
 		_touchEnabled = false;
-		_tsAdcMinX = 0; _tsAdcMinY = 0; _tsAdcMaxX = 1024; _tsAdcMaxY = 1024;
+		if(!touchCalibrated()) {
+			_tsAdcMinX = 0; 
+			_tsAdcMinY = 0; 
+			_tsAdcMaxX = 1024; 
+			_tsAdcMaxY = 1024;
+		} else {
+			//We have a valid calibration in _utilities\RA8875Calibration.h
+			//Note that low may be a smaller value than high
+			//These values may be updated by any rotation/orientation setter.
+			_tsAdcMinX = TOUCSRCAL_XLOW;
+			_tsAdcMinY = TOUCSRCAL_YLOW;
+			_tsAdcMaxX = TOUCSRCAL_XHIGH;
+			_tsAdcMaxY = TOUCSRCAL_YHIGH;
+		}
 	#else
 /*	Touch Panel Control Register 0     [0x70]
 	7: 0(disable, 1:(enable)
@@ -336,7 +350,6 @@ void RA8875::initialize(uint8_t initIndex) {
 		writeData(RA8875_PWRR_NORMAL);
 		delay(200);
 	}
-	
 
 	//set the sysClock
 	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);////PLL Control Register 1
@@ -364,7 +377,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	writeReg(RA8875_VSTR0,initStrings[initIndex][12]);////VSYNC Start Position Register 0
 	writeReg(RA8875_VSTR1,initStrings[initIndex][13]);////VSYNC Start Position Register 1
 	writeReg(RA8875_VPWR,initStrings[initIndex][14]);////VSYNC Pulse Width Register
-	setActiveWindow(0,(_width-1),0,(_height-1));//set the active winsow
+	setActiveWindow(0,(_width-1),0,(_height-1));//set the active window
 	clearMemory(true);//clear FULL memory
 	//end of hardware initialization
 	delay(10); //100
@@ -520,7 +533,7 @@ void RA8875::changeMode(enum RA8875modes m) {
 }
 
 /**************************************************************************/
-/*!		Upload user custom cahr or symbol to CGRAM, max 255
+/*!		Upload user custom char or symbol to CGRAM, max 255
 		Parameters:
 		symbol[]: an 8bit x 16 char in an array. Must be exact 16 bytes
 		address: 0...255 the address of the CGRAM where to store the char
@@ -528,18 +541,20 @@ void RA8875::changeMode(enum RA8875modes m) {
 /**************************************************************************/
 void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address) {
 	bool modeChanged = false;
+	uint8_t tempMWCR1 = readReg(RA8875_MWCR1);
 	uint8_t i;
-	if (_currentMode != GRAPHIC) {//was in text!
+	if (_currentMode != GRAPHIC) {     //was in text!
 		changeMode(GRAPHIC);
 		modeChanged = true;
 	}
 	writeReg(RA8875_CGSR,address);
-	writeTo(CGRAM);
+	writeTo(CGRAM);                    //this clobbers MWCR1
 	writeCommand(RA8875_MRWC);
 	for (i=0;i<16;i++){
 		writeData(symbol[i]);
 	}
-	if (modeChanged) changeMode(TEXT);//back to text
+	writeReg(RA8875_MWCR1, tempMWCR1); //restore the previous writeTo
+	if (modeChanged) changeMode(TEXT); //back to text
 }
 
 /**************************************************************************/
@@ -1038,56 +1053,42 @@ void RA8875::setFontSpacing(uint8_t spc){//ok
 */
 /**************************************************************************/
 void RA8875::textWrite(const char* buffer, uint16_t len) {
-	//bool goBack = false;
-	uint8_t start = 0;
-	uint16_t i,ny;
+	uint16_t i,v;
 	uint8_t t1,t2;
 	if (_currentMode == GRAPHIC){
 		changeMode(TEXT);
-		//goBack = true;
 	}
 	if (len == 0) len = strlen(buffer);
-	if (len > 0 && ((buffer[0] == '\r') && (buffer[1] == '\n'))){//got a println?
-		//get current y
-		t1 = readReg(RA8875_F_CURYL);
-		t2 = readReg(RA8875_F_CURYH);
-		//calc new line y
-		ny = (t2 << 8) | (t1 & 0xFF);
-		//update y
-		ny = ny + (16 + (16*_textVScale))+_fontInterline;//TODO??
-		setCursor(0,ny);
-		start = 2;
-	#if defined(ENERGIA)//oops! Energia 013 seems have a bug here! Should send a \r but only \n given!
-		} else if (len > 0 && ((buffer[0] == '\n'))){
-			//get current y
-			t1 = readReg(RA8875_F_CURYL);
-			t2 = readReg(RA8875_F_CURYH);
-			//calc new line y
-			ny = (t2 << 8) | (t1 & 0xFF);
-			//update y
-			ny = ny + (16 + (16*_textVScale))+_fontInterline;//TODO??
-			setCursor(0,ny);
-			start = 1;
-		}
-	#else
-		}
-	#endif
 	writeCommand(RA8875_MRWC);
-	for (i=start;i<len;i++){
-		if (buffer[i] == '\n' || buffer[i] == '\r') {
-			//_cursor_y += textsize * 8;
-			//_cursor_x  = 0;
-		} else {
-			writeData(buffer[i]);
-			waitBusy(0x80);
+	for (i=0;i<len;i++){
+		switch(buffer[i]) {
+			case '\r':
+				//Ignore carriage-return, only detect \n newline 
+			break;
+			case '\n':
+				//Move cursor down - X or Y depends on the rotation
+				if(_rotation == 0 || _rotation == 2) {
+					//y coordinate is vertical
+					t1 = readReg(RA8875_F_CURYL);
+					t2 = readReg(RA8875_F_CURYH);
+					v = (t2 << 8) | (t1 & 0xFF);
+					v += (16 + (16*_textVScale))+_fontInterline;
+					setCursor(0,v);
+				} else {
+					//x coordinate is vertical
+					t1 = readReg(RA8875_F_CURXL);
+					t2 = readReg(RA8875_F_CURXH);
+					v = (t2 << 8) | (t1 & 0xFF);
+					v += (16 + (16*_textVScale))+_fontInterline;
+					setCursor(v,0);
+				} 
+			break;
+			default:
+				//write a normal char
+				writeData(buffer[i]);
+				waitBusy(0x80);
 		}
-/* #if defined(__AVR__)
-		if (_textScale > 1) delay(1);
-#elif defined(__arm__)
-		if (_textScale > 0) delay(1);//Teensy3 
-#endif */
 	}
-	//if (goBack) changeMode(GRAPHIC);
 }
 
 /**************************************************************************/
@@ -1240,10 +1241,20 @@ boolean RA8875::waitPoll(uint8_t regname, uint8_t waitflag) {
 */
 /**************************************************************************/
 void RA8875::waitBusy(uint8_t res) {
+	//Found this wasn't working properly on the Adafruit 480x272 4.3" display
+	//It would just never come up as ready during the initialise.
+	//clearMemory(true) calls waitBusy(0x80), looking for the memory read/write busy bit.
+	//The status returned from the display was initially 0xC0 which the 
+	//datasheet says corresponds to memory busy and BTE (block transfer) busy.
+	//After about 5ms, this would change to 0x80 and stay there. It
+	//never reported un-busy so this function would hang.
+	//Putting in the timeout allowed the example programs to run and it works!
 	uint8_t w; 	
+	unsigned long start = millis();
 	do {
-	if (res == 0x01) writeCommand(RA8875_DMACR);//dma
-	w = readStatus();
+		if (res == 0x01) writeCommand(RA8875_DMACR);//dma
+		w = readStatus();
+		if(millis()-start > 10) return;//expect initialization to take 5ms, but give it some leeway.
 	} while ((w & res) == res);
 }
 
@@ -2203,7 +2214,7 @@ void RA8875::touchEnable(boolean enabled) {
 			writeReg(RA8875_TPCR0, _TPCR0Reg);
 			_touchEnabled = false;
 		}
-	}
+	} 
 }
 
 /**************************************************************************/
@@ -2262,6 +2273,9 @@ boolean RA8875::touched(void) {
 	  Parameters:
 	  x:out 0...1024
 	  Y:out 0...1024
+	  Modified 14/4/15 M Sandercock: remove range checking and inversions
+	  
+	  [private]
 */
 /**************************************************************************/
 void RA8875::readTouchADC(uint16_t *x, uint16_t *y) {
@@ -2270,37 +2284,15 @@ void RA8875::readTouchADC(uint16_t *x, uint16_t *y) {
 	uint8_t temp = readReg(RA8875_TPXYL);
 	tx <<= 2;
 	ty <<= 2;
-	tx |= temp & 0x03;        // get the bottom x bits
-	ty |= (temp >> 2) & 0x03; // get the bottom y bits
-	#if defined (INVERTETOUCH_X)
-		tx = 1024 - tx;
-	#endif
-	
-	#if defined (INVERTETOUCH_Y)
-		ty = 1024 - ty;
-	#endif
-	//calibrate???
-	  #if defined(TOUCSRCAL_XLOW) && (TOUCSRCAL_XLOW != 0)
-		_tsAdcMinX = TOUCSRCAL_XLOW;
-		if (tx < TOUCSRCAL_XLOW) tx = TOUCSRCAL_XLOW;
-	  #endif
-	  
-	  #if defined(TOUCSRCAL_YLOW) && (TOUCSRCAL_YLOW != 0)
-		_tsAdcMinY = TOUCSRCAL_YLOW;
-		if (ty < TOUCSRCAL_YLOW) ty = TOUCSRCAL_YLOW;
-	  #endif
-	  
-	  #if defined(TOUCSRCAL_XHIGH) && (TOUCSRCAL_XHIGH != 0)
-		_tsAdcMaxX = TOUCSRCAL_XHIGH;
-		if (tx > TOUCSRCAL_XHIGH) tx = TOUCSRCAL_XHIGH;
-	  #endif
-	  
-	  #if defined(TOUCSRCAL_YHIGH) && (TOUCSRCAL_YHIGH != 0)
-		_tsAdcMaxY = TOUCSRCAL_YHIGH;
-		if (ty > TOUCSRCAL_YHIGH) ty = TOUCSRCAL_YHIGH;
-	  #endif
-	 *x = tx;
-	 *y = ty;
+	tx |= temp & 0x03;        // get the bottom x bits from temp
+	ty |= (temp >> 2) & 0x03; // get the bottom y bits from temp
+	//Note: removed inversion and range checking here - do it inside readTouchPixel()
+    *x = tx;
+	*y = ty;
+	Serial.print('R');
+	Serial.print(tx);
+	Serial.print(',');
+	Serial.println(ty);
 }
 
 /**************************************************************************/
@@ -2308,6 +2300,7 @@ void RA8875::readTouchADC(uint16_t *x, uint16_t *y) {
 	  Parameters:
 	  x:out 0...1024
 	  Y:out 0...1024
+	  Odd that this is called 'Raw' when it applies the calibrations.
 */
 /**************************************************************************/
 void RA8875::touchReadRaw(uint16_t *x, uint16_t *y) {
@@ -2331,13 +2324,18 @@ void RA8875::touchReadRaw(uint16_t *x, uint16_t *y) {
 	  Parameters:
 	  x:out 0...screen width  (pixels)
 	  Y:out 0...screen Height (pixels)
+	  Check for out-of-bounds here as touches near the edge of the screen
+	  can be safely mapped to the nearest point of the screen.
+	  If the screen is rotated, then the min and max will be modified elsewhere
+	  so that this always corresponds to screen pixel coordinates.
 */
 /**************************************************************************/
 void RA8875::touchReadPixel(uint16_t *x, uint16_t *y) {
 	uint16_t tx,ty;
+	Serial.print("Y cal=");Serial.print(_tsAdcMinY);Serial.print("-");Serial.print(_tsAdcMaxY); Serial.print("  ");
 	readTouchADC(&tx,&ty);
-	*x = map(tx,_tsAdcMinX,_tsAdcMaxX,0,_width-1);
-	*y = map(ty,_tsAdcMinY,_tsAdcMaxY,0,_height-1);
+	*x = constrain(map(tx,_tsAdcMinX,_tsAdcMaxX,0,_width-1),0,_width-1);
+	*y = constrain(map(ty,_tsAdcMinY,_tsAdcMaxY,0,_height-1),0,_height-1);
 	clearTouchInt();
 }
 
@@ -2530,6 +2528,115 @@ void RA8875::scanDirection(boolean invertH,boolean invertV){
 	invertH == true ? _DPCRReg |= (1 << 3) : _DPCRReg &= ~(1 << 3);
 	invertV == true ? _DPCRReg |= (1 << 2) : _DPCRReg &= ~(1 << 2);
 	writeReg(RA8875_DPCR,_DPCRReg);
+}
+
+/**************************************************************************/
+/*!
+      Change the rotation of the screen
+	    Graphics and text will be rotated. Anything already on the screen
+		    will be moved to the new orientation but mirrored if changing
+			from portrait to landscape. 
+	    Use same rotation numbers as other Adafruit displays.
+		Coorinates are flipped, but not rotated:
+			X is always the long axis of the screen
+			Y is always the short axis of the screen
+			Therefore _width and _height don't change
+			(0,0) is top left for your orientation
+	    Note this also flips the touchReadPixel() calibration to match.
+	  Parameters:
+	  rotation:
+	    0 = default, connector to bottom
+		1 = connector to right
+		2 = connector to top
+		3 = connector to left
+*/
+/**************************************************************************/
+void RA8875::setRotation(uint8_t rotation){
+	_rotation = rotation % 4; //limit to the range 0-3
+	switch (_rotation)
+	{
+	case 0:
+		//default, connector to bottom
+		scanDirection(0,0);
+		setFontRotate(false);
+		#if !defined(USE_EXTERNALTOUCH)
+			if(!touchCalibrated()) {
+				_tsAdcMinX = 0; 
+				_tsAdcMinY = 0; 
+				_tsAdcMaxX = 1024; 
+				_tsAdcMaxY = 1024;
+			} else {
+				_tsAdcMinX = TOUCSRCAL_XLOW;
+				_tsAdcMinY = TOUCSRCAL_YLOW;
+				_tsAdcMaxX = TOUCSRCAL_XHIGH;
+				_tsAdcMaxY = TOUCSRCAL_YHIGH;
+			}
+		#endif
+    break;
+	case 1:
+		//connector to right
+		scanDirection(1,0);
+		setFontRotate(true);
+		#if !defined(USE_EXTERNALTOUCH)
+			if(!touchCalibrated()) {
+				_tsAdcMinX = 1024; 
+				_tsAdcMinY = 0; 
+				_tsAdcMaxX = 0; 
+				_tsAdcMaxY = 1024;
+			} else {
+				_tsAdcMinX = TOUCSRCAL_XHIGH;
+				_tsAdcMinY = TOUCSRCAL_YLOW;
+				_tsAdcMaxX = TOUCSRCAL_XLOW;
+				_tsAdcMaxY = TOUCSRCAL_YHIGH;
+			}
+		#endif
+    break;
+	case 2:
+		//connector to top
+		scanDirection(1,1);
+		setFontRotate(false);
+		#if !defined(USE_EXTERNALTOUCH)
+			if(!touchCalibrated()) {
+				_tsAdcMinX = 1024; 
+				_tsAdcMinY = 1024; 
+				_tsAdcMaxX = 0; 
+				_tsAdcMaxY = 0;
+			} else {
+				_tsAdcMinX = TOUCSRCAL_XHIGH;
+				_tsAdcMinY = TOUCSRCAL_YHIGH;
+				_tsAdcMaxX = TOUCSRCAL_XLOW;
+				_tsAdcMaxY = TOUCSRCAL_YLOW;
+			}
+		#endif
+    break;
+	case 3:
+		//connector to left
+		scanDirection(0,1);
+		setFontRotate(true);
+		#if !defined(USE_EXTERNALTOUCH)
+			if(!touchCalibrated()) {
+				_tsAdcMinX = 0; 
+				_tsAdcMinY = 1024; 
+				_tsAdcMaxX = 1024; 
+				_tsAdcMaxY = 0;
+			} else {
+				_tsAdcMinX = TOUCSRCAL_XLOW;
+				_tsAdcMinY = TOUCSRCAL_YHIGH;
+				_tsAdcMaxX = TOUCSRCAL_XHIGH;
+				_tsAdcMaxY = TOUCSRCAL_YLOW;
+			}
+		#endif
+    break;
+	}
+}
+
+/**************************************************************************/
+/*!
+      Get rotation setting
+*/
+/**************************************************************************/
+uint8_t RA8875::getRotation(){
+	return _rotation;
 }
 
 /**************************************************************************/
