@@ -18,6 +18,8 @@ brightness	KEYWORD2
 changeMode	KEYWORD2
 setColorBpp	KEYWORD2
 getColorBpp	KEYWORD2
+setRotation	KEYWORD2
+getRotation	KEYWORD2
 setActiveWindow	KEYWORD2
 setForegroundColor	KEYWORD2
 setBackgroundColor	KEYWORD2

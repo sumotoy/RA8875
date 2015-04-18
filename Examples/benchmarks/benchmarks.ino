@@ -30,9 +30,9 @@ RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
 
 void setup() {
   Serial.begin(38400);
-  long unsigned debug_start = millis ();
-  while (!Serial && ((millis () - debug_start) <= 5000)) ;
-  tft.begin(RA8875_480x272);
+  //long unsigned debug_start = millis ();
+  //while (!Serial && ((millis () - debug_start) <= 5000)) ;
+  tft.begin(RA8875_800x480);
 
   Serial.println(F("Benchmark                Time (microseconds)"));
   Serial.print(F("Screen fill              "));
@@ -98,5 +98,4 @@ void setup() {
 void loop(void) {
 
 }
-
 

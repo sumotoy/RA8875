@@ -106,22 +106,26 @@ unsigned long testRects(uint16_t color) {
   return micros() - start;
 }
 
-unsigned long testFilledRects(uint16_t color1, uint16_t color2){
+
+unsigned long testFilledRects(uint16_t color1,uint16_t color2) {
   unsigned long start;
   unsigned long t = 0;
-  uint16_t i;
-  uint16_t nx;
-  uint16_t ny;
-  tft.clearScreen();
-	for (i=tft.width()-1; i > 6; i-=6){
-          nx = (tft.width()/2) - (i/2);
-          ny = (tft.height()/2) - (i/2);
-            start = micros();
-		tft.fillRect(nx, ny , i, i, color1);
-            t    += micros() - start;
-		tft.drawRect(nx, ny , i, i, color2);
-	}
-return t;
+  int           n, i, i2,
+  cx = tft.width()  / 2,
+  cy = tft.height() / 2;
+  tft.fillScreen();
+  n     = min(tft.width(), tft.height());
+  start = micros();
+  for(i=2; i<n; i+=6) {
+    i2 = i / 2;
+    tft.fillRect(cx-i2, cy-i2, i, i, color1);
+  }
+  t = micros() - start;
+  for(i=2; i<n; i+=6) {
+    i2 = i / 2;
+    tft.drawRect(cx-i2, cy-i2, i, i, color2);
+  }
+  return t;
 }
 
 
@@ -140,7 +144,7 @@ unsigned long testFilledCircles(uint8_t radius, uint16_t color1,uint16_t color2)
       //tft.drawCircle(x, y, radius, color2);
     }
   }
-return micros() - start;
+  return micros() - start;
 }
 
 unsigned long testCircles(uint8_t radius, uint16_t color) {
@@ -180,7 +184,7 @@ unsigned long testFilledTriangles(uint16_t color1,uint16_t color2) {
   uint16_t cx = (tft.width() / 2) - 1;
   uint16_t cy = (tft.height() / 2) - 1;
   uint16_t n = min(cx,cy);
-tft.clearScreen();
+  tft.clearScreen();
   start = micros();
   for(i=n; i>10; i-=5) {
     start = micros();

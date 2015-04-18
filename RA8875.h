@@ -2,7 +2,8 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b12 introduced Automatic text/graphic mode (to be stested deeply)
+	Version:0.69b15 bug fixes and adds from M.Sanderscock
+	Added alternative pins for SPI (only Teensy 3.x or LC)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -173,8 +174,10 @@ static const uint8_t _RA8875colorMask[4] = {11,5,13,8};//for color masking, firs
 class RA8875 : public Print {
  public:
 //------------- Instance -------------------------
-	#if defined(__MKL26Z64__)
-		RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);//only Teensy LC
+	//#if defined(__MKL26Z64__)
+	//	RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);//only Teensy LC
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+		RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t mosi_pin=11,uint8_t sclk_pin=13,uint8_t miso_pin=12);
 	#else	
 		RA8875(const uint8_t CS, const uint8_t RST=255);//all the others
 	#endif
@@ -190,6 +193,8 @@ class RA8875 : public Print {
 	void 		scanDirection(boolean invertH,boolean invertV);
 	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
 	uint8_t 	getColorBpp();//get the current display color space (return 8 or 16)
+	void		setRotation(uint8_t rotation); //rotate text and graphics
+	uint8_t		getRotation(); //return the current rotation 0-3
 //--------------area & color -------------------------
 	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);
 	uint16_t 	width(void);
@@ -237,7 +242,7 @@ class RA8875 : public Print {
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);//ok
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);//ok
-	void    	fillScreen(uint16_t color);//ok
+	void    	fillScreen(uint16_t color=0x0000);//ok
 	void		clearScreen(uint16_t color=RA8875_BLACK);
 	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
@@ -302,11 +307,16 @@ using Print::write;
 
  private:
 	//------------- VARS ----------------------------
-
+	
+	/*
 	#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)
 		uint8_t _SPIint;
 	#endif
+	*/
 	uint8_t 		 		_cs, _rst;
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+		uint8_t _miso, _mosi, _sclk;
+	#endif
 	// Touch Screen vars ---------------------
 	#if !defined(USE_EXTERNALTOUCH)
 	uint8_t					_touchPin;
@@ -328,6 +338,7 @@ using Print::write;
 	uint8_t					_fontSpacing;
 	bool					_fontFullAlig;
 	bool					_fontRotation;
+	uint8_t					_rotation;
 	bool					_extFontRom;
 	uint8_t					_fontInterline;
 	enum RA8875extRomFamily _fontFamily;
