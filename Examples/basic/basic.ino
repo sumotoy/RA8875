@@ -55,7 +55,7 @@ Set MISO to true will switch MISO from pin 12 to 8
 */
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy
 //or
-//RA8875 tft = RA8875(RA8875_CS,255);//Teensy (not using rst pin)
+//RA8875 tft = RA8875(RA8875_CS);//Teensy (not using rst pin)
 /*
 an example for using it with Audio Shield...
 CS: set to 2,20,21 because are not used by audio shield
@@ -69,19 +69,38 @@ MISO:12 (classic pin)
 #else
 
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's
-//RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's no rst
+//RA8875 tft = RA8875(RA8875_CS);//arduino's no rst
 #endif
 
 
 void setup() 
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
+  Serial.begin(38400);
+  //long unsigned debug_start = millis ();
+  //while (!Serial && ((millis () - debug_start) <= 5000)) ;
   Serial.println("RA8875 start");
+/*
+If you have an Adafruit RA8875 board + display choose:
+Adafruit_480x272
+Adafruit_640x480
+Adafruit_800x480
+If you have any other display you have to choose:
+RA8875_320x240
+RA8875_480x272
+RA8875_800x480
+RA8875_640x480
+*/
+  tft.begin(RA8875_800x480);
+/*
+By default the library init display at 16bit color depth but
+you can optionally force the display to work at 8 bit:
 
-  tft.begin(RA8875_480x272);
-
-
+tft.begin(RA8875_480x272,8);//force obit color depth
+*/
+/*
+Now that board it's inited you can use any draw or text command:
+*/
+tft.print("Hello World!");
 }
 
 void loop() 

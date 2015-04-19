@@ -2,8 +2,9 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b15 bug fixes and adds from M.Sanderscock
+	Version:0.69b16 bug fixes and adds from M.Sanderscock
 	Added alternative pins for SPI (only Teensy 3.x or LC)
+	Corrected setRotation and added absolute display W&H to support rotation
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -111,7 +112,18 @@ Rounded rects (outline)  8298
 Rounded rects (filled)   29468
 --------------------------------
 
-
+	color = (color << 8) | (color >> 8);    // swap
+    uint8_t blue  = ((color & 0x001F) << 3) | (color & 0x07)
+    uint8_t green = ((color & 0x07E0) >> 3) | ((color >> 9) & 0x03);
+    uint8_t red   = ((color & 0xF800) >> 8) | ((color >> 13) & 0x07);
+	
+uint16_t RA8875::rgbTo16(uint8_t r, uint8_t g, uint8_t b){
+    uint16_t color;
+    color  = ((r >> 3) <<  0);
+    color |= ((g >> 2) <<  5);
+    color |= ((b >> 3) << 11);
+	return color;
+}
 */
 
 #ifndef _RA8875MC_H_
@@ -145,7 +157,7 @@ Rounded rects (filled)   29468
   #include <math.h>
 #endif
 
-enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480,RA8875_640x480 };
+enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480 };
 enum RA8875modes { GRAPHIC,TEXT };
 enum RA8875tcursor { NOCURSOR,IBEAM,UNDER,BLOCK };
 enum RA8875tsize { X16,X24,X32 };
@@ -183,42 +195,45 @@ class RA8875 : public Print {
 	#endif
 //------------- Setup -------------------------
 	void 		begin(const enum RA8875sizes s,uint8_t colors=16);
+	//(RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480) , (8/16 bit)
 //------------- Hardware related -------------------------
-	void    	displayOn(boolean on);
-	void    	sleep(boolean sleep);
+	void    	displayOn(boolean on);//turn diplay on/off
+	void    	sleep(boolean sleep);//put display in sleep or not
 	void 		brightness(uint8_t val);//ok
-	void 		changeMode(enum RA8875modes m);//GRAPHIC,TEXT (this soon will be private!)
-	uint8_t 	readStatus(void);
-	void		clearMemory(boolean full);
-	void 		scanDirection(boolean invertH,boolean invertV);
-	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
-	uint8_t 	getColorBpp();//get the current display color space (return 8 or 16)
+	uint8_t 	readStatus(void);//used to verify when an operation has concluded
+	void		clearMemory(boolean full);//clear the RA8875 internal buffer (fully or current layer)
+//------------ Low Level functions -------------------------
+	void    	writeCommand(uint8_t d);
+	void  		writeData16(uint16_t data);
+//--------------area -------------------------------------
+	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);//The working area where to draw on
+	uint16_t 	width(void) const;//the phisical display width
+	uint16_t 	height(void) const;//the phisical display height
 	void		setRotation(uint8_t rotation); //rotate text and graphics
 	uint8_t		getRotation(); //return the current rotation 0-3
-//--------------area & color -------------------------
-	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);
-	uint16_t 	width(void);
-	uint16_t 	height(void);
-	void		setForegroundColor(uint16_t color);//OK
-	void		setForegroundColor(uint8_t R,uint8_t G,uint8_t B);
-	void		setBackgroundColor(uint16_t color);//OK
-	void		setBackgroundColor(uint8_t R,uint8_t G,uint8_t B);
-	void 		setTrasparentColor(uint16_t color);//OK
-	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);
-//--------------Text functions ------------------------- 
-	//----------cursor stuff................
-	//void		showCursor(boolean cur,enum RA8875tcursor c=BLINK);//show text cursor, select cursor typ (NORMAL,BLINK)
-	void 		setCursorBlinkRate(uint8_t rate);//0...255 0:faster
-	void 		showCursor(enum RA8875tcursor c,bool blink);
-	void    	setCursor(uint16_t x, uint16_t y);
+//--------------color -------------------------------------
+	void		setForegroundColor(uint16_t color);//color of objects in 16bit
+	void		setForegroundColor(uint8_t R,uint8_t G,uint8_t B);//color of objects in 8+8+8bit
+	void		setBackgroundColor(uint16_t color);//color of objects background in 16bit
+	void		setBackgroundColor(uint8_t R,uint8_t G,uint8_t B);//color of objects background in 8+8+8bit
+	void 		setTrasparentColor(uint16_t color);//the current transparent color in 16bit
+	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);//the current transparent color in 8+8+8bit
+	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
+	uint8_t 	getColorBpp();//get the current display color space (return 8 or 16)
+	inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
+//--------------Cursor Stuff----------------------------
+	void 		setCursorBlinkRate(uint8_t rate);//set blink rate of the cursor 0...255 0:faster
+	void 		showCursor(enum RA8875tcursor c,bool blink);//show cursor(NOCURSOR,IBEAM,UNDER,BLOCK), default blinking
+	void    	setCursor(uint16_t x, uint16_t y);//set cursor position to write text
 	void 		getCursor(uint16_t *x, uint16_t *y);//update the library _cursorX,_cursorY internally
-				//and get the current data, this is useful sometime because the chip track cursor internally only
-	void    	setTextColor(uint16_t fColor, uint16_t bColor);
-	void 		setTextColor(uint16_t fColor);//transparent background
-	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);
-	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//0...255
-	void    	setFontScale(uint8_t scale);//0..3
-	void    	setFontScale(uint8_t vscale,uint8_t hscale);//0..3
+	//and get the current data, this is useful sometime because the chip track cursor internally only
+//--------------Text functions ------------------------- 
+	void    	setTextColor(uint16_t fColor, uint16_t bColor);//set text color + text background color
+	void 		setTextColor(uint16_t fColor);//set text color (backgroud will be transparent)
+	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);//upload user defined char as array at the address 0..255
+	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//show user uploaded char at the adrs 0...255
+	void    	setFontScale(uint8_t scale);//global font scale (w+h)
+	void    	setFontScale(uint8_t vscale,uint8_t hscale);//font scale separatred bu w and h
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
 	void 		setFontRotate(boolean rot);//true = 90 degrees
@@ -238,12 +253,11 @@ class RA8875 : public Print {
 	void 		setGraphicCursor(uint8_t cur);//0...7 Select a custom graphic cursor (you should upload first)
 	void 		showGraphicCursor(boolean cur);//show graphic cursor
 	//--------------- DRAW -------------------------
-	//void    	pushPixels(uint32_t num, uint16_t p);//push large number of pixels
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);//ok
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);//ok
-	void    	fillScreen(uint16_t color=0x0000);//ok
-	void		clearScreen(uint16_t color=RA8875_BLACK);
+	void    	fillScreen(uint16_t color=RA8875_BLACK);//fill the entire screen with a color(default black)
+	void		clearScreen(uint16_t color=RA8875_BLACK);//exact as fillScreen, used for compatibility
 	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
@@ -257,6 +271,12 @@ class RA8875 : public Print {
 	void    	fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
 	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);//ok
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
+//-------------- LAYERS -----------------------------------------
+	void 		useLayers(boolean on);//mainly used to turn of layers!
+	void		writeTo(enum RA8875writes d);//L1, L2, CGRAM, PATTERN, CURSOR
+	void 		layerEffect(enum RA8875boolean efx);//LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING
+	void 		layerTransparency(uint8_t layer1,uint8_t layer2);
+	uint8_t		getCurrentLayer(void); //return the current drawing layer. If layers are OFF, return 255
 //--------------- SCROLL ----------------------------------------
 	void        setScrollMode(enum RA8875scrollMode mode); // The experimentalist
 	void 		setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);
@@ -268,13 +288,6 @@ class RA8875 : public Print {
 	void	 	BTE_source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
 	void		BTE_ROP_code(unsigned char setx);//TESTING
 	void 		BTE_enable(void);//TESTING
-	
-//-------------- LAYERS -----------------------------------------
-	void 		useLayers(boolean on);
-	void		writeTo(enum RA8875writes d);//L1, L2, CGRAM, PATTERN, CURSOR
-	void 		layerEffect(enum RA8875boolean efx);//LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING
-	void 		layerTransparency(uint8_t layer1,uint8_t layer2);
-	uint8_t		getCurrentLayer(void); //return the current drawing layer. If layers are OFF, return 255
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
@@ -288,11 +301,6 @@ class RA8875 : public Print {
 	void 		touchReadPixel(uint16_t *x, uint16_t *y);//return pixels (0...width, 0...height)
 	boolean		touchCalibrated(void);//true if screen calibration it's present
 #endif
-//----------------------------------------------------
-	//thanks to Adafruit for this!
-    inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
-	void    	writeCommand(uint8_t d);
-	void  		writeData16(uint16_t data);
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -331,16 +339,16 @@ using Print::write;
 	bool					_unsupported;//if true, not supported board
 	bool					_inited;//true when init has been ended
 	uint16_t 		 		_width, _height;
+	uint16_t 		 		WIDTH, HEIGHT;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
-	uint8_t 		 		_textHScale;
-	uint8_t 		 		_textVScale;
-	bool					_textWrap;
+	uint8_t 		 		_textHScale, _textVScale;	 		
+	uint8_t					_rotation;
 	uint8_t					_fontSpacing;
+	uint8_t					_fontInterline;
+	bool					_textWrap;
 	bool					_fontFullAlig;
 	bool					_fontRotation;
-	uint8_t					_rotation;
 	bool					_extFontRom;
-	uint8_t					_fontInterline;
 	enum RA8875extRomFamily _fontFamily;
 	enum RA8875extRomType 	_fontRomType;
 	enum RA8875extRomCoding _fontRomCoding;
@@ -366,7 +374,7 @@ using Print::write;
 	// 		helpers-----------------------------
 	void 	checkLimitsHelper(int16_t &x,int16_t &y);//RA8875 it's prone to freeze with values out of range
 	void 	circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
-	void 	rectHelper  (int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
+	void 	rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
 	void 	triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
 	void 	ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled);
 	void 	curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled);
@@ -380,6 +388,9 @@ using Print::write;
 	#endif
 	void 	DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR);
 	void 	DMA_startAddress(unsigned long adrs);
+	//---------------- moved to private functions (before where public) ------------
+	void 	changeMode(enum RA8875modes m);//GRAPHIC,TEXT (now private)
+	void 	scanDirection(boolean invertH,boolean invertV);//(now private)
 	//---------------------------------------------------------
     // Low level access  commands ----------------------
 	void    	writeReg(uint8_t reg, uint8_t val);

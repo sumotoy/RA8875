@@ -166,6 +166,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 		_unsupported = true;
 		return;
 	}
+	WIDTH = _width;
+	HEIGHT = _height;
 	#if !defined(USE_EXTERNALTOUCH)
 		_touchPin = 255;
 		_clearTInt = false;
@@ -277,6 +279,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 		SPI.begin();
 	#endif 
 	*/
+	//------------------------------- Start SPI initialization ------------------------------------------
 	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 		if ((_mosi == 11 || _mosi == 7) && (_miso == 12 || _miso == 8) && (_sclk == 13 || _sclk == 14)) {//valid SPI pins?
 			SPI.setMOSI(_mosi);
@@ -352,7 +355,7 @@ void RA8875::initialize(uint8_t initIndex) {
 	{0x0B,0x02} //3 -> 800x480
 	};
 	
-	if (_rst > 254) {//soft reset
+	if (_rst > 254) {//No Hard Reset? time for soft reset
 		writeCommand(RA8875_PWRR);
 		writeData(RA8875_PWRR_SOFTRESET);
 		writeData(RA8875_PWRR_NORMAL);
@@ -503,7 +506,7 @@ void RA8875::setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB){
 		so you need to subtract 1!
 */
 /**************************************************************************/
-uint16_t RA8875::width(void) { return _width; }
+uint16_t RA8875::width(void) const { return _width; }
 
 /**************************************************************************/
 /*!		
@@ -512,7 +515,7 @@ uint16_t RA8875::width(void) { return _width; }
 		so you need to subtract 1!
 */
 /**************************************************************************/
-uint16_t RA8875::height(void) { return _height; }
+uint16_t RA8875::height(void) const { return _height; }
 
 /************************* Text Mode ***********************************/
 
@@ -1150,7 +1153,7 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 /**************************************************************************/
 void RA8875::setForegroundColor(uint16_t color){
 	uint8_t idx = 0;
-	if (_color_bpp < 16) idx = 2;//65K
+	if (_color_bpp < 16) idx = 2;//8bit
 	writeReg(RA8875_FGCR0,((color & 0xF800) >> _RA8875colorMask[idx]));
 	writeReg(RA8875_FGCR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));
 	writeReg(RA8875_FGCR2,(color & 0x001F));
@@ -1178,7 +1181,7 @@ void RA8875::setForegroundColor(uint8_t R,uint8_t G,uint8_t B){
 /**************************************************************************/
 void RA8875::setBackgroundColor(uint16_t color){
 	uint8_t idx = 0;
-	if (_color_bpp < 16) idx = 2;//65K
+	if (_color_bpp < 16) idx = 2;//8bit
 	writeReg(RA8875_BGCR0,((color & 0xF800) >> _RA8875colorMask[idx]));//11
 	writeReg(RA8875_BGCR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));//5
 	writeReg(RA8875_BGCR2,(color & 0x001F));
@@ -1207,7 +1210,7 @@ void RA8875::setBackgroundColor(uint8_t R,uint8_t G,uint8_t B){
 /**************************************************************************/
 void RA8875::setTrasparentColor(uint16_t color){
 	uint8_t idx = 0;
-	if (_color_bpp < 16) idx = 2;//65K
+	if (_color_bpp < 16) idx = 2;//8bit
 	writeReg(RA8875_BGTR0,((color & 0xF800) >> _RA8875colorMask[idx]));
 	writeReg(RA8875_BGTR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));
 	writeReg(RA8875_BGTR2,(color & 0x001F));
@@ -1729,15 +1732,14 @@ void RA8875::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color){
 void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color){
 	if (w < 1 || h < 1) return;//it cannot be!
 	//RA8875 it's not out-of-range tolerant so this is a workaround
-	
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
 	} else {			 //render as rect
 		rectHelper(x,y,(w+x)-1,(h+y)-1,color,false);//thanks the experimentalist
 	}
-	
-	//rectHelper(x,y,(x+w)-1,(y+h)-1,color,false);//thanks the experimentalist
 }
+
+
 
 /**************************************************************************/
 /*!
@@ -1757,8 +1759,9 @@ void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 	} else {			 //render as rect
 		rectHelper(x,y,(x+w)-1,(y+h)-1,color,true);//thanks the experimentalist
 	}
-	//rectHelper(x,y,(x+w)-1,(y+h)-1,color,true);//thanks the experimentalist
 }
+
+
 
 /**************************************************************************/
 /*!
@@ -1994,18 +1997,15 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 	if (w < 1) w = 1;
 	if (h < 1) h = 1;
 	
-	//if (w < 2 && h < 2) {//1 pixel, cannot draw a rect, draw Pixel instead
-	//	drawPixel(x,y,color);
-	//} else {//safe to draw a rect
-		lineAddressing(x,y,w,h);
+	lineAddressing(x,y,w,h);
 	
-		setForegroundColor(color);
+	setForegroundColor(color);
 
-		writeCommand(RA8875_DCR);
-		filled == true ? writeData(0xB0) : writeData(0x90);
-		waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
-	//}
+	writeCommand(RA8875_DCR);
+	filled == true ? writeData(0xB0) : writeData(0x90);
+	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 }
+
 
 
 /**************************************************************************/
@@ -2016,8 +2016,8 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 void RA8875::checkLimitsHelper(int16_t &x,int16_t &y){
 	if (x < 0) x = 0;
 	if (y < 0) y = 0;
-	if (x >= _width) x = _width - 1;//479
-	if (y >= _height) y = _height -1;//271
+	if (x >= _width) x = _width - 1;
+	if (y >= _height) y = _height -1;
 	x = x;
 	y = y;
 }
@@ -2225,7 +2225,7 @@ void RA8875::PWMsetup(uint8_t pw,boolean on, uint8_t clock) {
 	writeReg(reg,(set | (clock & 0xF)));
 }
 
-#if !defined(USE_EXTERNALTOUCH)
+#if !defined(USE_EXTERNALTOUCH)//useless if you are using a capacitive TS
 
 /**************************************************************************/
 /*!   Initialize support for on-chip resistive Touch Screen controller
@@ -2629,14 +2629,15 @@ void RA8875::scanDirection(boolean invertH,boolean invertV){
 /**************************************************************************/
 void RA8875::setRotation(uint8_t rotation){
 	_rotation = rotation % 4; //limit to the range 0-3
-	switch (_rotation)
-	{
+	switch (_rotation) {
 	case 0:
 		//default, connector to bottom
 		scanDirection(0,0);
 		setFontRotate(false);
+		_width = WIDTH;
+		_height = HEIGHT;
 		#if !defined(USE_EXTERNALTOUCH)
-			if(!touchCalibrated()) {
+			if (!touchCalibrated()) {
 				_tsAdcMinX = 0; 
 				_tsAdcMinY = 0; 
 				_tsAdcMaxX = 1024; 
@@ -2653,8 +2654,10 @@ void RA8875::setRotation(uint8_t rotation){
 		//connector to right
 		scanDirection(1,0);
 		setFontRotate(true);
+		_width = HEIGHT;
+		_height = WIDTH;
 		#if !defined(USE_EXTERNALTOUCH)
-			if(!touchCalibrated()) {
+			if (!touchCalibrated()) {
 				_tsAdcMinX = 1024; 
 				_tsAdcMinY = 0; 
 				_tsAdcMaxX = 0; 
@@ -2671,8 +2674,10 @@ void RA8875::setRotation(uint8_t rotation){
 		//connector to top
 		scanDirection(1,1);
 		setFontRotate(false);
+		_width = WIDTH;
+		_height = HEIGHT;
 		#if !defined(USE_EXTERNALTOUCH)
-			if(!touchCalibrated()) {
+			if (!touchCalibrated()) {
 				_tsAdcMinX = 1024; 
 				_tsAdcMinY = 1024; 
 				_tsAdcMaxX = 0; 
@@ -2689,8 +2694,10 @@ void RA8875::setRotation(uint8_t rotation){
 		//connector to left
 		scanDirection(0,1);
 		setFontRotate(true);
+		_width = HEIGHT;
+		_height = WIDTH;
 		#if !defined(USE_EXTERNALTOUCH)
-			if(!touchCalibrated()) {
+			if (!touchCalibrated()) {
 				_tsAdcMinX = 0; 
 				_tsAdcMinY = 1024; 
 				_tsAdcMaxX = 1024; 
@@ -2785,10 +2792,10 @@ void  RA8875::writeData(uint8_t data) {
 void  RA8875::writeData16(uint16_t data) {
 	startSend();
 	SPI.transfer(RA8875_DATAWRITE);
-	#if (ARDUINO >= 160) || TEENSYDUINO > 120
-		//SPI.transfer16(data);//until this has been fixed!
-		SPI.transfer(data >> 8);
-		SPI.transfer(data);
+	#if (ARDUINO >= 160) || TEENSYDUINO > 121
+		SPI.transfer16(data);//should be fixed already
+		//SPI.transfer(data >> 8);
+		//SPI.transfer(data);
 	#else
 		SPI.transfer(data >> 8);
 		SPI.transfer(data);
