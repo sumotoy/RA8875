@@ -110,6 +110,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
 	_currentMode = GRAPHIC;
+	_brightness = 255;
 	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
 	_textWrap = _DFT_RA8875_TEXTWRAP;
 	_textSize = X16;
@@ -353,12 +354,7 @@ void RA8875::initialize() {
 	
 
 	//set the sysClock
-	writeReg(RA8875_PLLC1,initStrings[_initIndex][0]);////PLL Control Register 1
-	delay(1);
-	writeReg(RA8875_PLLC2,initStrings[_initIndex][1]);////PLL Control Register 2
-	delay(1);
-	writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
-	delay(1);
+	setSysClock(initStrings[_initIndex][0],initStrings[_initIndex][1],initStrings[_initIndex][2]);
 	//color space setup
 	if (_color_bpp < 16){//256
 		writeReg(RA8875_SYSR,0x00);//256
@@ -384,9 +380,7 @@ void RA8875::initialize() {
     //now starts the first time setting up
 	displayOn(true);//turn On Display
 	delay(10);
-	if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(true);//only for adafruit stuff 
-	PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
-	PWMout(1,255);//turn on PWM1
+	backlight(true);
 	setCursorBlinkRate(DEFAULTCURSORBLINKRATE);//set default blink rate
 	//if (_textCursorStyle == BLINK) showCursor(false,BLINK); //set default text cursor type and turn off
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
@@ -399,16 +393,18 @@ void RA8875::initialize() {
 	writeReg(RA8875_F_CURYH,(0 >> 8));
 	delay(1);
 	//postburner PLL!
-	writeReg(RA8875_PLLC1,sysClockPar[_initIndex][0]);////PLL Control Register 1
-	delay(1);
-	writeReg(RA8875_PLLC2,sysClockPar[_initIndex][1]);////PLL Control Register 2
-	delay(1);
-	writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
-	delay(1);
-	//writeReg(RA8875_HDWR,initStrings[_initIndex][3]);// TESTTT
-	//delay(1);
-	
+	setSysClock(sysClockPar[_initIndex][0],sysClockPar[_initIndex][1],initStrings[_initIndex][2]);
 	_inited = true;//from here we will go at high speed!
+}
+
+
+void RA8875::setSysClock(uint8_t pll1,uint8_t pll2,uint8_t pixclk){
+	writeReg(RA8875_PLLC1,pll1);////PLL Control Register 1
+	delay(1);
+	writeReg(RA8875_PLLC2,pll2);////PLL Control Register 2
+	delay(1);
+	writeReg(RA8875_PCSR,pixclk);//Pixel Clock Setting Register
+	delay(1);
 }
 
 /**************************************************************************/
@@ -2182,7 +2178,8 @@ void RA8875::PWMout(uint8_t pw,uint8_t p) {
 */
 /**************************************************************************/
 void RA8875::brightness(uint8_t val) {
-	PWMout(1,val);
+	_brightness = val;
+	PWMout(1,_brightness);
 }
 
 /**************************************************************************/
@@ -2731,9 +2728,9 @@ void RA8875::displayOn(boolean on) {
 void RA8875::sleep(boolean sleep) {
 	if (_sleep != sleep){//only if it's needed
 		_sleep = sleep;
-		if (_sleep){
+		if (_sleep == true){
 			//1)turn off backlight
-			backlight(false);
+			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(false);
 			//2)decelerate SPI clock
 			#if defined(SPI_HAS_TRANSACTION)
 				settings = SPISettings(1000000, MSBFIRST, SPI_MODE3);
@@ -2741,31 +2738,19 @@ void RA8875::sleep(boolean sleep) {
 				SPI.setClockDivider(SPI_CLOCK_DIV16);
 			#endif
 			//3)set PLL to default
-			writeReg(RA8875_PLLC1,0x07);////PLL Control Register 1
-			delay(1);
-			writeReg(RA8875_PLLC2,0x03);////PLL Control Register 2
-			delay(1);
-			//4)display off(20ms)
-			writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF);
-			delay(20);
-			//4)sleep(100ms)
-			writeReg(RA8875_PWRR, RA8875_PWRR_SLEEP);
+			setSysClock(0x07,0x03,0x02);
+			//4)display off & sleep
+			writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF | RA8875_PWRR_SLEEP);
 			delay(100);
 		} else {
 			//1)wake up with display off(100ms)
 			writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF);
 			delay(100);
-			//2)bring back the pll(1+1ms)
-			writeReg(RA8875_PLLC1,initStrings[_initIndex][0]);////PLL Control Register 1
-			delay(1);
-			writeReg(RA8875_PLLC2,initStrings[_initIndex][1]);////PLL Control Register 2
-			delay(1);
-			//3)display on settings(20+20+20ms)
-			writeReg(RA8875_PCSR,0x02);//Pixel Clock Setting Register
+			//2)bring back the pll
+			setSysClock(initStrings[_initIndex][0],initStrings[_initIndex][1],initStrings[_initIndex][2]);
+			//writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
 			delay(20);
-			writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
-			delay(20);
-			writeReg(RA8875_PWRR, RA8875_PWRR_DISPON);//disp on
+			writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON);//disp on
 			delay(20);
 			//4)resume SPI speed
 			#if defined(SPI_HAS_TRANSACTION)
@@ -2773,16 +2758,11 @@ void RA8875::sleep(boolean sleep) {
 			#else
 				SPI.setClockDivider(SPI_CLOCK_DIV4);
 			#endif
-			//5)PLL at right speed now!
-			writeReg(RA8875_PLLC1,sysClockPar[_initIndex][0]);////PLL Control Register 1
-			delay(1);
-			writeReg(RA8875_PLLC2,sysClockPar[_initIndex][1]);////PLL Control Register 2
-			delay(1);
-			writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
-			delay(1);
+			//5)PLL afterburn!
+			setSysClock(sysClockPar[_initIndex][0],sysClockPar[_initIndex][1],initStrings[_initIndex][2]);
 			//5)turn on backlight
-			backlight(true);
-			writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL);
+			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(true);
+			//writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL);
 		}
 	}
 }
@@ -2791,9 +2771,9 @@ void RA8875::backlight(boolean on) {
 	if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) {
 		GPIOX(on);
 	} else {
-		if (on){
+		if (on == true){
 			PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
-			PWMout(1,255);//turn on PWM1
+			PWMout(1,_brightness);//turn on PWM1
 		} else {
 			PWMsetup(1,false, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
 		}

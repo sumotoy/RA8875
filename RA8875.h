@@ -371,9 +371,10 @@ using Print::write;
 	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
 	//color space-----------------------------
 	uint8_t					_color_bpp;//8=256, 16=64K colors
-
+	uint8_t					_brightness;
 	//		functions --------------------------
 	void 	initialize();
+	void 	setSysClock(uint8_t pll1,uint8_t pll2,uint8_t pixclk);
 	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
 	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
 	// 		helpers-----------------------------
