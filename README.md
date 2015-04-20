@@ -10,6 +10,7 @@ Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
 * EastRising RA8875 5"Inch (480x272) in SPI mode<br>
+* EastRising RA8875 7"Inch (800x480) in SPI mode<br>
 <b>NOTE</b>:If your do not work please ask here, I've <b>VERIFIED</b> that works.<br>
 
 A couple of users tested also with:
