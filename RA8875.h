@@ -2,9 +2,10 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b16 bug fixes and adds from M.Sanderscock
+	Version:0.69b17 bug fixes and adds from M.Sanderscock
 	Added alternative pins for SPI (only Teensy 3.x or LC)
 	Corrected setRotation and added absolute display W&H to support rotation
+	Sleep mode on/off sequence ok!
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -228,10 +229,10 @@ class RA8875 : public Print {
 	void 		getCursor(uint16_t *x, uint16_t *y);//update the library _cursorX,_cursorY internally
 	//and get the current data, this is useful sometime because the chip track cursor internally only
 //--------------Text functions ------------------------- 
-	void    	setTextColor(uint16_t fColor, uint16_t bColor);//set text color + text background color
-	void 		setTextColor(uint16_t fColor);//set text color (backgroud will be transparent)
 	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);//upload user defined char as array at the address 0..255
 	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//show user uploaded char at the adrs 0...255
+	void    	setTextColor(uint16_t fColor, uint16_t bColor);//set text color + text background color
+	void 		setTextColor(uint16_t fColor);//set text color (backgroud will be transparent)
 	void    	setFontScale(uint8_t scale);//global font scale (w+h)
 	void    	setFontScale(uint8_t vscale,uint8_t hscale);//font scale separatred bu w and h
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
@@ -338,6 +339,8 @@ using Print::write;
 	//----------------------------------------
 	bool					_unsupported;//if true, not supported board
 	bool					_inited;//true when init has been ended
+	uint8_t					_initIndex;
+	bool					_sleep;
 	uint16_t 		 		_width, _height;
 	uint16_t 		 		WIDTH, HEIGHT;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
@@ -368,7 +371,7 @@ using Print::write;
 	uint8_t					_color_bpp;//8=256, 16=64K colors
 
 	//		functions --------------------------
-	void 	initialize(uint8_t initIndex);
+	void 	initialize();
 	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
 	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
 	// 		helpers-----------------------------
@@ -418,7 +421,19 @@ using Print::write;
 	uint8_t		_SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
-
+	const uint8_t initStrings[4][15] = {
+	{0x07,0x03,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
+	{0x07,0x03,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
+	{0x07,0x03,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
+	{0x07,0x03,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01} //3 -> 800x480
+	};
+	// christoph settings = 60Mhz
+	const uint8_t sysClockPar[4][2] = {
+	{0x0B,0x02},//0 -> 320x240
+	{0x0B,0x02},//1 -> 480x272
+	{0x0B,0x02},//2 -> 640x480
+	{0x0B,0x02} //3 -> 800x480
+	};
 };
 
 #endif

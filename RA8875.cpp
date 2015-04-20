@@ -100,10 +100,10 @@ void RA8875::selectCS(uint8_t module) {
 */
 /**************************************************************************/
 void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
-	uint8_t initIndex;
 	_size = s;
 	_unsupported = false;
 	_inited = false;
+	_sleep = false;
 	_hasLayerLimits = false;
 	_maxLayers = 2;
 	_currentLayer = 0;
@@ -129,13 +129,13 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 		case RA8875_320x240:
 			_width = 320;
 			_height = 240;
-			initIndex = 0;
+			_initIndex = 0;
 		break;
 		case RA8875_480x272:
 		case Adafruit_480x272:
 			_width = 480;
 			_height = 272;
-			initIndex = 1;
+			_initIndex = 1;
 		break;
 		case RA8875_640x480:
 		case Adafruit_640x480:
@@ -147,7 +147,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 				_maxLayers = 1;
 			}
 			_hasLayerLimits = true;
-			initIndex = 2;
+			_initIndex = 2;
 		break;
 		case RA8875_800x480:
 		case Adafruit_800x480:
@@ -159,7 +159,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 				_maxLayers = 1;
 			}
 			_hasLayerLimits = true;
-			initIndex = 3;
+			_initIndex = 3;
 		break;
 		default:
 		//error, not supported
@@ -327,7 +327,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	pinMode(_cs, OUTPUT);
 	digitalWrite(_cs, HIGH);
 	#endif
-	initialize(initIndex);
+	initialize();
 }
 
 /************************* Initialization *********************************/
@@ -338,22 +338,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
       Hardware initialization of RA8875 and turn on
 */
 /**************************************************************************/
-void RA8875::initialize(uint8_t initIndex) {
+void RA8875::initialize() {
 	if (_unsupported) return;//better stop here!
 	_inited = false;
-	const static uint8_t initStrings[4][15] = {
-	{0x07,0x03,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
-	{0x07,0x03,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
-	{0x07,0x03,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
-	{0x07,0x03,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01} //3 -> 800x480
-	};
-	// christoph settings = 60Mhz
-	const static uint8_t sysClockPar[4][2] = {
-	{0x0B,0x02},//0 -> 320x240
-	{0x0B,0x02},//1 -> 480x272
-	{0x0B,0x02},//2 -> 640x480
-	{0x0B,0x02} //3 -> 800x480
-	};
+
 	
 	if (_rst > 254) {//No Hard Reset? time for soft reset
 		writeCommand(RA8875_PWRR);
@@ -364,12 +352,12 @@ void RA8875::initialize(uint8_t initIndex) {
 	
 
 	//set the sysClock
-	writeReg(RA8875_PLLC1,initStrings[initIndex][0]);////PLL Control Register 1
+	writeReg(RA8875_PLLC1,initStrings[_initIndex][0]);////PLL Control Register 1
 	delay(1);
-	writeReg(RA8875_PLLC2,initStrings[initIndex][1]);////PLL Control Register 2
+	writeReg(RA8875_PLLC2,initStrings[_initIndex][1]);////PLL Control Register 2
 	delay(1);
 	
-	writeReg(RA8875_PCSR,initStrings[initIndex][2]);//Pixel Clock Setting Register
+	writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
 	delay(1);
 	//color space setup
 	if (_color_bpp < 16){//256
@@ -377,18 +365,18 @@ void RA8875::initialize(uint8_t initIndex) {
 	} else {
 		writeReg(RA8875_SYSR,0x0C);//65K
 	}
-	writeReg(RA8875_HDWR,initStrings[initIndex][3]);//LCD Horizontal Display Width Register
-	writeReg(RA8875_HNDFTR,initStrings[initIndex][4]);//Horizontal Non-Display Period Fine Tuning Option Register
-	writeReg(RA8875_HNDR,initStrings[initIndex][5]);////LCD Horizontal Non-Display Period Register
-	writeReg(RA8875_HSTR,initStrings[initIndex][6]);////HSYNC Start Position Register
-	writeReg(RA8875_HPWR,initStrings[initIndex][7]);////HSYNC Pulse Width Register
-	writeReg(RA8875_VDHR0,initStrings[initIndex][8]);////LCD Vertical Display Height Register0
-	writeReg(RA8875_VDHR1,initStrings[initIndex][9]);////LCD Vertical Display Height Register1
-	writeReg(RA8875_VNDR0,initStrings[initIndex][10]);////LCD Vertical Non-Display Period Register 0
-	writeReg(RA8875_VNDR1,initStrings[initIndex][11]);////LCD Vertical Non-Display Period Register 1
-	writeReg(RA8875_VSTR0,initStrings[initIndex][12]);////VSYNC Start Position Register 0
-	writeReg(RA8875_VSTR1,initStrings[initIndex][13]);////VSYNC Start Position Register 1
-	writeReg(RA8875_VPWR,initStrings[initIndex][14]);////VSYNC Pulse Width Register
+	writeReg(RA8875_HDWR,initStrings[_initIndex][3]);//LCD Horizontal Display Width Register
+	writeReg(RA8875_HNDFTR,initStrings[_initIndex][4]);//Horizontal Non-Display Period Fine Tuning Option Register
+	writeReg(RA8875_HNDR,initStrings[_initIndex][5]);////LCD Horizontal Non-Display Period Register
+	writeReg(RA8875_HSTR,initStrings[_initIndex][6]);////HSYNC Start Position Register
+	writeReg(RA8875_HPWR,initStrings[_initIndex][7]);////HSYNC Pulse Width Register
+	writeReg(RA8875_VDHR0,initStrings[_initIndex][8]);////LCD Vertical Display Height Register0
+	writeReg(RA8875_VDHR1,initStrings[_initIndex][9]);////LCD Vertical Display Height Register1
+	writeReg(RA8875_VNDR0,initStrings[_initIndex][10]);////LCD Vertical Non-Display Period Register 0
+	writeReg(RA8875_VNDR1,initStrings[_initIndex][11]);////LCD Vertical Non-Display Period Register 1
+	writeReg(RA8875_VSTR0,initStrings[_initIndex][12]);////VSYNC Start Position Register 0
+	writeReg(RA8875_VSTR1,initStrings[_initIndex][13]);////VSYNC Start Position Register 1
+	writeReg(RA8875_VPWR,initStrings[_initIndex][14]);////VSYNC Pulse Width Register
 	setActiveWindow(0,(_width-1),0,(_height-1));//set the active window
 	clearMemory(true);//clear FULL memory
 	//end of hardware initialization
@@ -412,11 +400,11 @@ void RA8875::initialize(uint8_t initIndex) {
 	delay(1);
 	//now raiseup the sysClock!
 
-	writeReg(RA8875_PLLC1,sysClockPar[initIndex][0]);////PLL Control Register 1
+	writeReg(RA8875_PLLC1,sysClockPar[_initIndex][0]);////PLL Control Register 1
 	delay(1);
-	writeReg(RA8875_PLLC2,sysClockPar[initIndex][1]);////PLL Control Register 2
+	writeReg(RA8875_PLLC2,sysClockPar[_initIndex][1]);////PLL Control Register 2
 	delay(1);
-	writeReg(RA8875_HDWR,initStrings[initIndex][3]);// TESTTT
+	writeReg(RA8875_HDWR,initStrings[_initIndex][3]);// TESTTT
 	delay(1);
 	_inited = true;//from here we will go at high speed!
 }
@@ -2734,11 +2722,67 @@ void RA8875::displayOn(boolean on) {
 
 /**************************************************************************/
 /*!
-    Sleep mode on/off (caution! in SPI this need some more code!)
+    Sleep mode on/off (complete sequence)
+	The sleep on/off sequence it's quite tricky on RA8875 when in SPI mode!
 */
 /**************************************************************************/
 void RA8875::sleep(boolean sleep) {
-	sleep == true ? writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF | RA8875_PWRR_SLEEP) : writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF);
+	if (_sleep != sleep){//only if it's needed
+		_sleep = sleep;
+		if (_sleep){
+			//1)turn off backlight
+			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(false);
+			//2)decelerate SPI clock
+			#if defined(SPI_HAS_TRANSACTION)
+				settings = SPISettings(1000000, MSBFIRST, SPI_MODE3);
+			#else
+				SPI.setClockDivider(SPI_CLOCK_DIV16);
+			#endif
+			//3)set PLL to default
+			writeReg(RA8875_PLLC1,0x07);////PLL Control Register 1
+			delay(1);
+			writeReg(RA8875_PLLC2,0x03);////PLL Control Register 2
+			delay(1);
+			//4)display off(20ms)
+			writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF);
+			delay(20);
+			//4)sleep(100ms)
+			writeReg(RA8875_PWRR, RA8875_PWRR_SLEEP);
+			delay(100);
+		} else {
+			//1)wake up with display off(100ms)
+			writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF);
+			delay(100);
+			//2)bring back the pll(1+1ms)
+			writeReg(RA8875_PLLC1,initStrings[_initIndex][0]);////PLL Control Register 1
+			delay(1);
+			writeReg(RA8875_PLLC2,initStrings[_initIndex][1]);////PLL Control Register 2
+			delay(1);
+			//3)display on settings(20+20+20ms)
+			writeReg(RA8875_PCSR,0x02);//Pixel Clock Setting Register
+			delay(20);
+			writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
+			delay(20);
+			writeReg(RA8875_PWRR, RA8875_PWRR_DISPON);//disp on
+			delay(20);
+			//4)resume SPI speed
+			#if defined(SPI_HAS_TRANSACTION)
+				settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
+			#else
+				SPI.setClockDivider(SPI_CLOCK_DIV4);
+			#endif
+			//5)PLL at right speed now!
+			writeReg(RA8875_PLLC1,sysClockPar[_initIndex][0]);////PLL Control Register 1
+			delay(1);
+			writeReg(RA8875_PLLC2,sysClockPar[_initIndex][1]);////PLL Control Register 2
+			delay(1);
+			writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
+			delay(1);
+			//5)turn on backlight
+			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(true);
+			writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL);
+		}
+	}
 }
 
 /************************* Low Level ***********************************/
