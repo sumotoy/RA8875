@@ -2,10 +2,13 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b17 bug fixes and adds from M.Sanderscock
+	Version:0.69b18 bug fixes and adds from M.Sanderscock
 	Added alternative pins for SPI (only Teensy 3.x or LC)
 	Corrected setRotation and added absolute display W&H to support rotation
 	Sleep mode on/off sequence ok!
+	--> Fixed color at 8 bit! <--
+	Added setFontAdvance
+	
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -182,7 +185,7 @@ enum RA8875scrollMode{ SIMULTANEOUS, LAYER1ONLY, LAYER2ONLY, BUFFERED };
 // Touch screen cal structs
 typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
 typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fix for DUE
-static const uint8_t _RA8875colorMask[4] = {11,5,13,8};//for color masking, first 2 byte for 65K
+static const uint8_t _RA8875colorMask[6] = {11,5,0,13,8,3};//for color masking, first 3 byte for 65K
 
 class RA8875 : public Print {
  public:
@@ -241,6 +244,7 @@ class RA8875 : public Print {
 	void 		setFontRotate(boolean rot);//true = 90 degrees
 	void 		setFontInterline(uint8_t pix);//0...63 pix
 	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
+	void 		setFontAdvance(bool on);
 	uint8_t 	getFontWidth(boolean inColums=false);
 	uint8_t 	getFontHeight(boolean inRows=false);
 	//----------Font Selection and related..............................
@@ -354,6 +358,7 @@ using Print::write;
 	bool					_fontFullAlig;
 	bool					_fontRotation;
 	bool					_extFontRom;
+	bool					_autoAdvance;
 	enum RA8875extRomFamily _fontFamily;
 	enum RA8875extRomType 	_fontRomType;
 	enum RA8875extRomCoding _fontRomCoding;

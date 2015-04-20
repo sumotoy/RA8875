@@ -95,8 +95,8 @@ void setup()
   //while (!Serial) {;}
   Serial.println("RA8875 start");
 
-  tft.begin(RA8875_480x272);
-  tft.useLayers(true);//turn on layers
+  tft.begin(RA8875_800x480);
+
   tft.writeTo(L1);//write colored bars to layer 1
   //create ONCE all colored bars
   drawHbar(10,10,100,100);
@@ -150,4 +150,3 @@ void loop()
   }
 
 }
-

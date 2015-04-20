@@ -15,6 +15,7 @@ RA8875	KEYWORD1
 displayOn	KEYWORD2
 sleep	KEYWORD2
 brightness	KEYWORD2
+clearMemory	KEYWORD2
 backlight	KEYWORD2
 changeMode	KEYWORD2
 setColorBpp	KEYWORD2
@@ -66,6 +67,7 @@ setExtFontFamily	KEYWORD2
 setFontFullAlign	KEYWORD2
 setFontRotate	KEYWORD2
 setFontInterline	KEYWORD2
+setFontAdvance	KEYWORD2
 uploadUserChar	KEYWORD2
 showUserChar	KEYWORD2
 setGraphicCursor	KEYWORD2

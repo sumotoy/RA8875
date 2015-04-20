@@ -121,6 +121,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors) {
 	_fontSource = INT;
 	_fontFullAlig = false;
 	_fontRotation = false;
+	_autoAdvance = true;
 	_rotation = 0;
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
@@ -958,6 +959,16 @@ void RA8875::setFontScale(uint8_t vscale,uint8_t hscale){
 	_textVScale = vscale;
 }
 
+void RA8875::setFontAdvance(bool on){
+	if (on){
+		bitClear(_MWCR0Reg,1);
+	} else {
+		bitSet(_MWCR0Reg,1);
+	}
+	//bitWrite(_MWCR0Reg,1,!on);
+	writeReg(RA8875_MWCR0,_MWCR0Reg);
+}
+
 /**************************************************************************/
 /*!		
 		Choose between 16x16(8x16) - 24x24(12x24) - 32x32(16x32)
@@ -1139,10 +1150,10 @@ void RA8875::textWrite(const char* buffer, uint16_t len) {
 /**************************************************************************/
 void RA8875::setForegroundColor(uint16_t color){
 	uint8_t idx = 0;
-	if (_color_bpp < 16) idx = 2;//8bit
+	if (_color_bpp < 16) idx = 3;//8bit
 	writeReg(RA8875_FGCR0,((color & 0xF800) >> _RA8875colorMask[idx]));
 	writeReg(RA8875_FGCR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));
-	writeReg(RA8875_FGCR2,(color & 0x001F));
+	writeReg(RA8875_FGCR2,((color & 0x001F) >> _RA8875colorMask[idx+2]));
 }
 /**************************************************************************/
 /*!
@@ -1167,10 +1178,10 @@ void RA8875::setForegroundColor(uint8_t R,uint8_t G,uint8_t B){
 /**************************************************************************/
 void RA8875::setBackgroundColor(uint16_t color){
 	uint8_t idx = 0;
-	if (_color_bpp < 16) idx = 2;//8bit
+	if (_color_bpp < 16) idx = 3;//8bit
 	writeReg(RA8875_BGCR0,((color & 0xF800) >> _RA8875colorMask[idx]));//11
 	writeReg(RA8875_BGCR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));//5
-	writeReg(RA8875_BGCR2,(color & 0x001F));
+	writeReg(RA8875_BGCR2,((color & 0x001F) >> _RA8875colorMask[idx+2]));//0
 }
 /**************************************************************************/
 /*!
@@ -1196,10 +1207,10 @@ void RA8875::setBackgroundColor(uint8_t R,uint8_t G,uint8_t B){
 /**************************************************************************/
 void RA8875::setTrasparentColor(uint16_t color){
 	uint8_t idx = 0;
-	if (_color_bpp < 16) idx = 2;//8bit
+	if (_color_bpp < 16) idx = 3;//8bit
 	writeReg(RA8875_BGTR0,((color & 0xF800) >> _RA8875colorMask[idx]));
 	writeReg(RA8875_BGTR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));
-	writeReg(RA8875_BGTR2,(color & 0x001F));
+	writeReg(RA8875_BGTR2,((color & 0x001F) >> _RA8875colorMask[idx+2]));
 }
 /**************************************************************************/
 /*!
@@ -1487,6 +1498,8 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 */
 /**************************************************************************/
 void RA8875::BTE_size(uint16_t w, uint16_t h){
+	if (w > _width) w = _width;
+	if (h > _height) h = _height;
     writeReg(RA8875_BEWR0,w);//BET area width literacy  
     writeReg(RA8875_BEWR1,w >> 8);//BET area width literacy	   
     writeReg(RA8875_BEHR0,h);//BET area height literacy
