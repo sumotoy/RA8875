@@ -19,9 +19,8 @@ void setup() {
   Serial.begin(38400);
   long unsigned debug_start = millis ();
   while (!Serial && ((millis () - debug_start) <= 5000)) ;
-  tft.begin(RA8875_480x272,16);
+  tft.begin(RA8875_480x272);
   Serial.println(F("Turn ON layers (automatically)"));
-  //tft.useLayers(true);//turn on layers
   tft.writeTo(L1);//If layers off it will turn on
   //remember to turn off or layers remain active forever!
   Serial.println(F("Writing on Layer1 a magenta rect"));
@@ -45,9 +44,9 @@ void setup() {
   delay(1000);
   Serial.println(F("Apply Transparent"));
   tft.layerEffect(TRANSPARENT);
-  delay(1000);
- Serial.println(F("Turn OFF layers"));
-  tft.useLayers(false);//turn on layers
+  // delay(1000);
+  // Serial.println(F("Turn OFF layers"));
+  // tft.useLayers(false);//turn on layers
 }
 
 void loop(){

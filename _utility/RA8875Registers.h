@@ -18,7 +18,11 @@
 	#define RA8875_PWRR_SLEEP       0x02
 	#define RA8875_PWRR_NORMAL      0x00
 	#define RA8875_PWRR_SOFTRESET   0x01
-
+/* REG[02h] Memory Read/Write Command (MRWC)
+Data to write in memory corresponding to the setting of
+MWCR1[3:2]. Continuous data write cycle can be accepted in
+bulk data write case.
+*/ 
 #define RA8875_MRWC             		0x02//Memory Read/Write Command
 	#define RA8875_CMDWRITE         	0x80
 	#define RA8875_CMDREAD          	0xC0
@@ -368,7 +372,7 @@ from 0 to 255
 #define RA8875_BEWR1				  0x5D//BTE Width Register 1
 #define RA8875_BEHR0				  0x5E//BTE Height Register 0
 #define RA8875_BEHR1				  0x5F//BTE Height Register 1
-/* Pattern Set No for BTE            [0x65]
+/* Pattern Set No for BTE            [0x66]
 ----- Bit 7 (Pattern Format)
 0: 8x8
 1: 16x16
@@ -376,7 +380,7 @@ from 0 to 255
 ----- Bit 3,2,1,0 (Pattern Set No)
 If pattern Format = 8x8 then Pattern Set [3:0]
 If pattern Format = 16x16 then Pattern Set [1:0] is valid */
-#define RA8875_PTNO				  	  0x65//Pattern Set No for BTE
+#define RA8875_PTNO				  	  0x66//Pattern Set No for BTE
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            Color Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

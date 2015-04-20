@@ -69,7 +69,6 @@ void mediabuttons() {
 
 void tftPrintTest() {
   //tft.setTextWrap(false);
-  //tft.changeMode(TEXT);
   tft.fillScreen(RA8875_BLACK);
   tft.setCursor(0, 30);
   tft.setTextColor(RA8875_RED);
@@ -105,7 +104,6 @@ void tftPrintTest() {
   tft.print(millis() / 1000);
   tft.setTextColor(RA8875_WHITE);
   tft.print(" seconds.");
-  //tft.changeMode(GRAPHIC);
 }
 
 void testroundrects() {
@@ -238,8 +236,9 @@ void testlines(uint16_t color) {
 
 void setup() 
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
+  Serial.begin(38400);
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
   Serial.println("RA8875 start");
 
   tft.begin(RA8875_480x272);

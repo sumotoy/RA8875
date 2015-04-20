@@ -36,26 +36,18 @@ MOSI:  PD_3
 MISO:  PD_2
 SS:    PD_1
 */
-#elif defined(__MK20DX128__) || defined(__MK20DX256__)
-/*
-Teensy3.x has small difference since it can use alternative
-SPI pins, very useful if you want to use this library with
-Audio Shield.
-To omit Reset pin, set as 255!
+#elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+/* Teensy3.x has small difference since it can use alternative
+ SPI pins, very useful if you want to use this library with Audio Shield.
 So the full Teensy 3 instance is:
-RA8875 tft = RA8875(CS,RST,SCLK,MOSI,MISO);
+RA8875 tft = RA8875(CS,RST,MOSI,SCLK,MISO);
 CS can be selected between compatible CS pin of Teensy 3
-RST can literally be any pin or set to 255 to omit it.
-SCLK,MOSI,MISO are the alternative pin triggers, normally are set
-to 'false' but you can reassign any of those pins to his alternative
-position! 
-Set SCLK to true will switch SCLK from pin 13 to 14
-Set MOSI to true will switch MOSI from pin 11 to 7
-Set MISO to true will switch MISO from pin 12 to 8
+RST can literally be any pin or set to 255 to omit it (if you use alternative SPI pins you have to set at 255)
+MOSI,SCLK,MISO are the alternative pin (see Teensy 3, 3.1 and LC docs or read wiki)
 */
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy
 //or
-//RA8875 tft = RA8875(RA8875_CS);//Teensy (not using rst pin)
+//RA8875 tft = RA8875(RA8875_CS);//Teensy (not using RST pin)
 /*
 an example for using it with Audio Shield...
 CS: set to 2,20,21 because are not used by audio shield
@@ -63,9 +55,9 @@ Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 rst: not used
 SCLK:14 (alternative pin selected)
 MOSI:7 (alternative pin selected)
-MISO:12 (classic pin)
 */
-//RA8875 tft = RA8875(2,255,true,true);
+//RA8875 tft = RA8875(2,255,7,14);
+
 #else
 
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's
@@ -81,21 +73,21 @@ void setup()
   Serial.println("RA8875 start");
 /*
 If you have an Adafruit RA8875 board + display choose:
-Adafruit_480x272
-Adafruit_640x480
-Adafruit_800x480
+ Adafruit_480x272
+ Adafruit_640x480
+ Adafruit_800x480
 If you have any other display you have to choose:
-RA8875_320x240
-RA8875_480x272
-RA8875_800x480
-RA8875_640x480
+ RA8875_320x240
+ RA8875_480x272
+ RA8875_800x480
+ RA8875_640x480
 */
   tft.begin(RA8875_800x480);
 /*
 By default the library init display at 16bit color depth but
 you can optionally force the display to work at 8 bit:
 
-tft.begin(RA8875_480x272,8);//force obit color depth
+tft.begin(RA8875_480x272,8);//force 8bit color depth
 */
 /*
 Now that board it's inited you can use any draw or text command:

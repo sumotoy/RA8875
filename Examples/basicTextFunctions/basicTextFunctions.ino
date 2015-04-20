@@ -47,7 +47,6 @@ void setup()
   Serial.println("RA8875 start");
   //initialization routine
   tft.begin(RA8875_800x480);
-
   //following it's already by begin function but
   //if you like another background color....
   tft.fillScreen(RA8875_BLACK);//fill screen black

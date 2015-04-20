@@ -2,12 +2,14 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b18 bug fixes and adds from M.Sanderscock
+	Version:0.69b19 bug fixes and adds from M.Sanderscock
 	Added alternative pins for SPI (only Teensy 3.x or LC)
 	Corrected setRotation and added absolute display W&H to support rotation
 	Sleep mode on/off sequence ok!
 	--> Fixed color at 8 bit! <--
 	Added setFontAdvance
+	Added some test BTE stuff
+	Small optimizations and library cleaning
 	
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
@@ -83,51 +85,6 @@ SD CARD ID: pin xx (selectable and optional)
 *(3) On Teensy3.x not all pin are usable for CS's! 
 can be used: 2,6,9,10,15,20,21,22,23
 
-	-----------------------------------------------
-	in ms
-Screen fill              37380 	25140
-Text                     36828	36626
-Lines                    54186	40914
-Horiz/Vert Lines         39910	32280
-Rectangles (outline)     66329	45956
-Rectangles (filled)      70788	48744
-Circles (filled)         90466	67567
-Circles (outline)        96677	72260
-Triangles (outline)      12743	9848
-Triangles (filled)       22655	16359
-Rounded rects (outline)  10198	9045
-Rounded rects (filled)   42062	30125
-
-
-Benchmark                Time (microseconds)
-Screen fill              4949
-Test Pixel               42
-Test Pixels              19779
-Text                     20717 4696
-Lines                    39317
-Horiz/Vert Lines         30758
-Rectangles (outline)     45341
-Rectangles (filled)      213002
-Circles (filled)         66797
-Circles (outline)        66202
-Triangles (outline)      9335
-Triangles (filled)       15968
-Rounded rects (outline)  8298
-Rounded rects (filled)   29468
---------------------------------
-
-	color = (color << 8) | (color >> 8);    // swap
-    uint8_t blue  = ((color & 0x001F) << 3) | (color & 0x07)
-    uint8_t green = ((color & 0x07E0) >> 3) | ((color >> 9) & 0x03);
-    uint8_t red   = ((color & 0xF800) >> 8) | ((color >> 13) & 0x07);
-	
-uint16_t RA8875::rgbTo16(uint8_t r, uint8_t g, uint8_t b){
-    uint16_t color;
-    color  = ((r >> 3) <<  0);
-    color |= ((g >> 2) <<  5);
-    color |= ((b >> 3) << 11);
-	return color;
-}
 */
 
 #ifndef _RA8875MC_H_
@@ -173,6 +130,8 @@ enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
 enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
 enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
 enum RA8875scrollMode{ SIMULTANEOUS, LAYER1ONLY, LAYER2ONLY, BUFFERED };
+enum RA8875pattern{ P8X8, P16X16 };
+enum RA8875btedatam{ CONT, RECT };
 
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
 #include "_utility/RA8875Registers.h"
@@ -224,7 +183,7 @@ class RA8875 : public Print {
 	void 		setTrasparentColor(uint16_t color);//the current transparent color in 16bit
 	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);//the current transparent color in 8+8+8bit
 	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
-	uint8_t 	getColorBpp();//get the current display color space (return 8 or 16)
+	uint8_t 	getColorBpp(void);//get the current display color space (return 8 or 16)
 	inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
 //--------------Cursor Stuff----------------------------
 	void 		setCursorBlinkRate(uint8_t rate);//set blink rate of the cursor 0...255 0:faster
@@ -258,6 +217,7 @@ class RA8875 : public Print {
 	void 		setY(uint16_t y) ;
 	void 		setGraphicCursor(uint8_t cur);//0...7 Select a custom graphic cursor (you should upload first)
 	void 		showGraphicCursor(boolean cur);//show graphic cursor
+	void 		setPattern(uint8_t num, enum RA8875pattern p=P8X8);
 	//--------------- DRAW -------------------------
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);//ok
@@ -293,7 +253,8 @@ class RA8875 : public Print {
 	void 		BTE_size(uint16_t w, uint16_t h);
 	void	 	BTE_source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
 	void		BTE_ROP_code(unsigned char setx);//TESTING
-	void 		BTE_enable(void);//TESTING
+	void 		BTE_enable(bool on);//TESTING
+	void 		BTE_dataMode(enum RA8875btedatam m);
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
