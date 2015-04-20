@@ -1,10 +1,11 @@
 #include <SPI.h>
 #include "RA8875.h"
 
+
+
 #ifdef SPI_HAS_TRANSACTION
 static SPISettings settings;
 #endif
-
 
 /**************************************************************************/
 /*!
@@ -356,7 +357,6 @@ void RA8875::initialize() {
 	delay(1);
 	writeReg(RA8875_PLLC2,initStrings[_initIndex][1]);////PLL Control Register 2
 	delay(1);
-	
 	writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
 	delay(1);
 	//color space setup
@@ -398,14 +398,16 @@ void RA8875::initialize() {
 	writeReg(RA8875_F_CURYL,(0 & 0xFF));
 	writeReg(RA8875_F_CURYH,(0 >> 8));
 	delay(1);
-	//now raiseup the sysClock!
-
+	//postburner PLL!
 	writeReg(RA8875_PLLC1,sysClockPar[_initIndex][0]);////PLL Control Register 1
 	delay(1);
 	writeReg(RA8875_PLLC2,sysClockPar[_initIndex][1]);////PLL Control Register 2
 	delay(1);
-	writeReg(RA8875_HDWR,initStrings[_initIndex][3]);// TESTTT
+	writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
 	delay(1);
+	//writeReg(RA8875_HDWR,initStrings[_initIndex][3]);// TESTTT
+	//delay(1);
+	
 	_inited = true;//from here we will go at high speed!
 }
 
@@ -2731,7 +2733,7 @@ void RA8875::sleep(boolean sleep) {
 		_sleep = sleep;
 		if (_sleep){
 			//1)turn off backlight
-			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(false);
+			backlight(false);
 			//2)decelerate SPI clock
 			#if defined(SPI_HAS_TRANSACTION)
 				settings = SPISettings(1000000, MSBFIRST, SPI_MODE3);
@@ -2779,8 +2781,21 @@ void RA8875::sleep(boolean sleep) {
 			writeReg(RA8875_PCSR,initStrings[_initIndex][2]);//Pixel Clock Setting Register
 			delay(1);
 			//5)turn on backlight
-			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(true);
+			backlight(true);
 			writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL);
+		}
+	}
+}
+
+void RA8875::backlight(boolean on) {
+	if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) {
+		GPIOX(on);
+	} else {
+		if (on){
+			PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
+			PWMout(1,255);//turn on PWM1
+		} else {
+			PWMsetup(1,false, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
 		}
 	}
 }
@@ -2914,7 +2929,7 @@ void RA8875::writeCommand(uint8_t d) {
 		starts SPI communication
 */
 /**************************************************************************/
-void RA8875::startSend(){
+ void RA8875::startSend(){
 #if defined(SPI_HAS_TRANSACTION)
 	SPI.beginTransaction(settings);
 #elif !defined(ENERGIA)
@@ -2943,6 +2958,6 @@ void RA8875::endSend(){
 #elif !defined(ENERGIA)
 	sei();//enable interrupts
 #endif
-}
+} 
 
 

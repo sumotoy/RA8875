@@ -15,6 +15,7 @@ RA8875	KEYWORD1
 displayOn	KEYWORD2
 sleep	KEYWORD2
 brightness	KEYWORD2
+backlight	KEYWORD2
 changeMode	KEYWORD2
 setColorBpp	KEYWORD2
 getColorBpp	KEYWORD2

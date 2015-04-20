@@ -198,6 +198,7 @@ class RA8875 : public Print {
 	void 		begin(const enum RA8875sizes s,uint8_t colors=16);
 	//(RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480) , (8/16 bit)
 //------------- Hardware related -------------------------
+	void 		backlight(boolean on);
 	void    	displayOn(boolean on);//turn diplay on/off
 	void    	sleep(boolean sleep);//put display in sleep or not
 	void 		brightness(uint8_t val);//ok
@@ -322,6 +323,7 @@ using Print::write;
 		uint8_t _SPIint;
 	#endif
 	*/
+
 	uint8_t 		 		_cs, _rst;
 	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 		uint8_t _miso, _mosi, _sclk;
@@ -408,6 +410,7 @@ using Print::write;
 	void 		startSend();
 	void 		endSend();
 
+
 	#if defined(NEEDS_SET_MODULE)//for Energia
 	void 		selectCS(uint8_t module);
 	#endif
@@ -421,13 +424,14 @@ using Print::write;
 	uint8_t		_SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
+	//initialization parameters---------------------------------------------------------------------
 	const uint8_t initStrings[4][15] = {
 	{0x07,0x03,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
 	{0x07,0x03,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
 	{0x07,0x03,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
 	{0x07,0x03,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01} //3 -> 800x480
 	};
-	// christoph settings = 60Mhz
+	//postburner PLL parameters (60Mhz)--------------------------------------------------------------
 	const uint8_t sysClockPar[4][2] = {
 	{0x0B,0x02},//0 -> 320x240
 	{0x0B,0x02},//1 -> 480x272
