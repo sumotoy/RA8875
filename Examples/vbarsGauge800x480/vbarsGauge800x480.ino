@@ -35,8 +35,8 @@ Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 
 const uint8_t _barWidth = 2;           //width of single bar dot
 const uint8_t _spacer = 1;             //space between bars
-const uint8_t _segHeight = 2;          //height of every bar single dot
-const uint8_t _segments = 60;          //how many dots per bar 
+const uint8_t _segHeight = 3;          //height of every bar single dot
+const uint8_t _segments = 90;          //how many dots per bar 
 const unsigned long updateEvery = 40;  //time between screen updates, fom 0 ...xx (in ms)
 
 
@@ -58,7 +58,7 @@ void setup()
 //  while (!Serial && ((millis () - debug_start) <= 5000)) ;
 //  Serial.println("RA8875 start");
 
-  tft.begin(RA8875_480x272);
+  tft.begin(RA8875_800x480);
 
 }
 
@@ -148,4 +148,3 @@ void updateBars(uint8_t vals[], uint16_t origX, uint16_t origY,uint16_t maxbars,
     updateBar(vals[i], origX + (i * _barWidth) + (i * _spacer), origY,single);
   }
 }
-
