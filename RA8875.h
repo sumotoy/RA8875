@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b19 bug fixes and adds from M.Sanderscock
+	Version:0.69b20 bug fixes and adds from M.Sanderscock
 	Added alternative pins for SPI (only Teensy 3.x or LC)
 	Corrected setRotation and added absolute display W&H to support rotation
 	Sleep mode on/off sequence ok!
@@ -10,6 +10,7 @@
 	Added setFontAdvance
 	Added some test BTE stuff
 	Small optimizations and library cleaning
+	Addressing almost fixed even in portrait
 	
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
@@ -85,6 +86,63 @@ SD CARD ID: pin xx (selectable and optional)
 *(3) On Teensy3.x not all pin are usable for CS's! 
 can be used: 2,6,9,10,15,20,21,22,23
 
+	-----------------------------------------------
+	in ms
+Screen fill              37380 	25140
+Text                     36828	36626
+Lines                    54186	40914
+Horiz/Vert Lines         39910	32280
+Rectangles (outline)     66329	45956
+Rectangles (filled)      70788	48744
+Circles (filled)         90466	67567
+Circles (outline)        96677	72260
+Triangles (outline)      12743	9848
+Triangles (filled)       22655	16359
+Rounded rects (outline)  10198	9045
+Rounded rects (filled)   42062	30125
+
+
+Benchmark                Time (microseconds)
+Screen fill              4949
+Test Pixel               42
+Test Pixels              19779
+Text                     20717 4696
+Lines                    39317
+Horiz/Vert Lines         30758
+Rectangles (outline)     45341
+Rectangles (filled)      213002
+Circles (filled)         66797
+Circles (outline)        66202
+Triangles (outline)      9335
+Triangles (filled)       15968
+Rounded rects (outline)  8298
+Rounded rects (filled)   29468
+--------------------------------
+
+	color = (color << 8) | (color >> 8);    // swap
+    uint8_t blue  = ((color & 0x001F) << 3) | (color & 0x07)
+    uint8_t green = ((color & 0x07E0) >> 3) | ((color >> 9) & 0x03);
+    uint8_t red   = ((color & 0xF800) >> 8) | ((color >> 13) & 0x07);
+	
+uint16_t RA8875::rgbTo16(uint8_t r, uint8_t g, uint8_t b){
+    uint16_t color;
+    color  = ((r >> 3) <<  0);
+    color |= ((g >> 2) <<  5);
+    color |= ((b >> 3) << 11);
+	return color;
+}
+
+The suggested programming steps and registers setting are listed below as reference.pag130
+1. Setting destination position -> REG[58h], [59h], [5Ah], [5Bh]
+2. Setting BTE width register -> REG[5Ch], [5Dh]
+3. Setting BTE height register -> REG[5Eh], [5Fh]
+4. Setting register Destination = source -> REG[51h] = Ch
+5. Enable BTE function -> REG[50h] Bit7 = 1
+6. Enable REG[02h]
+7. Check STSR Bit7
+8. Write next image data
+9. Continue run step 7, 8 until image data = block image data. Or Check STSR Bit6
+
 */
 
 #ifndef _RA8875MC_H_
@@ -148,6 +206,7 @@ static const uint8_t _RA8875colorMask[6] = {11,5,0,13,8,3};//for color masking, 
 
 class RA8875 : public Print {
  public:
+	void 		debugData(uint16_t data,uint8_t len=8);
 //------------- Instance -------------------------
 	//#if defined(__MKL26Z64__)
 	//	RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);//only Teensy LC
@@ -220,6 +279,9 @@ class RA8875 : public Print {
 	void 		setPattern(uint8_t num, enum RA8875pattern p=P8X8);
 	//--------------- DRAW -------------------------
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
+	void 		drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y);
+	uint16_t 	getPixel(int16_t x, int16_t y);
+	void 		getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);//ok
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);//ok
 	void    	fillScreen(uint16_t color=RA8875_BLACK);//fill the entire screen with a color(default black)

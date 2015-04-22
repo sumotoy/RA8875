@@ -518,8 +518,8 @@ void RA8875::displayOn(boolean on)
 /**************************************************************************/
 void RA8875::setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB)
 {
-	if (XR >= _width) XR = _width-1;
-	if (YB >= _height) YB = _height-1;
+	if (XR >= WIDTH) XR = WIDTH-1;
+	if (YB >= HEIGHT) YB = HEIGHT-1;
     // X 
 	writeReg(RA8875_HSAW0,XL);
 	writeReg(RA8875_HSAW1,XL >> 8);   
@@ -1574,14 +1574,14 @@ void RA8875::setXY(int16_t x, int16_t y)
 
 void RA8875::setX(uint16_t x) 
 {
-	if (x >= _width) x = _width-1;
+	if (x >= WIDTH) x = WIDTH-1;
 	writeReg(RA8875_CURH0, x);
 	writeReg(RA8875_CURH1, (x >> 8)); 
 }
 
 void RA8875::setY(uint16_t y) 
 {
-	if (y >= _height) y = _height-1;
+	if (y >= HEIGHT) y = HEIGHT-1;
 	writeReg(RA8875_CURV0, y);
 	writeReg(RA8875_CURV1, y >> 8);  
 }
@@ -1770,8 +1770,8 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 /**************************************************************************/
 void RA8875::BTE_size(uint16_t w, uint16_t h)
 {
-	if (w > _width) w = _width;
-	if (h > _height) h = _height;
+	if (w > WIDTH) w = WIDTH;
+	if (h > HEIGHT) h = HEIGHT;
     writeReg(RA8875_BEWR0,w);//BET area width literacy  
     writeReg(RA8875_BEWR1,w >> 8);//BET area width literacy	   
     writeReg(RA8875_BEHR0,h);//BET area height literacy
@@ -2118,12 +2118,108 @@ void RA8875::writeTo(enum RA8875writes d)
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
 	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
-	//checkLimitsHelper(x,y);
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
 	writeData16(color); 
 }
 
+
+void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
+{
+    if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+    setXY(x, y);
+    writeCommand(RA8875_MRWC);
+    startSend();
+	SPI.transfer(RA8875_DATAWRITE);
+	while (count--) {
+	#if (ARDUINO >= 160) || TEENSYDUINO > 121
+		SPI.transfer16(*p);//should be fixed already
+	#else
+		SPI.transfer(*p >> 8);
+		SPI.transfer(*p & 0xFF);
+	#endif
+        p++;
+    }
+    endSend();
+}
+
+
+uint16_t RA8875::getPixel(int16_t x, int16_t y)
+{
+    uint16_t color;
+	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+    setXY(x, y);
+    writeCommand(RA8875_MRWC);
+	#if defined(SPI_HAS_TRANSACTION)
+		if (_inited) settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE3);
+	#else
+		#if defined(ENERGIA)
+			SPI.setClockDivider(SPI_SPEED_READ);//should be checked
+		#else
+			SPI.setClockDivider(SPI_CLOCK_DIV8);//should be checked
+		//TODO - depends of the CPU used!
+		#endif
+	#endif
+    startSend();
+    SPI.transfer(RA8875_DATAREAD);
+    SPI.transfer(0x00);//first byte it's dummy
+	#if (ARDUINO >= 160) || TEENSYDUINO > 121
+		color  = SPI.transfer16(0x0);
+	#else
+		color  = SPI.transfer(0x0);
+		color |= (SPI.transfer(0x0) << 8);
+	#endif
+	#if defined(SPI_HAS_TRANSACTION)
+	if (_inited) settings = SPISettings(MAXSPISPEED, MSBFIRST, SPI_MODE3);
+	#else
+		#if defined(ENERGIA)
+			SPI.setClockDivider(SPI_SPEED_WRITE);//should be checked
+		#else
+			SPI.setClockDivider(SPI_CLOCK_DIV4);//should be checked
+		//TODO - depends of the CPU used!
+		#endif
+	#endif
+    endSend();
+    return color;
+}
+
+
+
+void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
+{
+    uint16_t color; 
+    if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+    setXY(x, y);
+    writeCommand(RA8875_MRWC);
+	#if defined(SPI_HAS_TRANSACTION)
+		if (_inited) settings = SPISettings(MAXSPISPEED/2, MSBFIRST, SPI_MODE3);
+	#else
+		#if defined(ENERGIA)
+			SPI.setClockDivider(SPI_SPEED_READ);//should be checked
+		#else
+			SPI.setClockDivider(SPI_CLOCK_DIV8);//should be checked
+		//TODO - depends of the CPU used!
+		#endif
+	#endif
+    startSend();
+	SPI.transfer(RA8875_DATAREAD);
+	#if (ARDUINO >= 160) || TEENSYDUINO > 121
+		SPI.transfer16(0x0);//dummy
+	#else
+		SPI.transfer(0x0);//dummy
+		SPI.transfer(0x0);//dummy
+	#endif
+    while (count--) {
+		#if (ARDUINO >= 160) || TEENSYDUINO > 121
+			color  = SPI.transfer16(0x0);
+		#else
+			color  = SPI.transfer(0x0);
+			color |= (SPI.transfer(0x0) << 8);
+		#endif
+        *p++ = color;
+    }
+    endSend();
+}
 /**************************************************************************/
 /*!
       Basic line draw
@@ -2139,8 +2235,8 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 {
 	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
 	checkLimitsHelper(x0,y0);
-	if (x1 >= _width) x1 = _width-1;
-	if (y1 >= _height) y1 = _height-1;
+	//if (x1 >= _width) x1 = _width-1;
+	//if (y1 >= _height) y1 = _height-1;
 	
 	lineAddressing(x0,y0,x1,y1);
 	
@@ -2255,7 +2351,7 @@ void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 /**************************************************************************/
 void RA8875::fillScreen(uint16_t color)
 {  
-	lineAddressing(0,0,_width-1, _height-1);
+	lineAddressing(0,0,WIDTH-1, HEIGHT-1);
 	setForegroundColor(color);
 	writeCommand(RA8875_DCR);
 	writeData(0xB0);
@@ -2517,8 +2613,8 @@ void RA8875::checkLimitsHelper(int16_t &x,int16_t &y)
 {
 	if (x < 0) x = 0;
 	if (y < 0) y = 0;
-	if (x >= _width) x = _width - 1;
-	if (y >= _height) y = _height -1;
+	if (x >= WIDTH) x = WIDTH - 1;
+	if (y >= HEIGHT) y = HEIGHT -1;
 	x = x;
 	y = y;
 }
@@ -3233,4 +3329,17 @@ void RA8875::endSend()
 #endif
 } 
 
-
+void RA8875::debugData(uint16_t data,uint8_t len)
+{
+  for (int i=len-1; i>=0; i--){
+    if (bitRead(data,i)==1){
+      Serial.print("1");
+    } 
+    else {
+      Serial.print("0");
+    }
+  }
+  Serial.print(" -> 0x");
+  Serial.print(data,HEX);
+  Serial.print("\n");
+}
