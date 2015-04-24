@@ -2,9 +2,10 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b21 
+	Version:0.69b22
 	Everithing should work correctly even in rotation!
-	
+	Fixed println in portrait, fixed getCursor in portrait
+	some optimizations...
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -256,7 +257,6 @@ class RA8875 : public Print {
 	void    	setFontScale(uint8_t vscale,uint8_t hscale);//font scale separatred bu w and h
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
-	void 		setFontRotate(boolean rot);//true = 90 degrees
 	void 		setFontInterline(uint8_t pix);//0...63 pix
 	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
 	void 		setFontAdvance(bool on);
@@ -362,26 +362,31 @@ using Print::write;
 	#if defined(USE_RA8875_KEYMATRIX)
 	bool					_keyMatrixEnabled;
 	#endif
-	//----------------------------------------
+	//system vars -------------------------------------------
 	bool					_unsupported;//if true, not supported board
 	bool					_inited;//true when init has been ended
-	uint8_t					_initIndex;
 	bool					_sleep;
 	bool					_portrait;
-	uint16_t 		 		_width, _height;
+	uint8_t					_rotation;
+	uint8_t					_initIndex;
+	uint16_t 		 		_width, _height;//relative to rotation
+	uint16_t 		 		WIDTH, HEIGHT;//absolute
+	//text vars ----------------------------------------------
 	uint16_t				_txtForeColor;
 	uint16_t				_txtBackColor;
-	uint16_t 		 		WIDTH, HEIGHT;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	uint8_t 		 		_textHScale, _textVScale;	 		
-	uint8_t					_rotation;
 	uint8_t					_fontSpacing;
 	uint8_t					_fontInterline;
-	bool					_textWrap;
-	bool					_fontFullAlig;
-	bool					_fontRotation;
-	bool					_extFontRom;
-	bool					_autoAdvance;
+	/*
+	bit			 parameter
+	0	->		_extFontRom
+	1	->		_autoAdvance
+	2	->		_textWrap
+	3	->		_fontFullAlig
+	4	->		_fontRotation
+	*/
+	uint8_t					_commonTextPar;
 	enum RA8875extRomFamily _fontFamily;
 	enum RA8875extRomType 	_fontRomType;
 	enum RA8875extRomCoding _fontRomCoding;
@@ -425,6 +430,7 @@ using Print::write;
 	//---------------- moved to private functions (before where public) ------------
 	void 	changeMode(enum RA8875modes m);//GRAPHIC,TEXT (now private)
 	void 	scanDirection(boolean invertH,boolean invertV);//(now private)
+	
 	//---------------------------------------------------------
     // Low level access  commands ----------------------
 	void    	writeReg(uint8_t reg, uint8_t val);

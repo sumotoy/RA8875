@@ -85,10 +85,10 @@ void setup()
   tft.setFontSpacing(5);//now give 5 pix spacing
   tft.println("ABCDEF 1 2 3 4");
   tft.setFontSpacing(0);//reset
-  tft.setFontRotate(true);
-  tft.println("ABCDEF 1 2 3 4");
-  tft.setFontRotate(false);
-  tft.setFontScale(1);//font x2
+  //tft.setFontRotate(true);
+  //tft.println("ABCDEF 1 2 3 4");
+  //tft.setFontRotate(false);
+  tft.setFontScale(0);//font x2
   tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
   tft.setCursor(50,100);
   tft.print("Cursor Example: IBEAM");
@@ -106,7 +106,7 @@ void setup()
   tft.print("                        ");
   tft.showCursor(NOCURSOR,false);//deactivate cursor
   delay(1000);
-  tft.setFontScale(1);//font x3
+  tft.setFontScale(0,3);//font x3
   tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
   //here's another unusual command, setFontAdvance enable/disable font advance
   //so you don't have to use setCursor a lot when you need to update numbers on screen

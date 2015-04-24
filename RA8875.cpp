@@ -105,6 +105,7 @@ void RA8875::selectCS(uint8_t module)
 void RA8875::begin(const enum RA8875sizes s,uint8_t colors) 
 {
 	_size = s;
+	_portrait = false;
 	_unsupported = false;
 	_inited = false;
 	_sleep = false;
@@ -115,21 +116,26 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_currentMode = GRAPHIC;
 	_brightness = 255;
 	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
-	_textWrap = _DFT_RA8875_TEXTWRAP;
 	_textSize = X16;
 	_fontSpacing = 0;
+	/* set-->  _commonTextPar  <--
 	_extFontRom = false;
+	_autoAdvance = true;
+	_textWrap = user defined
+	_fontFullAlig = false;
+	_fontRotation = false;
+	*/
+	_commonTextPar = 0b00000010;
+	bitWrite(_commonTextPar,2,_DFT_RA8875_TEXTWRAP);//set _textWrap
 	_fontRomType = _DFT_RA8875_EXTFONTROMTYPE;
 	_fontRomCoding = _DFT_RA8875_EXTFONTROMCODING;
 	_fontSource = INT;
-	_fontFullAlig = false;
-	_fontRotation = false;
-	_autoAdvance = true;
+	_txtForeColor = RA8875_WHITE;
+	_txtBackColor = RA8875_BLACK;
 	_rotation = 0;
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
 	_textCursorStyle = NOCURSOR;
-	_portrait = false;
 	_color_bpp = 16;
 	if (colors != 16) _color_bpp = 8;
 	switch (_size){
@@ -169,8 +175,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			_initIndex = 3;
 		break;
 		default:
-		//error, not supported
-		_unsupported = true;
+		_unsupported = true;//error, not supported
 		return;
 	}
 	WIDTH = _width;
@@ -295,9 +300,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		} else {
 			return;
 		}
-		if (!SPI.pinIsChipSelect(_cs)) {//not a valid CS pin?
-			return;
-		}
+		if (!SPI.pinIsChipSelect(_cs)) return;
 	#endif
 	SPI.begin();
 	#if !defined(ENERGIA)//energia needs this here
@@ -628,7 +631,7 @@ void RA8875::setRotation(uint8_t rotation)
 		//default, connector to bottom
 		_portrait = false;
 		scanDirection(0,0);
-		setFontRotate(false);
+		_FNCR1Reg &= ~(1 << 4);
 		_width = WIDTH;
 		_height = HEIGHT;
 		#if !defined(USE_EXTERNALTOUCH)
@@ -649,7 +652,7 @@ void RA8875::setRotation(uint8_t rotation)
 		//connector to right
 		_portrait = true;
 		scanDirection(1,0);
-		setFontRotate(true);
+		_FNCR1Reg |= (1 << 4);
 		_width = HEIGHT;
 		_height = WIDTH;
 		#if !defined(USE_EXTERNALTOUCH)
@@ -670,7 +673,7 @@ void RA8875::setRotation(uint8_t rotation)
 		//connector to top
 		_portrait = false;
 		scanDirection(1,1);
-		setFontRotate(false);
+		_FNCR1Reg &= ~(1 << 4);
 		_width = WIDTH;
 		_height = HEIGHT;
 		#if !defined(USE_EXTERNALTOUCH)
@@ -691,7 +694,7 @@ void RA8875::setRotation(uint8_t rotation)
 		//connector to left
 		_portrait = true;
 		scanDirection(0,1);
-		setFontRotate(true);
+		_FNCR1Reg |= (1 << 4);
 		_width = HEIGHT;
 		_height = WIDTH;
 		#if !defined(USE_EXTERNALTOUCH)
@@ -709,8 +712,8 @@ void RA8875::setRotation(uint8_t rotation)
 		#endif
     break;
 	}
-	setTextColor(_txtForeColor,_txtBackColor);//0.69b21
-	//after rotation text loose it's previus color parameters!
+	writeReg(RA8875_FNCR1,_FNCR1Reg);//0.69b21
+	setTextColor(_txtForeColor,_txtBackColor);//0.69b21 after rotation text loose it's previus color parameters!
 }
 
 /**************************************************************************/
@@ -859,7 +862,8 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 			temp &= 0x1F; temp |= 0x80;
 		break;
 		default:
-			_extFontRom = false;//wrong type, better avoid for future
+			//_extFontRom = false;//wrong type, better avoid for future
+			bitClear(_commonTextPar,0);//wrong type, better avoid for future
 			return;//cannot continue, exit
 		}
 		_fontRomType = ert;
@@ -889,13 +893,15 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 			temp &= 0xE3; temp |= 0x1C;
 		break;
 		default:
-			_extFontRom = false;//wrong coding, better avoid for future
+			//_extFontRom = false;//wrong coding, better avoid for future
+			bitClear(_commonTextPar,0);//wrong coding, better avoid for future
 			return;//cannot continue, exit
 		}
 		_fontRomCoding = erc;
 		_SFRSETReg = temp;
 		setExtFontFamily(erf,false);	
-		_extFontRom = true;
+		//_extFontRom = true;
+		bitSet(_commonTextPar,0);
 		//writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F
 		//delay(4);
 }
@@ -946,7 +952,7 @@ void RA8875::setFont(enum RA8875fontSource s)
 	//enum RA8875fontCoding c
 	if (s == INT){
 		//check the font coding
-		if (_extFontRom) {
+		if (bitRead(_commonTextPar,0) == 1) {//0.96b22 _extFontRom = true
 			setFontSize(X16,false);
 			writeReg(RA8875_SFRSET,0b00000000);//_SFRSETReg
 		}
@@ -955,7 +961,7 @@ void RA8875::setFont(enum RA8875fontSource s)
 		_fontSource = s;
 		delay(1);
 	} else {
-		if (_extFontRom){
+		if (bitRead(_commonTextPar,0) == 1) {//0.96b22 _extFontRom = true
 			_fontSource = s;
 			//now switch
 			_FNCR0Reg |= (1 << 5);
@@ -993,11 +999,14 @@ void RA8875::setFontFullAlign(boolean align)
 		rot: true,false
 */
 /**************************************************************************/
+/*
 void RA8875::setFontRotate(boolean rot) 
 {
+	if (_portrait) rot = !rot;
 	rot == true ? _FNCR1Reg |= (1 << 4) : _FNCR1Reg &= ~(1 << 4);
 	writeReg(RA8875_FNCR1,_FNCR1Reg);
 }
+*/
 
 /**************************************************************************/
 /*!  
@@ -1025,7 +1034,8 @@ void RA8875::setFontInterline(uint8_t pix)
 void RA8875::setCursor(uint16_t x, uint16_t y) 
 {
 	if (_portrait) swapvals(x,y);
-	if (!_textWrap){
+	//if (!_textWrap){
+	if (bitRead(_commonTextPar,2) == 0){//0.69b22
 		if (x >= _width) x = _width-1;
 		if (y >= _height) y = _height-1;
 	}
@@ -1048,15 +1058,28 @@ void RA8875::setCursor(uint16_t x, uint16_t y)
 /**************************************************************************/
 void RA8875::getCursor(uint16_t *x, uint16_t *y) 
 {
-	uint8_t t1,t2;
+	//fixed in 0.69b22
+	uint8_t t1,t2,t3,t4;
 	t1 = readReg(RA8875_F_CURXL);
 	t2 = readReg(RA8875_F_CURXH);
+	t3 = readReg(RA8875_F_CURYL);
+	t4 = readReg(RA8875_F_CURYH);
+	if (_portrait){
+		swapvals(t1,t3);
+		swapvals(t2,t4);
+	}
+	_cursorX = (t2 << 8) | (t1 & 0xFF);
+	_cursorY = (t4 << 8) | (t3 & 0xFF);
+	*x = _cursorX;
+	*y = _cursorY;
+	/*
 	_cursorX = (t2 << 8) | (t1 & 0xFF);
 	t1 = readReg(RA8875_F_CURYL);
 	t2 = readReg(RA8875_F_CURYH);
 	_cursorY = (t2 << 8) | (t1 & 0xFF);
 	*x = _cursorX;
 	*y = _cursorY;
+	*/
 }
 /**************************************************************************/
 /*!     Show/Hide text cursor
@@ -1200,7 +1223,7 @@ void RA8875::setFontAdvance(bool on)
 	} else {
 		bitSet(_MWCR0Reg,1);
 	}
-	//bitWrite(_MWCR0Reg,1,!on);
+	bitWrite(_commonTextPar,1,on);//0.69b22
 	writeReg(RA8875_MWCR0,_MWCR0Reg);
 }
 
@@ -1243,6 +1266,7 @@ void RA8875::setFontSize(enum RA8875tsize ts,boolean halfSize)
 /**************************************************************************/
 uint8_t RA8875::getFontWidth(boolean inColums) 
 {
+	//if (_portrait) return getFontHeight(inColums);
     uint8_t temp = (((_FNCR0Reg >> 2) & 0x3) + 1) * 8;
 	if (inColums){
 		if (_textHScale < 1) return width() / temp;
@@ -1266,6 +1290,7 @@ uint8_t RA8875::getFontWidth(boolean inColums)
 /**************************************************************************/
 uint8_t RA8875::getFontHeight(boolean inRows) 
 {
+	//if (_portrait) return getFontWidth(inRows);
     uint8_t temp = (((_FNCR0Reg >> 0) & 0x3) + 1) * 16;
 	if (inRows){
 		if (_textVScale < 1) return height() / temp;
@@ -1298,58 +1323,16 @@ void RA8875::setFontSpacing(uint8_t spc)
 /*!	PRIVATE
 		This is the function that write text. Still in development
 		NOTE: It identify correctly (when I got it) println and nl & rt
-		
+		included fixes by Morgan Sandercrok (thanks man)
 */
 /**************************************************************************/
 void RA8875::textWrite(const char* buffer, uint16_t len)
  {
-	//uint8_t start = 0;
-	//uint16_t i,ny;
 	uint16_t i,v;
 	uint8_t t1,t2;
 	if (_currentMode == GRAPHIC) changeMode(TEXT);
 	if (len == 0) len = strlen(buffer);
-	/*
-	if (len > 1 && ((buffer[0] == '\r') && (buffer[1] == '\n'))){//got a println?
-		//get current y
-		t1 = readReg(RA8875_F_CURYL);
-		t2 = readReg(RA8875_F_CURYH);
-		//calc new line y
-		ny = (t2 << 8) | (t1 & 0xFF);
-		//update y
-		ny = ny + (16 + (16*_textVScale))+_fontInterline;//TODO??
-		setCursor(0,ny);
-		start = 2;
-	#if defined(ENERGIA) || defined(__AVR_ATmega32U4__)
-			//oops! Energia 013 seems have a bug here! Should send a \r but only \n given! (MaxMC)
-			//The Micro also seems to only ever send one char at a time to this function, so
-			//the test above will always fail to find the\r\n pair. (M.Sanderscock)
-		} else if (len > 0 && ((buffer[0] == '\n'))){
-			//get current y
-			t1 = readReg(RA8875_F_CURYL);
-			t2 = readReg(RA8875_F_CURYH);
-			//calc new line y
-			ny = (t2 << 8) | (t1 & 0xFF);
-			//update y
-			ny = ny + (16 + (16*_textVScale))+_fontInterline;//TODO??
-			setCursor(0,ny);
-			start = 1;
-		}
-	#else
-		}
-	#endif
-	*/
 	writeCommand(RA8875_MRWC);
-	/*
-	for (i=start;i<len;i++){
-		if (buffer[i] == '\n' || buffer[i] == '\r') {
-			//_cursor_y += textsize * 8;
-			//_cursor_x  = 0;
-		} else {
-			writeData(buffer[i]);
-			waitBusy(0x80);
-		}
-	*/
 	for (i=0;i<len;i++){
 		switch(buffer[i]) {
 			case '\r':
@@ -1362,16 +1345,17 @@ void RA8875::textWrite(const char* buffer, uint16_t len)
 					t1 = readReg(RA8875_F_CURYL);
 					t2 = readReg(RA8875_F_CURYH);
 					v = (t2 << 8) | (t1 & 0xFF);
-					v += (16 + (16*_textVScale))+_fontInterline;
-					setCursor(0,v);
+					v += (16 + (16 * _textVScale)) + _fontInterline;
+					//setCursor(0,v);
 				} else {
 					//x coordinate is vertical
 					t1 = readReg(RA8875_F_CURXL);
 					t2 = readReg(RA8875_F_CURXH);
 					v = (t2 << 8) | (t1 & 0xFF);
-					v += (16 + (16*_textVScale))+_fontInterline;
-					setCursor(v,0);
+					v += (16 + (16 * _textVScale)) + _fontInterline;
+					//setCursor(v,0);
 				} 
+				setCursor(0,v);//0.69b22
 			break;
 			default:
 				//write a normal char
