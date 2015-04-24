@@ -18,13 +18,13 @@ You are using 4 wire SPI here, so:
  the rest of pin below:
  */
 #define RA8875_INT 3 //any pin
-#define RA8875_CS 2 //see below...
+#define RA8875_CS 10 //see below...
 /*
 Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 Arduino's 8 bit: any
 DUE: should be any but not sure
 */
-#define RA8875_RESET 29//any pin or nothing!
+#define RA8875_RESET 9//any pin or nothing!
 
 #if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
 
@@ -198,11 +198,9 @@ const uint8_t battery6c[16] = {
 
 void setup() 
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
-  Serial.println("RA8875 online");
 
-  tft.begin(RA8875_480x272);
+  uint8_t i;
+  tft.begin(RA8875_800x480);
   //upload chars in address 0x00 to 0x04
   tft.uploadUserChar(battery1,0);//0x00
   tft.uploadUserChar(battery2,1);
@@ -213,35 +211,39 @@ void setup()
   tft.uploadUserChar(battery6b,6);//
   tft.uploadUserChar(battery6c,7);//
   //now custom char are stored in CGRAM
-  
+ tft.setTextColor(RA8875_WHITE,RA8875_BLACK);
+ tft.setFontScale(0);
+  for (i=0;i<5;i++){
+    tft.setCursor(tft.width()/2,tft.height()/2);
+    tft.showUserChar(i);//retrieve from 0x00 to 0x04
+    delay(200);
+  }
+  tft.setFontScale(0);
+}
+
+uint8_t rot;
+void loop() 
+{
+  uint8_t i;
+  tft.clearScreen();//exact as tft.fillScreen();
+  tft.setRotation(rot);
   tft.setTextColor(RA8875_WHITE,RA8875_BLACK);
   //custom char are managed as text but need to be called
   //by a special function
   //the only text parameter that is not accepted is setFontScale!
-  for (int i=0;i<5;i++){
+  for (i=0;i<5;i++){
     tft.setCursor(10,10);
     tft.showUserChar(i);//retrieve from 0x00 to 0x04
     delay(200);
   }
-  
-  delay(500);
-  
-  tft.setTextColor(RA8875_RED,RA8875_BLACK);
-  for (int i=4;i>=0;i--){
-    tft.setCursor(10,10);
-    tft.showUserChar(i);//retrieve from 0x00 to 0x04
-    delay(200);
-  }
-  delay(500);
   
   //now another feature, you can design a char wider
   //by using many char slot combined.
   //below an example, 3 chars wider
-  tft.setCursor(100,100);
+  tft.setTextColor(RA8875_LIGHT_ORANGE);
+  tft.setCursor(30,11);
   tft.showUserChar(5,2);
-}
-
-void loop() 
-{
-
+  delay(1000); 
+  if (rot > 3) rot = 0;
+  rot++;
 }
