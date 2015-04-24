@@ -1023,6 +1023,22 @@ void RA8875::setFontInterline(uint8_t pix)
 	//_FWTSETReg |= spc & 0x3F; 
 	writeReg(RA8875_FLDR,_fontInterline);
 }
+
+/**************************************************************************/
+/*!  
+		Set global text wrapping on/off
+		Parameters:
+		wrap: true(wrap on), false(wrap off [default])
+		0.69b23
+*/
+/**************************************************************************/
+/*
+void RA8875::setTextWrap(bool wrap)
+{
+	bitWrite(_commonTextPar,2,wrap);
+		
+}
+*/
 /**************************************************************************/
 /*!   
 		Set the Text position for write Text only.
@@ -1034,8 +1050,7 @@ void RA8875::setFontInterline(uint8_t pix)
 void RA8875::setCursor(uint16_t x, uint16_t y) 
 {
 	if (_portrait) swapvals(x,y);
-	//if (!_textWrap){
-	if (bitRead(_commonTextPar,2) == 0){//0.69b22
+	if (bitRead(_commonTextPar,2) == 0){//0.69b22 (_textWrap)
 		if (x >= _width) x = _width-1;
 		if (y >= _height) y = _height-1;
 	}
@@ -1651,9 +1666,9 @@ void RA8875::setScrollMode(enum RA8875scrollMode mode)
 /**************************************************************************/
 void RA8875::setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB)
 {
-	if (_portrait){//0.69b21 -have to check this, not verified
-		swapvals(XL,XR);
-		swapvals(YT,YB);
+	if (_portrait){//0.69b22 (fixed)
+		swapvals(XL,YT);
+		swapvals(XR,YB);
 	}
 	
 	checkLimitsHelper(XL,YT);
@@ -1681,7 +1696,7 @@ void RA8875::setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB)
 /**************************************************************************/
 void RA8875::scroll(uint16_t x,uint16_t y)
 { 
-	if (_portrait){//0.69b21 -have to check this, not verified
+	if (_portrait){//0.69b22 ok
 		swapvals(x,y);
 	}
 	if (y > _scrollYB) y = _scrollYB;//??? mmmm... not sure
@@ -1742,14 +1757,21 @@ void RA8875::DMA_startAddress(unsigned long adrs)
 void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum)
 {  
 	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
-	
+	if (_portrait){//0.69b21 -have to check this, not verified
+		swapvals(x,y);
+		swapvals(w,h);
+	}
 	writeReg(RA8875_SFCLR,0x00);
 	writeReg(RA8875_SROC,0x87);
 	writeReg(RA8875_DMACR,0x02);
 	//setActiveWindow(0,_width-1,0,_height-1); 
 	checkLimitsHelper(x,y);
 	checkLimitsHelper(w,h);
-	setXY(x,y);
+	if (_portrait){
+		setXY(y,x);
+	} else {
+		setXY(x,y);
+	}
 	
 	DMA_startAddress(261120 * (picnum-1));
 	DMA_blockModeSize(w,h,w);   
@@ -1790,8 +1812,8 @@ void RA8875::BTE_source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY)
 {
 	uint8_t temp0,temp1;
 	if (_portrait){//0.69b21 -have to check this, not verified
-		swapvals(SX,DX);
-		swapvals(SY,DY);
+		swapvals(SX,SY);
+		swapvals(DX,DY);
 	}
     writeReg(RA8875_HSBE0,SX);//BTE horizontal position of read/write data
     writeReg(RA8875_HSBE1,SX >> 8);//BTE horizontal position of read/write data   
@@ -2549,10 +2571,12 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 		swapvals(x,y);
 		swapvals(w,h);
 	}
-	checkLimitsHelper(x,y);
+	if (w > WIDTH) return;
+	if (h > HEIGHT) return;
 	if (w < 1) w = 1;
 	if (h < 1) h = 1;
-	
+	checkLimitsHelper(x,y);
+
 	lineAddressing(x,y,w,h);
 	
 	setForegroundColor(color);

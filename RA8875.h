@@ -2,9 +2,9 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b22
+	Version:0.69b23
 	Everithing should work correctly even in rotation!
-	Fixed println in portrait, fixed getCursor in portrait
+	Fixed scroll in portrait, other fixes related
 	some optimizations...
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
@@ -258,6 +258,7 @@ class RA8875 : public Print {
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
 	void 		setFontInterline(uint8_t pix);//0...63 pix
+	//void 		setTextWrap(bool wrap);
 	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
 	void 		setFontAdvance(bool on);
 	uint8_t 	getFontWidth(boolean inColums=false);
