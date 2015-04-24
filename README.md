@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b21 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b22 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -61,6 +61,7 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b18: FIXED 8 BIT COLOR! fixed sleep sequence, added a couple of functions.
 * 0.69b19: Fixed a couple of examples, memoryClear now works as it should.
 * 0.69b21: All rotation issues seems fixed!!! You can run any example in any rotation mode, no issues.
+* 0.69b22: fixed println in portrait, fixed getCursor in portrait
 
 
 ##### Description
