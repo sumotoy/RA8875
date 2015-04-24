@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b19 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b21 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -60,6 +60,7 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b15: fixed several errors and added more functionalities by M.Sanderscock. Confirmed 800x480 works.
 * 0.69b18: FIXED 8 BIT COLOR! fixed sleep sequence, added a couple of functions.
 * 0.69b19: Fixed a couple of examples, memoryClear now works as it should.
+* 0.69b21: All rotation issues seems fixed!!! You can run any example in any rotation mode, no issues.
 
 
 ##### Description
@@ -122,15 +123,16 @@ In real life this set apparently set almost all drawing functions to 65K color B
 Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br><br>
 
 **IF YOU OWN A EASTRISING from BuyDisplay please read this!!**<br>
-Thanks to the help of The Experimentalist was discovered that those display have pullups on any SPI output! This cause any type of malfunction with other SPI devices and even damage processor pin in some case. The display affected are the 5" and 7", black PCB, see this page 
+Thanks to the help of The Experimentalist was discovered that those display have pullups on any SPI output! This cause any type of malfunction with other SPI devices and even damage processor pin in some case. The display affected are the 5" and 7", black PCB, see this page<br>
 
 https://github.com/sumotoy/RA8875/wiki/EastRising-and-Buydisplay-SPI-configuration-and-wiring
 
-<br><br>
+<br>
 There's another **hardware issue on MISO** that's a problem only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!), Paul Stoffregen discover the MISO bug that it's not tristate:<br>
 https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices<br><br>
 The chip it's **NOT out-of-range-values tolerant!** (in contrast of the 90% of the other commercial drivers) If a value it's out of range you can experience various screen weirdness like garbage, white screen or chip freeze! This forced me to carefully surround many function with data range checks.<br><br>
-Memory Clear full should clear all layers memory? Accordly datasheet seems yes but it doesn't work as it should. On Datasheet, memory clear can clear the current screen or the entire memory but there's very obscure commands like memory start clear and memory stop clear that are not documented... Grrr
+Memory Clear full should clear all layers memory? Accordly datasheet seems yes but it doesn't work as it should. On Datasheet, memory clear can clear the current screen or the entire memory but there's very obscure commands like memory start clear and memory stop clear that are not documented... Grrr<br>
+During the fix of setRotation issues I found another bug, the RA8875 forget some parameter previously assigned when you touch the scan registers...Again solved by some library workaround<br>
 
 #### Wiring with your MCU
 I support only _native SPI_.<br>
