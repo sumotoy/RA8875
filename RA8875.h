@@ -2,10 +2,9 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b23
-	Everithing should work correctly even in rotation!
-	Fixed scroll in portrait, other fixes related
-	some optimizations...
+	Version:0.69b24
+	added clearScreen functionality, fixed setActiveWindow in portrait.
+	added getActiveWindow
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -228,6 +227,7 @@ class RA8875 : public Print {
 	void  		writeData16(uint16_t data);
 //--------------area -------------------------------------
 	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);//The working area where to draw on
+	void 		getActiveWindow(uint16_t &XL,uint16_t &XR ,uint16_t &YT ,uint16_t &YB);
 	uint16_t 	width(void) const;//the phisical display width
 	uint16_t 	height(void) const;//the phisical display height
 	void		setRotation(uint8_t rotation); //rotate text and graphics
@@ -283,7 +283,7 @@ class RA8875 : public Print {
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);//ok
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);//ok
 	void    	fillScreen(uint16_t color=RA8875_BLACK);//fill the entire screen with a color(default black)
-	void		clearScreen(uint16_t color=RA8875_BLACK);//exact as fillScreen, used for compatibility
+	void		clearScreen(uint16_t color=RA8875_BLACK);//as fillScreen but doesn't depends from setActiveWindow
 	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
@@ -372,6 +372,10 @@ using Print::write;
 	uint8_t					_initIndex;
 	uint16_t 		 		_width, _height;//relative to rotation
 	uint16_t 		 		WIDTH, HEIGHT;//absolute
+	uint16_t				_activeWindowXL;
+	uint16_t				_activeWindowXR;
+	uint16_t				_activeWindowYT;
+	uint16_t				_activeWindowYB;
 	//text vars ----------------------------------------------
 	uint16_t				_txtForeColor;
 	uint16_t				_txtBackColor;
@@ -428,6 +432,7 @@ using Print::write;
 	#endif
 	void 	DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR);
 	void 	DMA_startAddress(unsigned long adrs);
+	void 	updateActiveWindow(bool full);
 	//---------------- moved to private functions (before where public) ------------
 	void 	changeMode(enum RA8875modes m);//GRAPHIC,TEXT (now private)
 	void 	scanDirection(boolean invertH,boolean invertV);//(now private)

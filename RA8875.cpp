@@ -379,7 +379,7 @@ void RA8875::initialize()
 	writeReg(RA8875_VSTR0,initStrings[_initIndex][12]);////VSYNC Start Position Register 0
 	writeReg(RA8875_VSTR1,initStrings[_initIndex][13]);////VSYNC Start Position Register 1
 	writeReg(RA8875_VPWR,initStrings[_initIndex][14]);////VSYNC Pulse Width Register
-	setActiveWindow(0,(_width-1),0,(_height-1));//set the active window
+	setActiveWindow(0,(WIDTH-1),0,(HEIGHT-1));//set the active window
 	clearMemory(true);//clear memory (we are not in multilayer o the visible memory will be cleared)
 	//end of hardware initialization
 	delay(10); //100
@@ -522,18 +522,47 @@ void RA8875::displayOn(boolean on)
 /**************************************************************************/
 void RA8875::setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB)
 {
+	if (_portrait){//0.69b24
+		swapvals(XL,YT);
+		swapvals(XR,YB);
+	}
+	
 	if (XR >= WIDTH) XR = WIDTH-1;
 	if (YB >= HEIGHT) YB = HEIGHT-1;
-    // X 
-	writeReg(RA8875_HSAW0,XL);
-	writeReg(RA8875_HSAW1,XL >> 8);   
-	writeReg(RA8875_HEAW0,XR);
-	writeReg(RA8875_HEAW1,XR >> 8);
+	
+	_activeWindowXL = XL;
+	_activeWindowXR = XR;
+	_activeWindowYT = YT;
+	_activeWindowYB = YB;
+	updateActiveWindow(false);
+/*     // X 
+	writeReg(RA8875_HSAW0,_activeWindowXL);
+	writeReg(RA8875_HSAW1,_activeWindowXL >> 8);   
+	writeReg(RA8875_HEAW0,_activeWindowXR);
+	writeReg(RA8875_HEAW1,_activeWindowXR >> 8);
     // Y 
-	writeReg(RA8875_VSAW0,YT);
-	writeReg(RA8875_VSAW1,YT >> 8); 
-	writeReg(RA8875_VEAW0,YB); 
-	writeReg(RA8875_VEAW1,YB >> 8);
+	writeReg(RA8875_VSAW0,_activeWindowYT);
+	writeReg(RA8875_VSAW1,_activeWindowYT >> 8); 
+	writeReg(RA8875_VEAW0,_activeWindowYB); 
+	writeReg(RA8875_VEAW1,_activeWindowYB >> 8); */
+}
+
+/**************************************************************************/
+/*!		
+		Set the Active Window
+	    Parameters:
+		XL: Horizontal Left
+		XR: Horizontal Right
+		YT: Vertical TOP
+		YB: Vertical Bottom
+*/
+/**************************************************************************/
+void RA8875::getActiveWindow(uint16_t &XL,uint16_t &XR ,uint16_t &YT ,uint16_t &YB)//0.69b24
+{
+	XL = _activeWindowXL;
+	XR = _activeWindowXR;
+	YT = _activeWindowYT;
+	YB = _activeWindowYB;
 }
 
 /**************************************************************************/
@@ -2294,8 +2323,6 @@ void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 	}
 }
 
-
-
 /**************************************************************************/
 /*!
 	  draws a FILLED rectangle
@@ -2317,13 +2344,11 @@ void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 	}
 }
 
-
-
 /**************************************************************************/
 /*!
       Fill the screen by using a specified RGB565 color
 	  Parameters:
-	  color: RGB565 color
+	  color: RGB565 color (default=BLACK)
 */
 /**************************************************************************/
 void RA8875::fillScreen(uint16_t color)
@@ -2335,10 +2360,20 @@ void RA8875::fillScreen(uint16_t color)
 	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 }
 
-//legacy
-void RA8875::clearScreen(uint16_t color)
+/**************************************************************************/
+/*!
+      clearScreen it's different from fillScreen because it doesn't depends
+	  from the active window settings so it will clear all the screen.
+	  It should be used only when needed since it's slower than fillScreen.
+	  parameter:
+	  color: 16bit color (default=BLACK)
+*/
+/**************************************************************************/
+void RA8875::clearScreen(uint16_t color)//0.69b24
 {  
+	updateActiveWindow(true);//temporarily set all window
 	fillScreen(color);
+	updateActiveWindow(false);//go back to the old win settings
 }
 
 /**************************************************************************/
@@ -2719,6 +2754,38 @@ void RA8875::checkLimitsHelper(int16_t &x,int16_t &y)
 	if (y >= HEIGHT) y = HEIGHT -1;
 	x = x;
 	y = y;
+}
+
+/**************************************************************************/
+/*!
+		
+*/
+/**************************************************************************/
+void RA8875::updateActiveWindow(bool full)
+{
+	if (full){
+		// X
+		writeReg(RA8875_HSAW0,0);
+		writeReg(RA8875_HSAW1,0);   
+		writeReg(RA8875_HEAW0,WIDTH-1);
+		writeReg(RA8875_HEAW1,(WIDTH-1) >> 8);
+		// Y 
+		writeReg(RA8875_VSAW0,0);
+		writeReg(RA8875_VSAW1,0); 
+		writeReg(RA8875_VEAW0,HEIGHT-1); 
+		writeReg(RA8875_VEAW1,(HEIGHT-1) >> 8);
+	} else {
+		// X
+		writeReg(RA8875_HSAW0,_activeWindowXL);
+		writeReg(RA8875_HSAW1,_activeWindowXL >> 8);   
+		writeReg(RA8875_HEAW0,_activeWindowXR);
+		writeReg(RA8875_HEAW1,_activeWindowXR >> 8);
+		// Y 
+		writeReg(RA8875_VSAW0,_activeWindowYT);
+		writeReg(RA8875_VSAW1,_activeWindowYT >> 8); 
+		writeReg(RA8875_VEAW0,_activeWindowYB); 
+		writeReg(RA8875_VEAW1,_activeWindowYB >> 8);
+	}
 }
 
 /**************************************************************************/
