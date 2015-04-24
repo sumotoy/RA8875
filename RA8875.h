@@ -2,15 +2,8 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b20 bug fixes and adds from M.Sanderscock
-	Added alternative pins for SPI (only Teensy 3.x or LC)
-	Corrected setRotation and added absolute display W&H to support rotation
-	Sleep mode on/off sequence ok!
-	--> Fixed color at 8 bit! <--
-	Added setFontAdvance
-	Added some test BTE stuff
-	Small optimizations and library cleaning
-	Addressing almost fixed even in portrait
+	Version:0.69b21 
+	Everithing should work correctly even in rotation!
 	
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
@@ -174,6 +167,10 @@ The suggested programming steps and registers setting are listed below as refere
 #include "Print.h"
 #ifdef __AVR__
   #include <math.h>
+#endif
+
+#if !defined(swapvals)
+#define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
 #endif
 
 enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480 };
@@ -370,7 +367,10 @@ using Print::write;
 	bool					_inited;//true when init has been ended
 	uint8_t					_initIndex;
 	bool					_sleep;
+	bool					_portrait;
 	uint16_t 		 		_width, _height;
+	uint16_t				_txtForeColor;
+	uint16_t				_txtBackColor;
 	uint16_t 		 		WIDTH, HEIGHT;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	uint8_t 		 		_textHScale, _textVScale;	 		
