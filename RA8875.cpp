@@ -1,6 +1,10 @@
 #include <SPI.h>
 #include "RA8875.h"
 
+#if defined (USE_FT5206_TOUCH)
+	#include "Wire.h"
+	static volatile boolean _touched = false;
+#endif
 
 
 #ifdef SPI_HAS_TRANSACTION
@@ -16,7 +20,7 @@ static SPISettings settings;
 	spiInterface: 0 or 1 - default 0
 */
 /**************************************************************************/
-#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//teensy stuff
 /*
 	#if defined(__MKL26Z64__)//this one has 2 SPI
 		RA8875::RA8875(const uint8_t CS,const uint8_t RST,uint8_t spiInterface){
@@ -26,19 +30,36 @@ static SPISettings settings;
 		RA8875::RA8875(const uint8_t CS,const uint8_t RST){
 	#endif
 */
-	RA8875::RA8875(const uint8_t CS,const uint8_t RST,uint8_t mosi_pin,uint8_t sclk_pin,uint8_t miso_pin){
-			_cs = CS;
-			_rst = 255;
+	#if defined (USE_FT5206_TOUCH)
+		RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,const uint8_t INTp,const uint8_t mosi_pin,const uint8_t sclk_pin,const uint8_t miso_pin){
+			_cs = CSp;
+			_ctpInt = INTp;
 			_mosi = mosi_pin;
 			_miso = miso_pin;
 			_sclk = sclk_pin;
-			if (RST != 255) _rst = RST;
+			_rst = 255;
+			if (RSTp != 255) _rst = RSTp;
 		}
-#else
-	#if defined(NEEDS_SET_MODULE)
-		RA8875::RA8875(const uint8_t module, const uint8_t RST) {
+	#else		
+		RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,const uint8_t mosi_pin,const uint8_t sclk_pin,const uint8_t miso_pin){
+			_cs = CSp;
+			_mosi = mosi_pin;
+			_miso = miso_pin;
+			_sclk = sclk_pin;
+			_rst = 255;
+			if (RSTp != 255) _rst = RSTp;
+		}
+	#endif
+#else//not teensy
+	#if defined(NEEDS_SET_MODULE)//energia based
+		#if defined (USE_FT5206_TOUCH)
+			RA8875::RA8875(const uint8_t module, const uint8_t RSTp,const uint8_t INTp) {
+				_ctpInt = INTp;
+		#else
+			RA8875::RA8875(const uint8_t module, const uint8_t RSTp) {
+		#endif
 			selectCS(module);
-	#else
+	#else//all the rest
 /**************************************************************************/
 /*!
 	Constructor
@@ -46,13 +67,17 @@ static SPISettings settings;
 	RST: Reset pin (255 disable it)
 */
 /**************************************************************************/
-
-		RA8875::RA8875(const uint8_t CS, const uint8_t RST) {
-			_cs = CS;
+		#if defined (USE_FT5206_TOUCH)
+			RA8875::RA8875(const uint8_t CSp, const uint8_t RSTp,const uint8_t INTp) {
+				_ctpInt = INTp;
+		#else
+			RA8875::RA8875(const uint8_t CSp, const uint8_t RSTp) {
+		#endif
+				_cs = CSp;
 	#endif
-			_rst = 255;
-			if (RST != 255) _rst = RST;
-		}
+				_rst = 255;
+				if (RSTp != 255) _rst = RSTp;
+			}
 #endif
 
 /**************************************************************************/
@@ -113,7 +138,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_maxLayers = 2;
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
-	_currentMode = GRAPHIC;
+	_currentMode = 0;
 	_brightness = 255;
 	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
 	_textSize = X16;
@@ -338,6 +363,28 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	digitalWrite(_cs, HIGH);
 	#endif
 	initialize();
+	//------- time for capacitive touch stuff -----------------
+	#if defined (USE_FT5206_TOUCH)
+		Wire.begin();
+		#if ARDUINO >= 157
+			Wire.setClock(400000UL); // Set I2C frequency to 400kHz
+		#else
+			TWBR = ((F_CPU / 400000UL) - 16) / 2; // Set I2C frequency to 400kHz
+		#endif
+		delay(10);
+		//initialize FT5206 controller
+		Wire.beginTransmission(_ctpAdrs);
+		Wire.write(0x00);//device mode
+		Wire.write(0x00);
+		Wire.endTransmission(_ctpAdrs);
+		//enable _ctpInt as input for listen interrupts
+		pinMode(_ctpInt ,INPUT);
+		_maxTouch = 5;
+		_gesture = 0;
+		_currentTouches = 0;
+		_currentTouchState = 0;
+		_needISRrearm = false;
+	#endif
 }
 
 /************************* Initialization *********************************/
@@ -597,23 +644,25 @@ uint16_t RA8875::height(void) const {
 		[private]
 */
 /**************************************************************************/
-void RA8875::changeMode(enum RA8875modes m) 
+void RA8875::changeMode(uint8_t m) 
 {
-	//if (m == _currentMode) return;
+	if (m == _currentMode) return;
 	writeCommand(RA8875_MWCR0);
-	if (m == GRAPHIC){
-		 if (_currentMode == TEXT){//avoid consecutive calls
+	if (m != 0){//text
+		 //if (_currentMode == 1){//avoid consecutive calls
+			
+			 _MWCR0Reg |= (1 << 7);
+			 _currentMode = 1;
+			//writeData(_MWCR0Reg);
+		//}
+	} else {//graph
+		//if (_currentMode == 0){//avoid consecutive calls
 			 _MWCR0Reg &= ~(1 << 7);
-			 _currentMode = GRAPHIC;
-			writeData(_MWCR0Reg);
-		}
-	} else {
-		if (_currentMode == GRAPHIC){//avoid consecutive calls
-			_MWCR0Reg |= (1 << 7);
-			_currentMode = TEXT;
-			writeData(_MWCR0Reg);
-		}
+			_currentMode = 0;
+			//writeData(_MWCR0Reg);
+		//}
 	}
+	writeData(_MWCR0Reg);
 }
 
 /**************************************************************************/
@@ -772,8 +821,8 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 	uint8_t tempMWCR1 = readReg(RA8875_MWCR1);//thanks MorganSandercock
 	bool modeChanged = false;
 	uint8_t i;
-	if (_currentMode != GRAPHIC) {//was in text!
-		changeMode(GRAPHIC);
+	if (_currentMode != 0) {//was in text!
+		changeMode(0);
 		modeChanged = true;
 	}
 	writeReg(RA8875_CGSR,address);
@@ -783,7 +832,7 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 		writeData(symbol[i]);
 	}
 	writeReg(RA8875_MWCR1, tempMWCR1);//restore register (MorganSandercock)
-	if (modeChanged) changeMode(TEXT);//back to text
+	if (modeChanged) changeMode(1);//back to text
 }
 
 /**************************************************************************/
@@ -797,7 +846,7 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 /**************************************************************************/
 void RA8875::showUserChar(uint8_t symbolAddrs,uint8_t wide) 
 {
-	if (_currentMode != TEXT) changeMode(TEXT);
+	if (_currentMode != 1) changeMode(1);
 	uint8_t oldRegState = _FNCR0Reg;
 	uint8_t i;
 	bitSet(oldRegState,7);//set to CGRAM
@@ -978,7 +1027,6 @@ void RA8875::setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg)
 /**************************************************************************/
 void RA8875::setFont(enum RA8875fontSource s) 
 {
-	//enum RA8875fontCoding c
 	if (s == INT){
 		//check the font coding
 		if (bitRead(_commonTextPar,0) == 1) {//0.96b22 _extFontRom = true
@@ -1374,7 +1422,7 @@ void RA8875::textWrite(const char* buffer, uint16_t len)
  {
 	uint16_t i,v;
 	uint8_t t1,t2;
-	if (_currentMode == GRAPHIC) changeMode(TEXT);
+	if (_currentMode != 1) changeMode(1);
 	if (len == 0) len = strlen(buffer);
 	writeCommand(RA8875_MRWC);
 	for (i=0;i<len;i++){
@@ -1785,7 +1833,7 @@ void RA8875::DMA_startAddress(unsigned long adrs)
 /**************************************************************************/
 void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum)
 {  
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 	if (_portrait){//0.69b21 -have to check this, not verified
 		swapvals(x,y);
 		swapvals(w,h);
@@ -2119,7 +2167,7 @@ void RA8875::writeTo(enum RA8875writes d)
 /**************************************************************************/
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
 	writeData16(color); 
@@ -2128,7 +2176,7 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 
 void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 {
-    if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+    if (_currentMode != 0) changeMode(0);//we are in text mode?
     setXY(x, y);
     writeCommand(RA8875_MRWC);
     startSend();
@@ -2149,7 +2197,7 @@ void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 uint16_t RA8875::getPixel(int16_t x, int16_t y)
 {
     uint16_t color;
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
     setXY(x,y);
     writeCommand(RA8875_MRWC);
 	#if defined(SPI_HAS_TRANSACTION)
@@ -2190,7 +2238,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
 void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 {
     uint16_t color; 
-    if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+    if (_currentMode != 0) changeMode(0);//we are in text mode?
     setXY(x,y);
     writeCommand(RA8875_MRWC);
 	#if defined(SPI_HAS_TRANSACTION)
@@ -2235,7 +2283,7 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 /**************************************************************************/
 void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
 {
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 	if (_portrait) {//0.69b21
 		swapvals(x0,y0);
 		swapvals(x1,y1);
@@ -2575,7 +2623,7 @@ void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 /**************************************************************************/
 void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled)
 {
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 	if (_portrait) swapvals(x0,y0);//0.69b21
 	checkLimitsHelper(x0,y0);
 	if (r < 1) r = 1;
@@ -2601,7 +2649,7 @@ void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, boo
 /**************************************************************************/
 void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled)
 {
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 	if (_portrait) {//0.69b21
 		swapvals(x,y);
 		swapvals(w,h);
@@ -2629,7 +2677,7 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 /**************************************************************************/
 void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled)
 {
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 	if (_portrait) {//0.69b21
 		swapvals(x0,y0);
 		swapvals(x1,y1);
@@ -2661,7 +2709,7 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 /**************************************************************************/
 void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled)
 {
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 
 	//TODO:limits!
 	curveAddressing(xCenter,yCenter,longAxis,shortAxis);
@@ -2680,7 +2728,7 @@ void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, i
 /**************************************************************************/
 void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled)
 {
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 	if (_portrait) {//0.69b21
 		swapvals(xCenter,yCenter);
 		swapvals(longAxis,shortAxis);
@@ -2702,7 +2750,7 @@ void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 /**************************************************************************/
 void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled)
 {
-	if (_currentMode == TEXT) changeMode(GRAPHIC);//we are in text mode?
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
 	if (_portrait) {//0.69b21
 		swapvals(x,y);
 		swapvals(w,h);
@@ -3409,6 +3457,124 @@ void RA8875::endSend()
 #endif
 } 
 
+/*
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++				CAPACITIVE TOUCH SCREEN CONTROLLER	FT5206						     +
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*/
+#if defined (USE_FT5206_TOUCH)
+
+void RA8875::isr(void)
+{
+	_touched = true;
+}
+
+void RA8875::armTouchISR(bool force) 
+{
+	if (force || _needISRrearm){
+		_needISRrearm = false;
+#ifdef digitalPinToInterrupt
+		attachInterrupt(digitalPinToInterrupt(_ctpInt),isr,FALLING);
+#else
+		attachInterrupt(0,isr,FALLING);
+#endif
+		_touched = false;
+	}
+}
+
+bool RA8875::touched(bool safe)
+{
+	_needISRrearm = safe;
+    if (_touched){
+		if (_needISRrearm){
+#ifdef digitalPinToInterrupt
+			detachInterrupt(digitalPinToInterrupt(_ctpInt));
+#else
+			detachInterrupt(0);
+#endif
+		} else {
+			_touched = false;
+		}
+		return true;
+    }
+	return false;
+}
+
+void RA8875::setTouchLimit(uint8_t limit)
+{
+	if (limit > 5) limit = 5;
+	_maxTouch = limit;
+}
+
+uint8_t RA8875::getTouchLimit(void)
+{
+	return _maxTouch;
+}
+
+void RA8875::updateTS(void)
+{
+    Wire.requestFrom((uint8_t)_ctpAdrs, (uint8_t)28); //get 28 registers
+    uint8_t index = 0;
+    while(Wire.available()) {
+      _cptRegisters[index++] = Wire.read();//fill registers
+    }
+	_currentTouches = _cptRegisters[0x02] & 0xF;
+	if (_currentTouches > _maxTouch) _currentTouches = _maxTouch;
+	_gesture = _cptRegisters[0x01];
+	if (_maxTouch < 2) _gesture = 0;
+	uint8_t temp = _cptRegisters[0x03];
+	_currentTouchState = 0;
+	if (!bitRead(temp,7) && bitRead(temp,6)) _currentTouchState = 1;//finger up
+	if (bitRead(temp,7) && !bitRead(temp,6)) _currentTouchState = 2;//finger down
+}
+
+uint8_t RA8875::getTScoordinates(uint16_t (*touch_coordinates)[2])
+{
+	uint8_t i;
+	if (_currentTouches < 1) return 0;
+ 	for (i=1;i<=_currentTouches;i++){
+		switch(_rotation){
+			case 0://ok
+				touch_coordinates[i-1][0] = ((_cptRegisters[coordRegStart[i-1]] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 1];
+				touch_coordinates[i-1][1] = ((_cptRegisters[coordRegStart[i-1] + 2] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 3];
+			break;
+			case 1://ok
+				touch_coordinates[i-1][0] = (((_cptRegisters[coordRegStart[i-1] + 2] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 3]);
+				touch_coordinates[i-1][1] = (WIDTH - 1) - (((_cptRegisters[coordRegStart[i-1]] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 1]);
+			break;
+			case 2://ok
+				touch_coordinates[i-1][0] = (WIDTH - 1) - (((_cptRegisters[coordRegStart[i-1]] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 1]);
+				touch_coordinates[i-1][1] = (HEIGHT - 1) -(((_cptRegisters[coordRegStart[i-1] + 2] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 3]);
+			break;
+			case 3://ok
+				touch_coordinates[i-1][0] = (HEIGHT - 1) - (((_cptRegisters[coordRegStart[i-1] + 2] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 3]);
+				touch_coordinates[i-1][1] = (((_cptRegisters[coordRegStart[i-1]] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 1]);
+			break;
+		}
+
+		if (i == _maxTouch) return i;
+	} 
+    return _currentTouches;
+}
+
+uint8_t RA8875::getTouchState(void)
+{
+	return _currentTouchState;
+}
+
+uint8_t RA8875::getTouches(void)
+{
+	return _currentTouches;
+}
+
+uint8_t RA8875::getGesture(void)
+{
+	return _gesture;
+}
+
+#endif
+
+/*
 void RA8875::debugData(uint16_t data,uint8_t len)
 {
   for (int i=len-1; i>=0; i--){
@@ -3423,3 +3589,4 @@ void RA8875::debugData(uint16_t data,uint8_t len)
   Serial.print(data,HEX);
   Serial.print("\n");
 }
+*/

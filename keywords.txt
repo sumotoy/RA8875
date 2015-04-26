@@ -88,7 +88,15 @@ writeCommand	KEYWORD2
 writeData16	KEYWORD2
 setX	KEYWORD2
 setY	KEYWORD2
-
+armTouchISR	KEYWORD2
+touched	KEYWORD2
+setTouchLimit	KEYWORD2
+getTouchLimit	KEYWORD2
+updateTS	KEYWORD2
+getGesture	KEYWORD2
+getTouches	KEYWORD2
+getTouchState	KEYWORD2
+getTScoordinates	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

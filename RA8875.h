@@ -2,9 +2,9 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b24
-	added clearScreen functionality, fixed setActiveWindow in portrait.
-	added getActiveWindow
+	Version:0.69b25
+	faster changeMode (text/graphic)
+	include support for FT5206 capacitive Touch Screen controller
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -174,16 +174,15 @@ The suggested programming steps and registers setting are listed below as refere
 #endif
 
 enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480 };
-enum RA8875modes { GRAPHIC,TEXT };
-enum RA8875tcursor { NOCURSOR,IBEAM,UNDER,BLOCK };
-enum RA8875tsize { X16,X24,X32 };
-enum RA8875fontSource { INT, EXT };
+enum RA8875tcursor { NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
+enum RA8875tsize { X16=0,X24,X32 };//0,1,2
+enum RA8875fontSource { INT=0, EXT };//0,1
 enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
 enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1 };
 enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
-enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };//for LTPR0
-enum RA8875writes { L1, L2, CGRAM, PATTERN, CURSOR };//TESTING
+enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };
+enum RA8875writes { L1=0, L2, CGRAM, PATTERN, CURSOR };
 enum RA8875scrollMode{ SIMULTANEOUS, LAYER1ONLY, LAYER2ONLY, BUFFERED };
 enum RA8875pattern{ P8X8, P16X16 };
 enum RA8875btedatam{ CONT, RECT };
@@ -192,25 +191,45 @@ enum RA8875btedatam{ CONT, RECT };
 #include "_utility/RA8875Registers.h"
 #include "_utility/RA8875ColorPresets.h"
 #include "_utility/RA8875UserSettings.h"
+
+
+//include the support for FT5206
+#if defined (USE_FT5206_TOUCH)
+	#if !defined(USE_EXTERNALTOUCH)
+		#define USE_EXTERNALTOUCH//FT5206 doesn't use RA8875 stuff
+	#endif
+	#include "Wire.h"
+	//#include "FT5206.h"
+#endif
+
 #if !defined(USE_EXTERNALTOUCH)
-#include "_utility/RA8875Calibration.h"
+	#include "_utility/RA8875Calibration.h"
 #endif
 
 // Touch screen cal structs
 typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
 typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fix for DUE
+//const
 static const uint8_t _RA8875colorMask[6] = {11,5,0,13,8,3};//for color masking, first 3 byte for 65K
 
 class RA8875 : public Print {
  public:
-	void 		debugData(uint16_t data,uint8_t len=8);
+	//void 		debugData(uint16_t data,uint8_t len=8);
 //------------- Instance -------------------------
 	//#if defined(__MKL26Z64__)
 	//	RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);//only Teensy LC
 	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
-		RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t mosi_pin=11,uint8_t sclk_pin=13,uint8_t miso_pin=12);
-	#else	
-		RA8875(const uint8_t CS, const uint8_t RST=255);//all the others
+		#if defined (USE_FT5206_TOUCH)
+			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t INTp=2,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
+		#else
+			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
+		#endif
+	#else//not teensy
+		#if defined (USE_FT5206_TOUCH)
+			RA8875(const uint8_t CSp, const uint8_t RSTp=255,const uint8_t INTp=2);//all the others
+		#else
+			RA8875(const uint8_t CSp, const uint8_t RSTp=255);//all the others
+		#endif
 	#endif
 //------------- Setup -------------------------
 	void 		begin(const enum RA8875sizes s,uint8_t colors=16);
@@ -328,6 +347,18 @@ class RA8875 : public Print {
 	void 		touchReadPixel(uint16_t *x, uint16_t *y);//return pixels (0...width, 0...height)
 	boolean		touchCalibrated(void);//true if screen calibration it's present
 #endif
+//--------------Capacitive Touch Screen FT5206 -------------------------
+#if defined (USE_FT5206_TOUCH)
+	void 		armTouchISR(bool force = false); 
+	bool 		touched(bool safe=false);
+	void 		setTouchLimit(uint8_t limit);
+	uint8_t 	getTouchLimit(void);
+	void	 	updateTS(void);
+	uint8_t 	getGesture(void);
+	uint8_t 	getTouches(void);
+	uint8_t 	getTouchState(void);
+	uint8_t 	getTScoordinates(uint16_t (*touch_coordinates)[2]);
+#endif
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -354,6 +385,18 @@ using Print::write;
 		uint8_t _miso, _mosi, _sclk;
 	#endif
 	// Touch Screen vars ---------------------
+	#if defined (USE_FT5206_TOUCH)//internal FT5206 driver
+	uint8_t 				_ctpInt;
+	const uint8_t			_ctpAdrs = 0x38;
+	uint8_t					_maxTouch;
+	static void 		 	isr(void);
+	uint8_t 				_cptRegisters[28];
+	uint8_t					_gesture;
+	uint8_t					_currentTouches;//0...5
+	uint8_t					_currentTouchState;//0,1,2
+	bool					_needISRrearm;
+	const uint8_t coordRegStart[5] = {{0x03},{0x09},{0x0F},{0x15},{0x1B}};
+	#endif
 	#if !defined(USE_EXTERNALTOUCH)
 	uint8_t					_touchPin;
 	bool					_clearTInt;
@@ -396,7 +439,7 @@ using Print::write;
 	enum RA8875extRomType 	_fontRomType;
 	enum RA8875extRomCoding _fontRomCoding;
 	enum RA8875tsize		_textSize;
-	enum RA8875modes 		_currentMode;
+	uint8_t 				_currentMode;
 	enum RA8875sizes 		_size;
 	enum RA8875fontSource 	_fontSource;
 	enum RA8875tcursor		_textCursorStyle;
@@ -434,7 +477,7 @@ using Print::write;
 	void 	DMA_startAddress(unsigned long adrs);
 	void 	updateActiveWindow(bool full);
 	//---------------- moved to private functions (before where public) ------------
-	void 	changeMode(enum RA8875modes m);//GRAPHIC,TEXT (now private)
+	void 	changeMode(uint8_t m);//GRAPHIC,TEXT (now private)
 	void 	scanDirection(boolean invertH,boolean invertV);//(now private)
 	
 	//---------------------------------------------------------
@@ -482,20 +525,3 @@ using Print::write;
 };
 
 #endif
-/*
-Register affected by color
-REG[10h] System Configuration Register (SYSR) bit 3,2//OK
-REG[41h] Memory Write Control Register1 (MWCR1) bit 0//OK
-REG[60h] Background Color Register 0 (BGCR0) bit 4..0//OK
-REG[61h] Background Color Register 1 (BGCR1) bit 5..0//OK
-REG[62h] Background Color Register 2 (BGCR2) bit 4..0//OK
-REG[63h] Foreground Color Register 0 (FGCR0) bit 4..0//OK
-REG[64h] Foreground Color Register 1 (FGCR1) bit 5..0//OK
-REG[65h] Foreground Color Register 2 (FGCR2) bit 4..0//OK
-REG[67h] Background Color Register for Transparent 0 (BGTR0) bit 4..0//OK
-REG[68h] Background Color Register for Transparent 1 (BGTR1) bit 4..0//OK
-REG[69h] Background Color Register for Transparent 2 (BGTR2) bit 4..0//OK
-REG[84h] Graphic Cursor Color 0 (GCC0) bit 7..0
-REG[85h] Graphic Cursor Color 1 (GCC1) bit 7..0
-
-*/
