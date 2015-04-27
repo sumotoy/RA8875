@@ -3591,3 +3591,44 @@ void RA8875::debugData(uint16_t data,uint8_t len)
   Serial.print("\n");
 }
 */
+
+
+/**************************************************************************/
+/*! 
+		really experimental!!!!!
+*/
+/**************************************************************************/
+void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1)
+{
+	unsigned int offset;
+	unsigned char by = 0, mask = 0;
+	uint16_t i,j,h,w,NrBytes,cX,cY;
+	unsigned char cmap;
+	uint16_t allwidth = 0;
+	if (pixellation < 1) pixellation = 1;
+	while ((cmap = *in++)) {
+		cmap = pgm_read_byte(&strcut1->mapping_table[cmap]);
+		w = strcut1->glyph_width;
+		if (w == 0) w = pgm_read_byte(&strcut1->width_table[cmap]);
+		offset = pgm_read_word(&strcut1->offset_table[cmap]);
+		h = strcut1->glyph_height;
+        NrBytes = ((w - 1) / 8) + 1;
+		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
+			for (i = 0;i < w; i++){//  width
+			    if (i%8 == 0) {
+					by = pgm_read_byte(&strcut1->glyph_table[offset + j + (i/8)]);
+					mask = 0x80;
+			    }
+				cX = x + (i + allwidth) * pixellation;
+				cY = y + (j / NrBytes) * pixellation;
+				if (by & mask) {
+					drawPixel(cX,cY, color);
+	 			} else {
+					//background (to do)
+				}
+	 			mask >>= 1;
+			}//End i
+		}// End j
+		allwidth+=w;
+	}// End K
+} 

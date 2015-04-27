@@ -2,10 +2,11 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b26
+	Version:0.69b27
 	faster changeMode (text/graphic)
 	include support for FT5206 capacitive Touch Screen controller
 	Added support for send block of pixels
+	Added experimental font rendering (check fontRendering example)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -170,6 +171,31 @@ The suggested programming steps and registers setting are listed below as refere
   #include <math.h>
 #endif
 
+#include "_utility/RA8875Font.h"
+
+//pgmspace fixup
+#if defined(__MK20DX128__) || defined(__MK20DX256__)  || defined(__MKL26Z64__)//teensy 3 or 3.1 or LC
+#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
+#ifdef PROGMEM
+#undef PROGMEM
+#define PROGMEM __attribute__((section(".progmem.data")))
+#endif
+#elif defined(__32MX320F128H__) || defined(__32MX795F512L__) || (defined(ARDUINO) && defined(__arm__) && !defined(CORE_TEENSY))//chipkit uno, chipkit max, arduino DUE	
+	#ifndef __PGMSPACE_H_
+	#define __PGMSPACE_H_ 1
+	#define PROGMEM
+	#define PGM_P  const char *
+	#define PSTR(str) (str)
+	#define pgm_read_byte_near(addr) pgm_read_byte(addr)
+	#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+	#define pgm_read_word(addr) (*(const unsigned short *)(addr))
+	#endif
+#else
+#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
+
+#endif
+
+
 #if !defined(swapvals)
 #define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
 #endif
@@ -284,6 +310,8 @@ class RA8875 : public Print {
 	void 		setFontAdvance(bool on);
 	uint8_t 	getFontWidth(boolean inColums=false);
 	uint8_t 	getFontHeight(boolean inRows=false);
+//--------------Font Rendering Engine (ALPHA!!!! just to test) -------------------------
+	void 		gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1);
 	//----------Font Selection and related..............................
 	void		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
@@ -361,6 +389,7 @@ class RA8875 : public Print {
 	uint8_t 	getTouchState(void);
 	uint8_t 	getTScoordinates(uint16_t (*touch_coordinates)[2]);
 #endif
+
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
