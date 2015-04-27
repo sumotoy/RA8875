@@ -2,9 +2,10 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b25
+	Version:0.69b26
 	faster changeMode (text/graphic)
 	include support for FT5206 capacitive Touch Screen controller
+	Added support for send block of pixels
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -261,6 +262,7 @@ class RA8875 : public Print {
 	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
 	uint8_t 	getColorBpp(void);//get the current display color space (return 8 or 16)
 	inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
+	inline uint16_t Color24To565(int32_t color_) { return ((((color_ >> 16) & 0xFF) / 8) << 11) | ((((color_ >> 8) & 0xFF) / 4) << 5) | (((color_) &  0xFF) / 8);}
 //--------------Cursor Stuff----------------------------
 	void 		setCursorBlinkRate(uint8_t rate);//set blink rate of the cursor 0...255 0:faster
 	void 		showCursor(enum RA8875tcursor c,bool blink);//show cursor(NOCURSOR,IBEAM,UNDER,BLOCK), default blinking

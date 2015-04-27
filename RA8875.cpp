@@ -2194,6 +2194,7 @@ void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 }
 
 
+
 uint16_t RA8875::getPixel(int16_t x, int16_t y)
 {
     uint16_t color;

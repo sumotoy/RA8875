@@ -33,6 +33,9 @@ setXY	KEYWORD2
 pushPixels	KEYWORD2
 fillRect	KEYWORD2
 drawPixel	KEYWORD2
+drawPixels	KEYWORD2
+getPixel	KEYWORD2
+getPixels	KEYWORD2
 drawFastVLine	KEYWORD2
 drawFastHLine	KEYWORD2
 fillScreen	KEYWORD2
@@ -97,6 +100,9 @@ getGesture	KEYWORD2
 getTouches	KEYWORD2
 getTouchState	KEYWORD2
 getTScoordinates	KEYWORD2
+Color565	KEYWORD2
+Color24To565	KEYWORD2
+
 
 #######################################
 # Constants (LITERAL1)
