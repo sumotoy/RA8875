@@ -2,11 +2,12 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b27
+	Version:0.69b28
 	faster changeMode (text/graphic)
 	include support for FT5206 capacitive Touch Screen controller
 	Added support for send block of pixels
 	Added experimental font rendering (check fontRendering example)
+	Modded font rendering to write rows instead of pixels (much faster)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -311,7 +312,7 @@ class RA8875 : public Print {
 	uint8_t 	getFontWidth(boolean inColums=false);
 	uint8_t 	getFontHeight(boolean inRows=false);
 //--------------Font Rendering Engine (ALPHA!!!! just to test) -------------------------
-	void 		gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1);
+	void 		gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,const struct FONT_DEF *strcut1);
 	//----------Font Selection and related..............................
 	void		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)

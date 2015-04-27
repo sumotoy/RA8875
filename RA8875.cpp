@@ -3598,6 +3598,135 @@ void RA8875::debugData(uint16_t data,uint8_t len)
 		really experimental!!!!!
 */
 /**************************************************************************/
+
+void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,const struct FONT_DEF *strcut1)
+{
+	unsigned int offset;
+	unsigned char by = 0, mask = 0;
+	uint16_t i,j,h,w,NrBytes;
+	unsigned char cmap;
+	uint16_t allwidth = 0;
+	while ((cmap = *in++)) {
+		cmap = pgm_read_byte(&strcut1->mapping_table[cmap]);
+		w = strcut1->glyph_width;
+		if (w == 0) w = pgm_read_byte(&strcut1->width_table[cmap]);
+		uint16_t buffer[w];//temp buffer
+		offset = pgm_read_word(&strcut1->offset_table[cmap]);
+		h = strcut1->glyph_height;
+        NrBytes = ((w - 1) / 8) + 1;
+		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
+			for (i = 0;i < w; i++){//  width
+			    if (i%8 == 0) {
+					by = pgm_read_byte(&strcut1->glyph_table[offset + j + (i/8)]);
+					mask = 0x80;
+			    }
+				if (by & mask) {
+					buffer[i] = color;
+	 			} else {
+					//background (to do)
+					buffer[i] = 0x0000;
+				}
+	 			mask >>= 1;
+			}//End i
+			drawPixels(buffer,w,x+allwidth,y+(j / NrBytes));
+		}// End j
+		allwidth+=w;
+	}// End K
+} 
+/*
+void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1)
+{
+	unsigned int offset;
+	unsigned char by = 0, mask = 0;
+	uint16_t i,j,h,w,NrBytes;
+	unsigned char cmap;
+	uint16_t allwidth = 0;
+	if (pixellation < 1) pixellation = 1;
+	
+	while ((cmap = *in++)) {
+		cmap = pgm_read_byte(&strcut1->mapping_table[cmap]);
+		w = strcut1->glyph_width;
+		if (w == 0) w = pgm_read_byte(&strcut1->width_table[cmap]);
+		uint16_t buffer[w*pixellation];//temp buffer
+		offset = pgm_read_word(&strcut1->offset_table[cmap]);
+		h = strcut1->glyph_height;
+        NrBytes = ((w - 1) / 8) + 1;
+		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
+			uint16_t d = 0;
+			for (i = 0;i < w*pixellation; i++){//  width
+				if (d == 0){
+					if (i%8 == 0) {
+						by = pgm_read_byte(&strcut1->glyph_table[offset + j + (i/8)]);
+						mask = 0x80;
+					}
+				} else {
+					if (i%8 == 0) {
+						by = pgm_read_byte(&strcut1->glyph_table[offset + j + ((i-1)/8)]);
+						mask = 0x80;
+					}
+				}
+
+				if (by & mask) {
+					Serial.print("*");
+					buffer[i] = color;
+	 			} else {
+					//background (to do)
+					Serial.print(" ");
+					buffer[i] = 0x0000;
+				}
+				d++;
+				if (d > 1) d = 0;
+				
+				
+	 			mask >>= 1;
+			}//End i
+			Serial.println();
+			drawPixels(buffer,w*pixellation,(x+allwidth),y+(j / NrBytes));
+		}// End j
+		allwidth+=w;
+	}// End K
+} 
+*/
+/*
+
+void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,const struct FONT_DEF *strcut1)
+{
+	unsigned int offset;
+	unsigned char by = 0, mask = 0;
+	uint16_t i,j,h,w,NrBytes;
+	unsigned char cmap;
+	uint16_t allwidth = 0;
+	if (pixellation < 1) pixellation = 1;
+	
+	while ((cmap = *in++)) {
+		cmap = pgm_read_byte(&strcut1->mapping_table[cmap]);
+		w = strcut1->glyph_width;
+		if (w == 0) w = pgm_read_byte(&strcut1->width_table[cmap]);
+		uint16_t buffer[w];//temp buffer
+		offset = pgm_read_word(&strcut1->offset_table[cmap]);
+		h = strcut1->glyph_height;
+        NrBytes = ((w - 1) / 8) + 1;
+		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
+			for (i = 0;i < w; i++){//  width
+			    if (i%8 == 0) {
+					by = pgm_read_byte(&strcut1->glyph_table[offset + j + (i/8)]);
+					mask = 0x80;
+			    }
+				if (by & mask) {
+					buffer[i] = color;
+	 			} else {
+					//background (to do)
+					buffer[i] = 0x0000;
+				}
+	 			mask >>= 1;
+			}//End i
+			drawPixels(buffer,w,x+allwidth,y+(j / NrBytes));
+		}// End j
+		allwidth+=w;
+	}// End K
+} 
+
+
 void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1)
 {
 	unsigned int offset;
@@ -3632,3 +3761,4 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 		allwidth+=w;
 	}// End K
 } 
+*/

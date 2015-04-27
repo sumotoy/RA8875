@@ -20,18 +20,18 @@ RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's
 
 void setup() 
 {
-  Serial.begin(38400);
+  //Serial.begin(38400);
   //long unsigned debug_start = millis ();
   //while (!Serial && ((millis () - debug_start) <= 5000)) ;
-  Serial.println("RA8875 start");
+  //Serial.println("RA8875 start");
 
   tft.begin(RA8875_800x480);
   
   /*
-  x,y,text,color,pixellation,font
-  pixellation it's an experimental efx that write font by using aligned pixels and affect the size, try it!
+  x,y,text,color,font
   */
-  tft.gPrint(30,30,"Hello World",RA8875_CYAN,3,&Imagine_FontFixed__15);
+
+  tft.gPrint(30,30,"Hello world!",RA8875_WHITE,&Imagine_FontFixed__15);
 }
 
 void loop() 
