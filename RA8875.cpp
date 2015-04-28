@@ -155,8 +155,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_fontRomType = _DFT_RA8875_EXTFONTROMTYPE;
 	_fontRomCoding = _DFT_RA8875_EXTFONTROMCODING;
 	_fontSource = INT;
-	_txtForeColor = RA8875_WHITE;
-	_txtBackColor = RA8875_BLACK;
+	//_txtForeColor = RA8875_WHITE;
+	//_txtBackColor = RA8875_BLACK;
 	_rotation = 0;
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
@@ -437,7 +437,8 @@ void RA8875::initialize()
 	setCursorBlinkRate(DEFAULTCURSORBLINKRATE);//set default blink rate
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
 	setFont(INT);	//set internal font use
-	setTextColor(RA8875_WHITE);//since the blackground it's black...
+	_backTransparent = false;//0.69b30
+	setTextColor(RA8875_WHITE);
 	//set cursor at 0,0
 	writeReg(RA8875_F_CURXL,(0 & 0xFF));
 	writeReg(RA8875_F_CURXH,(0 >> 8));
@@ -650,7 +651,6 @@ void RA8875::changeMode(uint8_t m)
 	writeCommand(RA8875_MWCR0);
 	if (m != 0){//text
 		 //if (_currentMode == 1){//avoid consecutive calls
-			
 			 _MWCR0Reg |= (1 << 7);
 			 _currentMode = 1;
 			//writeData(_MWCR0Reg);
@@ -791,7 +791,7 @@ void RA8875::setRotation(uint8_t rotation)
     break;
 	}
 	writeReg(RA8875_FNCR1,_FNCR1Reg);//0.69b21
-	setTextColor(_txtForeColor,_txtBackColor);//0.69b21 after rotation text loose it's previus color parameters!
+	//setTextColor(_txtForeColor,_txtBackColor);//0.69b21 after rotation text loose it's previus color parameters!
 }
 
 /**************************************************************************/
@@ -1102,21 +1102,6 @@ void RA8875::setFontInterline(uint8_t pix)
 }
 
 /**************************************************************************/
-/*!  
-		Set global text wrapping on/off
-		Parameters:
-		wrap: true(wrap on), false(wrap off [default])
-		0.69b23
-*/
-/**************************************************************************/
-/*
-void RA8875::setTextWrap(bool wrap)
-{
-	bitWrite(_commonTextPar,2,wrap);
-		
-}
-*/
-/**************************************************************************/
 /*!   
 		Set the Text position for write Text only.
 		Parameters:
@@ -1231,17 +1216,17 @@ void RA8875::setCursorBlinkRate(uint8_t rate)
 /*!		
 		set the text color and his background
 		Parameters:
-		fColor:16bit foreground color (text) RGB565
-		bColor:16bit background color RGB565
+		fcolor:16bit foreground color (text) RGB565
+		bcolor:16bit background color RGB565
+		NOTE:will set background trasparent OFF
 */
 /**************************************************************************/
-void RA8875::setTextColor(uint16_t fColor, uint16_t bColor)
+void RA8875::setTextColor(uint16_t fcolor, uint16_t bcolor)//0.69b30
 {
-	setForegroundColor(fColor);
-	setBackgroundColor(bColor);
-	_txtForeColor = fColor;
-	_txtBackColor = bColor;
-	_FNCR1Reg &= ~(1 << 6);
+	_backTransparent = false;
+	if (fcolor != _foreColor) setForegroundColor(fcolor);
+	if (bcolor != _backColor) setBackgroundColor(bcolor);
+	_FNCR1Reg &= ~(1 << 6);//clear
 	writeReg(RA8875_FNCR1,_FNCR1Reg);
 }
 
@@ -1250,14 +1235,15 @@ void RA8875::setTextColor(uint16_t fColor, uint16_t bColor)
 		set the text color w transparent background
 		Parameters:
 		fColor:16bit foreground color (text) RGB565
+		NOTE:will set background trasparent ON
 */
 /**************************************************************************/
 
-void RA8875::setTextColor(uint16_t fColor)
+void RA8875::setTextColor(uint16_t fcolor)
 {
-	setForegroundColor(fColor);
-	_txtForeColor = fColor;
-	_FNCR1Reg |= (1 << 6);
+	_backTransparent = true;
+	if (fcolor != _foreColor) setForegroundColor(fcolor);
+	_FNCR1Reg |= (1 << 6);//set
 	writeReg(RA8875_FNCR1,_FNCR1Reg);
 }
 
@@ -1511,6 +1497,7 @@ void RA8875::setForegroundColor(uint16_t color)
 {
 	uint8_t idx = 0;
 	if (_color_bpp < 16) idx = 3;//8bit
+	_foreColor = color;//keep track
 	writeReg(RA8875_FGCR0,((color & 0xF800) >> _RA8875colorMask[idx]));
 	writeReg(RA8875_FGCR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));
 	writeReg(RA8875_FGCR2,((color & 0x001F) >> _RA8875colorMask[idx+2]));
@@ -1526,6 +1513,7 @@ void RA8875::setForegroundColor(uint16_t color)
 /**************************************************************************/
 void RA8875::setForegroundColor(uint8_t R,uint8_t G,uint8_t B)
 {
+	_foreColor = Color565(R,G,B);//keep track
 	writeReg(RA8875_FGCR0,R);
 	writeReg(RA8875_FGCR1,G);
 	writeReg(RA8875_FGCR2,B);
@@ -1536,12 +1524,14 @@ void RA8875::setForegroundColor(uint8_t R,uint8_t G,uint8_t B)
 	  It handles automatically color conversion when in 8 bit!
 	  Parameters:
 	  color:16bit color RGB565
+	  Note: will set background Trasparency OFF
 */
 /**************************************************************************/
 void RA8875::setBackgroundColor(uint16_t color)
 {
 	uint8_t idx = 0;
 	if (_color_bpp < 16) idx = 3;//8bit
+	_backColor = color;//keep track
 	writeReg(RA8875_BGCR0,((color & 0xF800) >> _RA8875colorMask[idx]));//11
 	writeReg(RA8875_BGCR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));//5
 	writeReg(RA8875_BGCR2,((color & 0x001F) >> _RA8875colorMask[idx+2]));//0
@@ -1553,11 +1543,13 @@ void RA8875::setBackgroundColor(uint16_t color)
 	  R:8bit RED
 	  G:8bit GREEN
 	  B:8bit BLUE
+	  Note: will set background Trasparency OFF
 */
 /**************************************************************************/
 void RA8875::setBackgroundColor(uint8_t R,uint8_t G,uint8_t B)
 {
 	//_color_bpp > 8
+	_backColor = Color565(R,G,B);//keep track
 	writeReg(RA8875_BGCR0,R);
 	writeReg(RA8875_BGCR1,G);
 	writeReg(RA8875_BGCR2,B);
@@ -1568,12 +1560,14 @@ void RA8875::setBackgroundColor(uint8_t R,uint8_t G,uint8_t B)
 	  It handles automatically color conversion when in 8 bit!
 	  Parameters:
 	  color:16bit color RGB565
+	  Note: will set background Trasparency ON
 */
 /**************************************************************************/
-void RA8875::setTrasparentColor(uint16_t color)
+void RA8875::setTransparentColor(uint16_t color)
 {
 	uint8_t idx = 0;
 	if (_color_bpp < 16) idx = 3;//8bit
+	_backColor = color;//to check
 	writeReg(RA8875_BGTR0,((color & 0xF800) >> _RA8875colorMask[idx]));
 	writeReg(RA8875_BGTR1,((color & 0x07E0) >> _RA8875colorMask[idx+1]));
 	writeReg(RA8875_BGTR2,((color & 0x001F) >> _RA8875colorMask[idx+2]));
@@ -1585,14 +1579,35 @@ void RA8875::setTrasparentColor(uint16_t color)
 	  R:8bit RED
 	  G:8bit GREEN
 	  B:8bit BLUE
+	  Note: will set background Trasparency ON
 */
 /**************************************************************************/
-void RA8875::setTrasparentColor(uint8_t R,uint8_t G,uint8_t B)
+void RA8875::setTransparentColor(uint8_t R,uint8_t G,uint8_t B)
 {
 	//_color_bpp > 8
+	_backColor = Color565(R,G,B);//to check
 	writeReg(RA8875_BGTR0,R);
 	writeReg(RA8875_BGTR1,G);
 	writeReg(RA8875_BGTR2,B);
+}
+
+/**************************************************************************/
+/*!		
+		set foreground,background color (plus transparent background)
+		Parameters:
+		fColor:16bit foreground color (text) RGB565
+		bColor:16bit background color RGB565
+		backTransp:if true the bColor will be transparent
+*/
+/**************************************************************************/
+void RA8875::setColor(uint16_t fcolor,uint16_t bcolor,bool bcolorTraspFlag)//0.69b30
+{
+	if (fcolor != _foreColor) setForegroundColor(fcolor);
+	if (bcolorTraspFlag){
+		setTransparentColor(bcolor);
+	} else {
+		if (bcolor != _backColor) setBackgroundColor(bcolor);
+	}
 }
 
 
@@ -1651,13 +1666,7 @@ void RA8875::showGraphicCursor(boolean cur)
 		y:vertical position
 */
 /**************************************************************************/
-/*
-		//drawPixel(x,y,color);
-		//0.69b21 fix!!!
-		setXY(x,y);
-		writeCommand(RA8875_MRWC);
-		writeData16(color);
-	*/
+
 void RA8875::setXY(int16_t x, int16_t y) 
 {
 	if (x < 0) x = 0;
@@ -1869,9 +1878,8 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 /**************************************************************************/
 void RA8875::BTE_size(uint16_t w, uint16_t h)
 {
-	if (_portrait){//0.69b21 -have to check this, not verified
-		swapvals(w,h);
-	}
+	//0.69b21 -have to check this, not verified
+	if (_portrait) swapvals(w,h);
 	if (w > _width) w = _width;
 	if (h > _height) h = _height;
     writeReg(RA8875_BEWR0,w);//BET area width literacy  
@@ -2177,7 +2185,7 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 {
     if (_currentMode != 0) changeMode(0);//we are in text mode?
-    setXY(x, y);
+    setXY(x,y);
     writeCommand(RA8875_MRWC);
     startSend();
 	SPI.transfer(RA8875_DATAWRITE);
@@ -2295,7 +2303,7 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 	
 	lineAddressing(x0,y0,x1,y1);
 	
-	setForegroundColor(color);
+	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid 3 useless SPI calls
 	
 	writeReg(RA8875_DCR,0x80);
 	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
@@ -2636,7 +2644,7 @@ void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, boo
 
 	writeReg(RA8875_DCRR,r); 
 	
-	setForegroundColor(color);
+	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 
 	writeCommand(RA8875_DCR);
 	filled == true ? writeData(RA8875_DCR_CIRCLE_START | RA8875_DCR_FILL) : writeData(RA8875_DCR_CIRCLE_START | RA8875_DCR_NOFILL);
@@ -2655,15 +2663,17 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 		swapvals(x,y);
 		swapvals(w,h);
 	}
-	if (w > WIDTH) return;
-	if (h > HEIGHT) return;
+	//if (w > WIDTH) return;
+	//if (h > HEIGHT) return;
+	if (w > _width) w = _width-1;
+	if (h > _height) h = _height-1;
 	if (w < 1) w = 1;
 	if (h < 1) h = 1;
 	checkLimitsHelper(x,y);
 
 	lineAddressing(x,y,w,h);
 	
-	setForegroundColor(color);
+	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 
 	writeCommand(RA8875_DCR);
 	filled == true ? writeData(0xB0) : writeData(0x90);
@@ -2696,7 +2706,7 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 	writeReg(RA8875_DTPV0,y2);
 	writeReg(RA8875_DTPV1,y2 >> 8);
 
-	setForegroundColor(color);
+	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 	
 	writeCommand(RA8875_DCR);
 	filled == true ? writeData(0xA1) : writeData(0x81);
@@ -2715,7 +2725,7 @@ void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, i
 	//TODO:limits!
 	curveAddressing(xCenter,yCenter,longAxis,shortAxis);
 	
-	setForegroundColor(color);
+	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 
 	writeCommand(RA8875_ELLIPSE);
 	filled == true ? writeData(0xC0) : writeData(0x80);
@@ -2737,7 +2747,7 @@ void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
 	//TODO:limits!
 	curveAddressing(xCenter,yCenter,longAxis,shortAxis);
 	
-	setForegroundColor(color);
+	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 
 	writeCommand(RA8875_ELLIPSE);
 	filled == true ? writeData(0xD0 | (curvePart & 0x03)) : writeData(0x90 | (curvePart & 0x03));
@@ -2780,7 +2790,7 @@ void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t
 		writeReg(RA8875_ELL_B0,r);
 		writeReg(RA8875_ELL_B1,r >> 8);
 
-		setForegroundColor(color);
+		if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 
 		writeCommand(RA8875_ELLIPSE);
 		filled == true ? writeData(0xE0) : writeData(0xA0);
@@ -3607,6 +3617,11 @@ void RA8875::gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,c
 	gPrint(x,y,in,color,scale,strcut1);
 }
 
+/**************************************************************************/
+/*! 
+		this will disappear - only for test!!!!!
+*/
+/**************************************************************************/
 void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1)
 {
 	if (_currentMode != 0) changeMode(0);//we are in text mode?
@@ -3667,101 +3682,15 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 		allwidth+=w*scale;
 	}// End K
 } 
-/*
-void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1)
-{
-	unsigned int offset;
-	unsigned char by = 0, mask = 0;
-	uint16_t i,j,h,w,NrBytes;
-	unsigned char cmap;
-	uint16_t allwidth = 0;
-	if (pixellation < 1) pixellation = 1;
-	
-	while ((cmap = *in++)) {
-		cmap = pgm_read_byte(&strcut1->mapping_table[cmap]);
-		w = strcut1->glyph_width;
-		if (w == 0) w = pgm_read_byte(&strcut1->width_table[cmap]);
-		uint16_t buffer[w*pixellation];//temp buffer
-		offset = pgm_read_word(&strcut1->offset_table[cmap]);
-		h = strcut1->glyph_height;
-        NrBytes = ((w - 1) / 8) + 1;
-		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
-			uint16_t d = 0;
-			for (i = 0;i < w*pixellation; i++){//  width
-				if (d == 0){
-					if (i%8 == 0) {
-						by = pgm_read_byte(&strcut1->glyph_table[offset + j + (i/8)]);
-						mask = 0x80;
-					}
-				} else {
-					if (i%8 == 0) {
-						by = pgm_read_byte(&strcut1->glyph_table[offset + j + ((i-1)/8)]);
-						mask = 0x80;
-					}
-				}
 
-				if (by & mask) {
-					Serial.print("*");
-					buffer[i] = color;
-	 			} else {
-					//background (to do)
-					Serial.print(" ");
-					buffer[i] = 0x0000;
-				}
-				d++;
-				if (d > 1) d = 0;
-				
-				
-	 			mask >>= 1;
-			}//End i
-			Serial.println();
-			drawPixels(buffer,w*pixellation,(x+allwidth),y+(j / NrBytes));
-		}// End j
-		allwidth+=w;
-	}// End K
-} 
+
+/**************************************************************************/
+/*! 
+		this will disappear - only for test!!!!!
 */
-/*
+/**************************************************************************/
 
-void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,const struct FONT_DEF *strcut1)
-{
-	unsigned int offset;
-	unsigned char by = 0, mask = 0;
-	uint16_t i,j,h,w,NrBytes;
-	unsigned char cmap;
-	uint16_t allwidth = 0;
-	if (pixellation < 1) pixellation = 1;
-	
-	while ((cmap = *in++)) {
-		cmap = pgm_read_byte(&strcut1->mapping_table[cmap]);
-		w = strcut1->glyph_width;
-		if (w == 0) w = pgm_read_byte(&strcut1->width_table[cmap]);
-		uint16_t buffer[w];//temp buffer
-		offset = pgm_read_word(&strcut1->offset_table[cmap]);
-		h = strcut1->glyph_height;
-        NrBytes = ((w - 1) / 8) + 1;
-		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
-			for (i = 0;i < w; i++){//  width
-			    if (i%8 == 0) {
-					by = pgm_read_byte(&strcut1->glyph_table[offset + j + (i/8)]);
-					mask = 0x80;
-			    }
-				if (by & mask) {
-					buffer[i] = color;
-	 			} else {
-					//background (to do)
-					buffer[i] = 0x0000;
-				}
-	 			mask >>= 1;
-			}//End i
-			drawPixels(buffer,w,x+allwidth,y+(j / NrBytes));
-		}// End j
-		allwidth+=w;
-	}// End K
-} 
-
-
-void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1)
+void RA8875::gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1)
 {
 	unsigned int offset;
 	unsigned char by = 0, mask = 0;
@@ -3776,7 +3705,10 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 		offset = pgm_read_word(&strcut1->offset_table[cmap]);
 		h = strcut1->glyph_height;
         NrBytes = ((w - 1) / 8) + 1;
+		cX = x;
+		cY = y;
 		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
+			//fillRect(cX,y,w*pixellation,(h*pixellation),RA8875_WHITE);
 			for (i = 0;i < w; i++){//  width
 			    if (i%8 == 0) {
 					by = pgm_read_byte(&strcut1->glyph_table[offset + j + (i/8)]);
@@ -3786,13 +3718,13 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 				cY = y + (j / NrBytes) * pixellation;
 				if (by & mask) {
 					drawPixel(cX,cY, color);
-	 			} else {
+					drawCircle(cX,cY,2,RA8875_GRAYSCALE*j);
+	 			}// else {
 					//background (to do)
-				}
+				//}
 	 			mask >>= 1;
 			}//End i
 		}// End j
 		allwidth+=w;
 	}// End K
 } 
-*/

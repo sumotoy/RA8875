@@ -2,13 +2,8 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b29
-	faster changeMode (text/graphic)
-	include support for FT5206 capacitive Touch Screen controller
-	Added support for send block of pixels
-	Added experimental font rendering (check fontRendering example)
-	Modded font rendering to write rows instead of pixels (much faster)
-	Minor fixing to the font rendering engine.
+	Version:0.69b30
+	Completely reordered examples, fast drawing speed (from 6 to 12 SPI calls less)
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -85,36 +80,20 @@ can be used: 2,6,9,10,15,20,21,22,23
 
 	-----------------------------------------------
 	in ms
-Screen fill              37380 	25140
-Text                     36828	36626
-Lines                    54186	40914
-Horiz/Vert Lines         39910	32280
-Rectangles (outline)     66329	45956
-Rectangles (filled)      70788	48744
-Circles (filled)         90466	67567
-Circles (outline)        96677	72260
-Triangles (outline)      12743	9848
-Triangles (filled)       22655	16359
-Rounded rects (outline)  10198	9045
-Rounded rects (filled)   42062	30125
-
-
-Benchmark                Time (microseconds)
-Screen fill              4949
-Test Pixel               42
-Test Pixels              19779
-Text                     20717 4696
-Lines                    39317
-Horiz/Vert Lines         30758
-Rectangles (outline)     45341
-Rectangles (filled)      213002
-Circles (filled)         66797
-Circles (outline)        66202
-Triangles (outline)      9335
-Triangles (filled)       15968
-Rounded rects (outline)  8298
-Rounded rects (filled)   29468
+Test Pixels              29589
+Text                     4452
+Lines                    91834
+Horiz/Vert Lines         59945
+Rectangles (outline)     268058
+Rectangles (filled)      267545
+Circles (filled)         158708
+Circles (outline)        155279
+Triangles (outline)      23003
+Triangles (filled)       62884
+Rounded rects (outline)  15845
+Rounded rects (filled)   145686
 --------------------------------
+
 
 	color = (color << 8) | (color >> 8);    // swap
     uint8_t blue  = ((color & 0x001F) << 3) | (color & 0x07)
@@ -285,8 +264,9 @@ class RA8875 : public Print {
 	void		setForegroundColor(uint8_t R,uint8_t G,uint8_t B);//color of objects in 8+8+8bit
 	void		setBackgroundColor(uint16_t color);//color of objects background in 16bit
 	void		setBackgroundColor(uint8_t R,uint8_t G,uint8_t B);//color of objects background in 8+8+8bit
-	void 		setTrasparentColor(uint16_t color);//the current transparent color in 16bit
-	void 		setTrasparentColor(uint8_t R,uint8_t G,uint8_t B);//the current transparent color in 8+8+8bit
+	void 		setTransparentColor(uint16_t color);//the current transparent color in 16bit
+	void 		setTransparentColor(uint8_t R,uint8_t G,uint8_t B);//the current transparent color in 8+8+8bit
+	void 		setColor(uint16_t fcolor,uint16_t bcolor,bool bcolorTraspFlag=false);
 	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
 	uint8_t 	getColorBpp(void);//get the current display color space (return 8 or 16)
 	inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
@@ -300,14 +280,13 @@ class RA8875 : public Print {
 //--------------Text functions ------------------------- 
 	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);//upload user defined char as array at the address 0..255
 	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//show user uploaded char at the adrs 0...255
-	void    	setTextColor(uint16_t fColor, uint16_t bColor);//set text color + text background color
-	void 		setTextColor(uint16_t fColor);//set text color (backgroud will be transparent)
+	void    	setTextColor(uint16_t fcolor, uint16_t bcolor);//set text color + text background color
+	void 		setTextColor(uint16_t fcolor);//set text color (backgroud will be transparent)
 	void    	setFontScale(uint8_t scale);//global font scale (w+h)
 	void    	setFontScale(uint8_t vscale,uint8_t hscale);//font scale separatred bu w and h
 	void    	setFontSize(enum RA8875tsize ts,boolean halfSize=false);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
 	void 		setFontInterline(uint8_t pix);//0...63 pix
-	//void 		setTextWrap(bool wrap);
 	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
 	void 		setFontAdvance(bool on);
 	uint8_t 	getFontWidth(boolean inColums=false);
@@ -315,6 +294,7 @@ class RA8875 : public Print {
 //--------------Font Rendering Engine (ALPHA!!!! just to test) -------------------------
 	void 		gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1);
 	void 		gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1);
+	void 		gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1);
 	//----------Font Selection and related..............................
 	void		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
@@ -454,8 +434,9 @@ using Print::write;
 	uint16_t				_activeWindowYT;
 	uint16_t				_activeWindowYB;
 	//text vars ----------------------------------------------
-	uint16_t				_txtForeColor;
-	uint16_t				_txtBackColor;
+	uint16_t				_foreColor;
+	uint16_t				_backColor;
+	bool					_backTransparent;
 	uint16_t				_cursorX, _cursorY;//try to internally track text cursor...
 	uint8_t 		 		_textHScale, _textVScale;	 		
 	uint8_t					_fontSpacing;

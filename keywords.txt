@@ -25,7 +25,9 @@ getRotation	KEYWORD2
 setActiveWindow	KEYWORD2
 setForegroundColor	KEYWORD2
 setBackgroundColor	KEYWORD2
-setTrasparentColor	KEYWORD2
+setTransparentColor	KEYWORD2
+setTextColor	KEYWORD2
+setColor	KEYWORD2
 showCursor	KEYWORD2
 setCursorBlinkRate	KEYWORD2
 setIntFontCoding	KEYWORD2
@@ -61,7 +63,6 @@ touchCalibrated	KEYWORD2
 readStatus	KEYWORD2
 begin	KEYWORD2
 setCursor	KEYWORD2
-setTextColor	KEYWORD2
 setFontSize	KEYWORD2
 setFontScale	KEYWORD2
 setFontSpacing	KEYWORD2
