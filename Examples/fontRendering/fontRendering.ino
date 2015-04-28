@@ -28,10 +28,10 @@ void setup()
   tft.begin(RA8875_800x480);
   
   /*
-  x,y,text,color,font
+  x,y,text,color,scale,font
   */
 
-  tft.gPrint(30,30,"Hello world!",RA8875_WHITE,&Imagine_FontFixed__15);
+  tft.gPrint(30,30,"Hello world!",RA8875_WHITE,1,&Imagine_FontFixed__15);
 }
 
 void loop() 

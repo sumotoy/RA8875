@@ -3599,38 +3599,72 @@ void RA8875::debugData(uint16_t data,uint8_t len)
 */
 /**************************************************************************/
 
-void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,const struct FONT_DEF *strcut1)
+
+void RA8875::gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1)
 {
+	char in[8];
+	itoa(num,in,10);
+	gPrint(x,y,in,color,scale,strcut1);
+}
+
+void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1)
+{
+	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (scale < 1) scale = 1;
 	unsigned int offset;
 	unsigned char by = 0, mask = 0;
-	uint16_t i,j,h,w,NrBytes;
+	uint16_t i,j,h,w,NrBytes,idx,idy,s;
 	unsigned char cmap;
 	uint16_t allwidth = 0;
 	while ((cmap = *in++)) {
 		cmap = pgm_read_byte(&strcut1->mapping_table[cmap]);
 		w = strcut1->glyph_width;
 		if (w == 0) w = pgm_read_byte(&strcut1->width_table[cmap]);
-		uint16_t buffer[w];//temp buffer
+		uint16_t buffer[w*scale];//temp buffer
 		offset = pgm_read_word(&strcut1->offset_table[cmap]);
 		h = strcut1->glyph_height;
         NrBytes = ((w - 1) / 8) + 1;
+		idy = 0;
 		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
+			idx = 0;
 			for (i = 0;i < w; i++){//  width
-			    if (i%8 == 0) {
+				
+			    if (i%8 == 0) {//read glyph
 					by = pgm_read_byte(&strcut1->glyph_table[offset + j + (i/8)]);
 					mask = 0x80;
 			    }
-				if (by & mask) {
-					buffer[i] = color;
-	 			} else {
-					//background (to do)
-					buffer[i] = 0x0000;
+				
+				for (s=0;s<scale;s++){//scaling
+					if (by & mask) {
+						buffer[idx] = color;
+					} else {
+						//background (to do)
+						buffer[idx] = 0x0000;
+					}
+					idx++;
 				}
-	 			mask >>= 1;
+				mask >>= 1;
 			}//End i
-			drawPixels(buffer,w,x+allwidth,y+(j / NrBytes));
+			
+			for (s=0;s<scale;s++){//scaling
+				setXY(x+allwidth,idy+y+(j/NrBytes));
+				writeCommand(RA8875_MRWC);
+				startSend();
+				SPI.transfer(RA8875_DATAWRITE);
+				for (i=0;i<w*scale;i++){
+					#if (ARDUINO >= 160) || TEENSYDUINO > 121
+						SPI.transfer16(buffer[i]);//should be fixed already
+					#else
+						SPI.transfer(buffer[i] >> 8);
+						SPI.transfer(buffer[i] & 0xFF);
+					#endif
+				}
+				endSend();
+				//drawPixels(buffer,w*scale,x+allwidth,idy+y+(j/NrBytes));
+				idy++;
+			}
 		}// End j
-		allwidth+=w;
+		allwidth+=w*scale;
 	}// End K
 } 
 /*
