@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b28 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b29 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -68,6 +68,7 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b26: Now can succesfully send block of pixels fast!Added conversion from 24 bit to 16 bit.
 * 0.69b27: Font rendering alpha test included (plus several test fonts). It's an alpha so don't complain.
 * 0.69b28: Faster font rendering, use rows instead pixels.
+* 0.69b29: Minor changes, added scale to the font rendering (that it's still an early alpha!).
 
 
 ##### Description
