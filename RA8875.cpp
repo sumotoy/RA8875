@@ -3657,9 +3657,17 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 						buffer[idx] = 0x0000;
 					}
 					idx++;
-				}
+				}//scale
 				mask >>= 1;
 			}//End i
+			//idy = 0;
+			if (scale < 2) idy = 0;
+			/*
+			for (s=0;s<scale;s++){//scaling
+				drawPixels(buffer,w*scale,x+allwidth,idy+y+(j/NrBytes));
+				idy++;
+			}
+			*/
 			
 			for (s=0;s<scale;s++){//scaling
 				setXY(x+allwidth,idy+y+(j/NrBytes));
@@ -3675,9 +3683,9 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 					#endif
 				}
 				endSend();
-				//drawPixels(buffer,w*scale,x+allwidth,idy+y+(j/NrBytes));
 				idy++;
-			}
+			}//scale
+			
 		}// End j
 		allwidth+=w*scale;
 	}// End K
