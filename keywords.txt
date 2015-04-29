@@ -103,6 +103,7 @@ getTouchState	KEYWORD2
 getTScoordinates	KEYWORD2
 Color565	KEYWORD2
 Color24To565	KEYWORD2
+htmlTo565	KEYWORD2
 gPrint	KEYWORD2
 
 #######################################

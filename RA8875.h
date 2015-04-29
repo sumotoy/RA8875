@@ -2,8 +2,11 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b30
+	Version:0.69b31
 	Completely reordered examples, fast drawing speed (from 6 to 12 SPI calls less)
+	Added htmlTo565 color conversion
+	Better initialization of the FT chip
+	Fixed a stupid issue created by GitHub that broke Adafruit Backlight
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -214,6 +217,7 @@ enum RA8875btedatam{ CONT, RECT };
 	#include "_utility/RA8875Calibration.h"
 #endif
 
+
 // Touch screen cal structs
 typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
 typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fix for DUE
@@ -271,6 +275,7 @@ class RA8875 : public Print {
 	uint8_t 	getColorBpp(void);//get the current display color space (return 8 or 16)
 	inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
 	inline uint16_t Color24To565(int32_t color_) { return ((((color_ >> 16) & 0xFF) / 8) << 11) | ((((color_ >> 8) & 0xFF) / 4) << 5) | (((color_) &  0xFF) / 8);}
+	inline uint16_t htmlTo565(int32_t color_) { return (uint16_t)(((color_ & 0xF80000) >> 8) | ((color_ & 0x00FC00) >> 5) | ((color_ & 0x0000F8) >> 3));}
 //--------------Cursor Stuff----------------------------
 	void 		setCursorBlinkRate(uint8_t rate);//set blink rate of the cursor 0...255 0:faster
 	void 		showCursor(enum RA8875tcursor c,bool blink);//show cursor(NOCURSOR,IBEAM,UNDER,BLOCK), default blinking
@@ -409,6 +414,8 @@ using Print::write;
 	uint8_t					_currentTouches;//0...5
 	uint8_t					_currentTouchState;//0,1,2
 	bool					_needISRrearm;
+	void 					initFT5206(void);
+	void 					regFT5206(uint8_t reg,uint8_t val);
 	const uint8_t coordRegStart[5] = {{0x03},{0x09},{0x0F},{0x15},{0x1B}};
 	#endif
 	#if !defined(USE_EXTERNALTOUCH)

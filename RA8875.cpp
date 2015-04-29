@@ -334,12 +334,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	#endif
 	if (_rst < 255){//time for hardware reset RA8875
 		pinMode(_rst, OUTPUT);
-		digitalWrite(_rst, HIGH);
-		delay(5);
 		digitalWrite(_rst, LOW);
 		delay(20);
 		digitalWrite(_rst, HIGH);
-		delay(150);
+		delay(20);
 	}
 #if defined(NEEDS_SET_MODULE)//energia specific
 	SPI.setModule(SPImodule);
@@ -373,10 +371,11 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		#endif
 		delay(10);
 		//initialize FT5206 controller
-		Wire.beginTransmission(_ctpAdrs);
-		Wire.write(0x00);//device mode
-		Wire.write(0x00);
-		Wire.endTransmission(_ctpAdrs);
+		initFT5206();
+		//Wire.beginTransmission(_ctpAdrs);
+		//Wire.write(0x00);//device mode
+		//Wire.write(0x00);
+		//Wire.endTransmission(_ctpAdrs);
 		//enable _ctpInt as input for listen interrupts
 		pinMode(_ctpInt ,INPUT);
 		_maxTouch = 5;
@@ -2913,7 +2912,7 @@ void RA8875::GPIOX(boolean on)
 		Parameters:
 		pw:pwm selection (1,2)
 		p:0...255 rate
-		NOTE:on non adafruit board PWM1 it's used by backlight!
+		
 */
 /**************************************************************************/
 void RA8875::PWMout(uint8_t pw,uint8_t p)
@@ -2949,17 +2948,14 @@ void RA8875::brightness(uint8_t val)
 		on:true(backlight on), false(backlight off)
 */
 /**************************************************************************/
-void RA8875::backlight(boolean on) 
+void RA8875::backlight(boolean on) //0.69b31 (fixed an issue with adafruit backlight)
 {
-	if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) {
-		GPIOX(on);
+	if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(on);
+	if (on == true){
+		PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
+		PWMout(1,_brightness);//turn on PWM1
 	} else {
-		if (on == true){
-			PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
-			PWMout(1,_brightness);//turn on PWM1
-		} else {
-			PWMsetup(1,false, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
-		}
+		PWMsetup(1,false, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
 	}
 }
 
@@ -3493,6 +3489,28 @@ void RA8875::armTouchISR(bool force)
 	}
 }
 
+void RA8875::initFT5206(void)
+{
+	regFT5206(0x80,0x16);//ID_G_THGROUP
+	regFT5206(0x81,0x3C);//ID_G_THPEAK
+	regFT5206(0x82,0xE9);//ID_G_THCAL
+	regFT5206(0x83,0x01);//D_G_THWATER
+	regFT5206(0x84,0x01);//ID_G_THTEMP
+	regFT5206(0x85,0xA0);//ID_G_THDIFF
+	regFT5206(0x87,0x0A);//ID_G_TIME_ENTER_MONITOR
+	regFT5206(0x88,0x06);//ID_G_PERIODACTIVE
+	regFT5206(0x89,0x28);//ID_G_PERIODMONITOR
+	regFT5206(0x00,0x00);//Device Mode
+}
+
+void RA8875::regFT5206(uint8_t reg,uint8_t val)
+{
+	Wire.beginTransmission(_ctpAdrs);
+	Wire.write(reg);
+	Wire.write(val);
+	Wire.endTransmission(_ctpAdrs);
+}
+
 bool RA8875::touched(bool safe)
 {
 	_needISRrearm = safe;
@@ -3546,6 +3564,8 @@ uint8_t RA8875::getTScoordinates(uint16_t (*touch_coordinates)[2])
  	for (i=1;i<=_currentTouches;i++){
 		switch(_rotation){
 			case 0://ok
+				//touch_coordinates[i-1][0] = _width - (((_cptRegisters[coordRegStart[i-1]] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 1]) / (4096/_width);
+				//touch_coordinates[i-1][1] = (((_cptRegisters[coordRegStart[i-1]] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 1]) / (4096/_height);
 				touch_coordinates[i-1][0] = ((_cptRegisters[coordRegStart[i-1]] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 1];
 				touch_coordinates[i-1][1] = ((_cptRegisters[coordRegStart[i-1] + 2] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 3];
 			break;
@@ -3620,6 +3640,7 @@ void RA8875::gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,c
 /**************************************************************************/
 /*! 
 		this will disappear - only for test!!!!!
+		It has many errors so please use only for tests
 */
 /**************************************************************************/
 void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1)
@@ -3633,7 +3654,7 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 	uint16_t allwidth = 0;
 	while ((cmap = *in++)) {
 		cmap = pgm_read_byte(&strcut1->mapping_table[cmap]);
-		w = strcut1->glyph_width;
+		w = strcut1->glyph_width;//12
 		if (w == 0) w = pgm_read_byte(&strcut1->width_table[cmap]);
 		uint16_t buffer[w*scale];//temp buffer
 		offset = pgm_read_word(&strcut1->offset_table[cmap]);
@@ -3642,6 +3663,7 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 		idy = 0;
 		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
 			idx = 0;
+			
 			for (i = 0;i < w; i++){//  width
 				
 			    if (i%8 == 0) {//read glyph
@@ -3652,15 +3674,22 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 				for (s=0;s<scale;s++){//scaling
 					if (by & mask) {
 						buffer[idx] = color;
+						//Serial.print("*");
 					} else {
 						//background (to do)
 						buffer[idx] = 0x0000;
+						//Serial.print(" ");
 					}
 					idx++;
 				}//scale
 				mask >>= 1;
 			}//End i
-			//idy = 0;
+/* 			Serial.println();
+			Serial.print("w:");
+			Serial.print(w);
+			Serial.print(" idx:");
+			Serial.print(idx);
+			Serial.println(); */
 			if (scale < 2) idy = 0;
 			/*
 			for (s=0;s<scale;s++){//scaling
@@ -3684,8 +3713,9 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 				}
 				endSend();
 				idy++;
+				//delay(200);
 			}//scale
-			
+			//delay(300);
 		}// End j
 		allwidth+=w*scale;
 	}// End K
