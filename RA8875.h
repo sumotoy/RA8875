@@ -2,11 +2,9 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b31
-	Completely reordered examples, fast drawing speed (from 6 to 12 SPI calls less)
-	Added htmlTo565 color conversion
-	Better initialization of the FT chip
-	Fixed a stupid issue created by GitHub that broke Adafruit Backlight
+	Version:0.69b32
+	Faster text, added CENTER option to setCursor
+	Various fixes and speedups
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -83,18 +81,18 @@ can be used: 2,6,9,10,15,20,21,22,23
 
 	-----------------------------------------------
 	in ms
-Test Pixels              29589
-Text                     4452
-Lines                    91834
-Horiz/Vert Lines         59945
-Rectangles (outline)     268058
-Rectangles (filled)      267545
-Circles (filled)         158708
-Circles (outline)        155279
-Triangles (outline)      23003
-Triangles (filled)       62884
-Rounded rects (outline)  15845
-Rounded rects (filled)   145686
+Test Pixels              29589  	30235	-
+Text                     4452  		3248	+
+Lines                    91834		91293	+
+Horiz/Vert Lines         59945		59202	+
+Rectangles (outline)     268058		267331	+
+Rectangles (filled)      267545		267858	-=
+Circles (filled)         158708		160738	-
+Circles (outline)        155279		157582	-
+Triangles (outline)      23003		22888	+
+Triangles (filled)       62884		62793	+
+Rounded rects (outline)  15845		15717	+
+Rounded rects (filled)   145686		145549	+
 --------------------------------
 
 
@@ -217,6 +215,9 @@ enum RA8875btedatam{ CONT, RECT };
 	#include "_utility/RA8875Calibration.h"
 #endif
 
+#define LEFT 0
+#define RIGHT 9999
+#define CENTER 9998
 
 // Touch screen cal structs
 typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
@@ -226,7 +227,7 @@ static const uint8_t _RA8875colorMask[6] = {11,5,0,13,8,3};//for color masking, 
 
 class RA8875 : public Print {
  public:
-	//void 		debugData(uint16_t data,uint8_t len=8);
+	void 		debugData(uint16_t data,uint8_t len=8);
 //------------- Instance -------------------------
 	//#if defined(__MKL26Z64__)
 	//	RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);//only Teensy LC
@@ -279,8 +280,8 @@ class RA8875 : public Print {
 //--------------Cursor Stuff----------------------------
 	void 		setCursorBlinkRate(uint8_t rate);//set blink rate of the cursor 0...255 0:faster
 	void 		showCursor(enum RA8875tcursor c,bool blink);//show cursor(NOCURSOR,IBEAM,UNDER,BLOCK), default blinking
-	void    	setCursor(uint16_t x, uint16_t y);//set cursor position to write text
-	void 		getCursor(uint16_t *x, uint16_t *y);//update the library _cursorX,_cursorY internally
+	void    	setCursor(uint16_t x, uint16_t y);//set cursor position to write text(pixels or CENTER)
+	void 		getCursor(uint16_t &x, uint16_t &y);//update the library _cursorX,_cursorY internally
 	//and get the current data, this is useful sometime because the chip track cursor internally only
 //--------------Text functions ------------------------- 
 	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);//upload user defined char as array at the address 0..255
@@ -298,6 +299,7 @@ class RA8875 : public Print {
 	uint8_t 	getFontHeight(boolean inRows=false);
 //--------------Font Rendering Engine (ALPHA!!!! just to test) -------------------------
 	void 		gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1);
+	
 	void 		gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1);
 	void 		gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1);
 	//----------Font Selection and related..............................
@@ -388,6 +390,8 @@ virtual size_t write(const uint8_t *buffer, size_t size) {
 	textWrite((const char *)buffer, size);
 	return size;
 }
+
+
 using Print::write;
 
  private:
@@ -455,7 +459,10 @@ using Print::write;
 	2	->		_textWrap
 	3	->		_fontFullAlig
 	4	->		_fontRotation
+	5	->		_alignXToCenter;
+	6	->		_alignYToCenter;
 	*/
+	bool					_centerFlag;
 	uint8_t					_commonTextPar;
 	enum RA8875extRomFamily _fontFamily;
 	enum RA8875extRomType 	_fontRomType;
@@ -485,8 +492,7 @@ using Print::write;
 	void 	circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
 	void 	rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
 	void 	triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
-	void 	ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled);
-	void 	curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled);
+	void 	ellipseCurveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis,uint8_t curvePart, uint16_t color, bool filled);
 	void 	lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	void 	curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	void 	roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);

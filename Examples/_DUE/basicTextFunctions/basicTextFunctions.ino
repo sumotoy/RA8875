@@ -48,7 +48,7 @@ void setup()
   tft.print("Hello World");
   //by default we using the internal font
   //so some manipulation it's possible
-  tft.setFontScale(1);//font x2
+  tft.setFontScale(1);//font x1
   Serial.println(tft.getFontWidth());
   Serial.println(tft.getFontHeight());
   tft.setTextColor(RA8875_RED);
@@ -57,10 +57,10 @@ void setup()
   //automatically increased by chip, unfortunatly not
   //tracked by library but we can use a command for that...
   uint16_t currentX,currentY;
-  tft.getCursor(&currentX,&currentY);
+  tft.getCursor(currentX,currentY);
   //now we have the location, lets draw a white pixel
   tft.drawPixel(currentX,currentY,RA8875_WHITE);//did you see the white dot?
-  tft.setFontScale(0);//font x1
+  tft.setFontScale(0);//font x0
   //here's an alternative...
   //tft.setFontScale(0,1);vScale,hScale arbitrary v & h scaling
   tft.setCursor(0,50);
@@ -69,6 +69,10 @@ void setup()
   tft.setFontSpacing(5);//now give 5 pix spacing
   tft.println("ABCDEF 1 2 3 4");
   tft.setFontSpacing(0);//reset
+  //here's an useful feature of setCursor
+  tft.setCursor(CENTER,CENTER);//this set text exact in the screen regardless his lenght and scale
+  tft.setFontScale(1);//font x2
+  tft.print("I'm in the center");
   //tft.setFontRotate(true);
   //tft.println("ABCDEF 1 2 3 4");
   //tft.setFontRotate(false);
@@ -90,7 +94,7 @@ void setup()
   tft.print("                        ");
   tft.showCursor(NOCURSOR,false);//deactivate cursor
   delay(1000);
-  tft.setFontScale(0,3);//font x3
+  tft.setFontScale(0,3);//font x0,x3
   tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
   //here's another unusual command, setFontAdvance enable/disable font advance
   //so you don't have to use setCursor a lot when you need to update numbers on screen
@@ -102,7 +106,7 @@ void setup()
   }
   tft.print(" ");
   tft.setFontAdvance(true);//back to normal
-  tft.setFontScale(2);//font x3
+  tft.setFontScale(2);//font x2
   tft.setTextColor(RA8875_BLUE,RA8875_BLACK);
 }
 
