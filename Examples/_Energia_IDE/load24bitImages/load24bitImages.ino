@@ -30,7 +30,7 @@ void drawArray(const uint32_t * image,uint16_t isize,uint16_t iwidth,uint16_t x,
   uint32_t i,idx;
   for (idx=0;idx<isize/iwidth;idx++){
     for (i = (iwidth*idx); i < iwidth*(idx+1);i++){
-      pixels[i - (iwidth*idx)] = tft.Color24To565(image_data_batman_ume[i]);
+      pixels[i - (iwidth*idx)] = tft.Color24To565(image[i]);
     }
     tft.drawPixels(pixels,iwidth,x,idx+y);
   }

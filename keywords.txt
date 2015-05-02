@@ -41,6 +41,7 @@ getPixels	KEYWORD2
 drawFastVLine	KEYWORD2
 drawFastHLine	KEYWORD2
 fillScreen	KEYWORD2
+clearScreen	KEYWORD2
 drawLine	KEYWORD2
 drawRect	KEYWORD2
 fillRect	KEYWORD2
