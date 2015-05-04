@@ -1858,7 +1858,81 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 */
 /**************************************************************************/
 /*!
+/**************************************************************************/
+/*! 
+		Block Transfer Move
+		Can move a rectangular block from any area of memory (eg. layer 1) to any other (eg layer 2)
+		Can move with transparency - note THE TRANSPARENT COLOUR IS THE TEXT FOREGROUND COLOUR
+		ReverseDir is for moving overlapping areas - may need to use reverse to prevent it double-copying the overlapping area (this option not available with transparency or monochrome)
+		ROP is Raster Operation. Usually use RA8875_ROP_SOURCE but a few others are defined
+		Defaults to current layer if not given or layer is zero.
+		Monochrome uses the colour-expansion mode: the input is a bit map which is then converted to the current foreground and background colours, transparent background is optional
 
+		This function returns immediately but the actual transfer can take some time
+		Caller should check the busy status before issuing any more RS8875 commands.
+
+		Basic usage:
+		BTEMove(SourceX, SourceY, Width, Height, DestX, DestY) = copy something visible on the current layer
+		BTEMove(SourceX, SourceY, Width, Height, DestX, DestY, 2) = copy something from layer 2 to the current layer
+		BTEMove(SourceX, SourceY, Width, Height, DestX, DestY, 2, 1, true) = copy from layer 2 to layer 1, with the transparency option
+		BTEMove(SourceX, SourceY, Width, Height, DestX, DestY, 0, 0, true, RA8875_BTEROP_ADD) = copy on the current layer, using transparency and the ADD/brighter operation 
+		BTEMove(SourceX, SourceY, Width, Height, DestX, DestY, 0, 0, false, RA8875_BTEROP_SOURCE, false, true) = copy on the current layer using the reverse direction option for overlapping areas
+*/
+/**************************************************************************/
+void  RA8875::BTEMove(uint16_t SourceX, uint16_t SourceY, uint16_t Width, uint16_t Height, uint16_t DestX, uint16_t DestY, uint8_t SourceLayer, uint8_t DestLayer,bool Transparent, uint8_t ROP, bool Monochrome, bool ReverseDir){
+	changeMode(0);//BTE requires graphics mode
+	if(_portrait) {
+		swapvals(SourceX,SourceY);
+		swapvals(Width,Height);
+		swapvals(DestX,DestY);
+	}	//Check for out-of-bounds X/Y/Width here?
+	if(SourceLayer==0) SourceLayer = _currentLayer;	
+	if(DestLayer==0) DestLayer = _currentLayer;
+	if(SourceLayer==2) SourceY |= 0x8000; //set the high bit of the vertical coordinate to indicate layer 2
+	if(DestLayer==2) DestY |= 0x8000; //set the high bit of the vertical coordinate to indicate layer 2
+	ROP &= 0xF0; //Ensure the lower bits of ROP are zero
+	if(Transparent) {
+		if(Monochrome) {
+			ROP |= 0x0A; //colour-expand transparent
+		} else {
+			ROP |= 0x05; //set the transparency option 
+		}
+	} else {
+		if(Monochrome) {
+			ROP |= 0x0B; //colour-expand normal
+		} else {
+			if(ReverseDir) {
+				ROP |= 0x03; //set the reverse option
+			} else {
+				ROP |= 0x02; //standard block-move operation
+			}
+		}
+	}
+
+	//from
+	writeReg(RA8875_HSBE0, SourceX & 0xFF);
+	writeReg(RA8875_HSBE1, SourceX >> 8);
+	writeReg(RA8875_VSBE0, SourceY & 0xFF);
+	writeReg(RA8875_VSBE1, SourceY >> 8);
+	writeReg(RA8875_BEWR0, Width & 0xFF);
+	writeReg(RA8875_BEWR1, Width >> 8);
+	writeReg(RA8875_BEHR0, Height & 0xFF);
+	writeReg(RA8875_BEHR1, Height >> 8);
+	//to
+	writeReg(RA8875_HDBE0, DestX & 0xFF);
+	writeReg(RA8875_HDBE1, DestX >> 8);
+	writeReg(RA8875_VDBE0, DestY & 0xFF);
+	writeReg(RA8875_VDBE1, DestY >> 8);
+
+	//ROP function and BTE operation mode
+	writeReg(RA8875_BECR1, ROP); 
+
+	//Execute BTE!
+	writeReg(RA8875_BECR0, 0x80);
+
+	//we are supposed to wait for the thing to become unbusy
+	//caller can call waitBusy(0x40) to check the BTE busy status (except it's private)
+}
 */
 /**************************************************************************/
 void RA8875::BTE_size(uint16_t w, uint16_t h)
