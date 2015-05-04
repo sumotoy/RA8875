@@ -381,6 +381,14 @@ from 0 to 255
 If pattern Format = 8x8 then Pattern Set [3:0]
 If pattern Format = 16x16 then Pattern Set [1:0] is valid */
 #define RA8875_PTNO				  	  0x66//Pattern Set No for BTE
+
+//BTE Raster OPerations - there's 16 possible operations but these are the main ones likely to be useful
+#define RA8875_BTEROP_SOURCE	0xC0	//Overwrite dest with source (no mixing) *****THIS IS THE DEFAULT OPTION****
+#define RA8875_BTEROP_BLACK		0xo0	//all black
+#define RA8875_BTEROP_WHITE		0xf0	//all white
+#define RA8875_BTEROP_DEST		0xA0    //destination unchanged
+#define RA8875_BTEROP_ADD		0xE0    //ADD (brighter)
+#define RA8875_BTEROP_SUBTRACT	0x20	//SUBTRACT (darker)
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            Color Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
