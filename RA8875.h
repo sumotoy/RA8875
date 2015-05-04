@@ -2,9 +2,8 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b32
-	Faster text, added CENTER option to setCursor
-	Various fixes and speedups
+	Version:0.69b33
+	Correct some typo
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -215,8 +214,8 @@ enum RA8875btedatam{ CONT, RECT };
 	#include "_utility/RA8875Calibration.h"
 #endif
 
-#define LEFT 0
-#define RIGHT 9999
+//#define LEFT 0
+//#define RIGHT 9999
 #define CENTER 9998
 
 // Touch screen cal structs
@@ -354,7 +353,7 @@ class RA8875 : public Print {
 	void		BTE_ROP_code(unsigned char setx);//TESTING
 	void 		BTE_enable(bool on);//TESTING
 	void 		BTE_dataMode(enum RA8875btedatam m);
-	void		BTEMove(uint16_t SourceX, uint16_t SourceY, uint16_t Width, uint16_t Height, uint16_t DestX, uint16_t DestY, uint8_t SourceLayer=0, uint8_t DestLayer=0, bool Transparent = false, uint8_t ROP=RA8875_BTEROP_SOURCE, bool Monochrome=false, bool ReverseDir = false);
+	void		BTE_Move(uint16_t SourceX, uint16_t SourceY, uint16_t Width, uint16_t Height, uint16_t DestX, uint16_t DestY, uint8_t SourceLayer=0, uint8_t DestLayer=0, bool Transparent = false, uint8_t ROP=RA8875_BTEROP_SOURCE, bool Monochrome=false, bool ReverseDir = false);
 //--------------GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free

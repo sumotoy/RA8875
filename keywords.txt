@@ -106,6 +106,12 @@ Color565	KEYWORD2
 Color24To565	KEYWORD2
 htmlTo565	KEYWORD2
 gPrint	KEYWORD2
+BTE_source	KEYWORD2
+BTE_ROP_code	KEYWORD2
+BTE_enable	KEYWORD2
+BTE_dataMode	KEYWORD2
+BTE_Move	KEYWORD2
+BTE_size	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

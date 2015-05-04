@@ -1,13 +1,15 @@
 /*
+----- Warning! HAve some bugs! - Preliminary---
 Simple test of BTE block move with the colour-expansion set
-(This allows a one-bit-per-pixel font to be stored on layer2 in a compact form
+(This allows a one-bit-per-pixel font to be stored on layer2 in a compact form)
+BTEMoveMonochrome
 */
 
 #include <SPI.h>
 #include <RA8875.h>
 
-#define RA8875_CS 4 //see below...
-#define RA8875_RESET 3//any pin or 255 to disable it!
+#define RA8875_CS 10 //see below...
+#define RA8875_RESET 9//any pin or 255 to disable it!
 
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's
 
@@ -57,7 +59,7 @@ void setup()
   while (!Serial && ((millis () - debug_start) <= 400)) ;
   Serial.println("RA8875 start");
 
-  tft.begin(Adafruit_480x272);
+  tft.begin(RA8875_800x480);
   
   //copy the custom char onto the 2nd layer so it's stored onboard the RA8875
   tft.writeTo(L2);
@@ -85,7 +87,7 @@ void setup()
   
   tft.writeTo(L1);
   tft.layerEffect(LAYER1);
-  tft.setRotation(2); //This demo works in rotation 0 and 2 (landscape) Portrait will require some more work.
+  tft.setRotation(0); //This demo works in rotation 0 and 2 (landscape) Portrait will require some more work.
   //fill a gradient, so we can test BTEing stuff around the screen
   for(int i=0;i<tft.height();i++) tft.drawLine(0,i,tft.width()-1,i,tft.Color565(map(i,0,tft.height(),128,40), map(i,0,tft.height(),255,40), map(i,0,tft.height(),40,128)));
   
@@ -95,14 +97,14 @@ void setup()
   tft.print("HELLO WORLD!");
   //The transparent-move option uses the foreground colour as the transparent colour.
   tft.setTextColor(RA8875_BLUE);
-  tft.BTEMove(20,20,30,30,200,200,0,0,true);
+  tft.BTE_Move(20,20,30,30,200,200,0,0,true);
   delay(1); //Wait for the BTE move to finish
 
   //Demonstrate the monochrome colour-expansion mode of the BTE move
   tft.setTextColor(RA8875_WHITE,RA8875_DARK_ORANGE);
   //draw the monochrome bitmap in normal FG+BG mode
-  tft.BTEMove(0,1,32,40,10,145, 2, 1, false, 0xE0,true);
-  //don't wait for the move to complete - the next BTEmove will check the busy status before it carries out its orders
+  tft.BTE_Move(0,1,32,40,10,145, 2, 1, false, 0xE0,true);
+  //don't wait for the move to complete - the next BTE_Move will check the busy status before it carries out its orders
   //However other tft commands here with no delay may halt the move in progress
   
   //Changing the width does strange things:
@@ -113,13 +115,13 @@ void setup()
     
 
   //now try it with the transparent BG option
-  tft.BTEMove(0,0,8,16,30,190, 2, 1, true, 0x70, true);
+  tft.BTE_Move(0,0,8,16,30,190, 2, 1, true, 0x70, true);
   
   //This 8-wide character can also be rendered 16 wide, with a different ROP, because there's nothing in the upper half of each word
-  tft.BTEMove(0,0,16,16,40,190, 2, 1, true, 0xF0, true);
+  tft.BTE_Move(0,0,16,16,40,190, 2, 1, true, 0xF0, true);
   
   //show the interleaved character (source starts from x coordinate=1) 
-  tft.BTEMove(1,0,16,16,58,190, 2, 1, true, 0xF0, true);
+  tft.BTE_Move(1,0,16,16,58,190, 2, 1, true, 0xF0, true);
 }
 
 void loop() 
