@@ -1867,6 +1867,9 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 		ROP is Raster Operation. Usually use RA8875_ROP_SOURCE but a few others are defined
 		Defaults to current layer if not given or layer is zero.
 		Monochrome uses the colour-expansion mode: the input is a bit map which is then converted to the current foreground and background colours, transparent background is optional
+		Monochrome data is assumed to be linear, originally written to the screen memory in 16-bit chunks with drawPixels().
+		Monochrome mode uses the ROP to define the offset of the first image bit within the first byte. This also depends on the width of the block you are trying to display.
+		Monochrome skips 16-bit words in the input pattern - see the example for more explanation and a trick to interleave 2 characters in the space of one.
 
 		This function returns immediately but the actual transfer can take some time
 		Caller should check the busy status before issuing any more RS8875 commands.
@@ -1909,6 +1912,8 @@ void  RA8875::BTEMove(uint16_t SourceX, uint16_t SourceY, uint16_t Width, uint16
 		}
 	}
 
+	waitBusy(0x40); //Check that another BTE operation is not still in progress
+
 	//from
 	writeReg(RA8875_HSBE0, SourceX & 0xFF);
 	writeReg(RA8875_HSBE1, SourceX >> 8);
@@ -1927,8 +1932,8 @@ void  RA8875::BTEMove(uint16_t SourceX, uint16_t SourceY, uint16_t Width, uint16
 	//ROP function and BTE operation mode
 	writeReg(RA8875_BECR1, ROP); 
 
-	//Execute BTE!
-	writeReg(RA8875_BECR0, 0x80);
+	//Execute BTE! (This selects linear addressing mode for the monochrome source data)
+	if(Monochrome) writeReg(RA8875_BECR0, 0xC0); else writeReg(RA8875_BECR0, 0x80);
 
 	//we are supposed to wait for the thing to become unbusy
 	//caller can call waitBusy(0x40) to check the BTE busy status (except it's private)
