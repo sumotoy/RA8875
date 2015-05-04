@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b32 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b34 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -72,6 +72,7 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b30: All examples reordered, faster drawing thanks to better color management.
 * 0.69b31: Fixed Adafruit backlight issue, added htmlTo565 color conversion, better FT chip initialization
 * 0.69b32: Lot of changes, better text handle, added 'CENTER' to setCursor, fixed a lot of stuff, speedups
+* 0.69b34: Working SD examples, Added a pull req, fixed DUE issue.
 
 
 ##### Description
