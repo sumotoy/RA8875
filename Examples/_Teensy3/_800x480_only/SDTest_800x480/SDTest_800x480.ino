@@ -3,8 +3,8 @@
  	It reads column by column and send each RA instead of pixels
 	Look inside the folder RA8875/examples/SDTest_800x480
 	there's a folder, copy the content in a formatted FAT32 SD card
-	Note: The USE_TEENSY3_OPTIMIZED_CODE of the Paul Stoffregen's SD library actually create garbage
-	I'm investigating on this so I would raccomand caution.
+	Note: Fixed the garbage introduced with Teensy3 optimized SD library
+	You can use USE_TEENSY3_OPTIMIZED_CODE now.
  */
 #include <SPI.h>
 #include <RA8875.h>
@@ -27,7 +27,11 @@ Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 */
 #define RA8875_RESET 9//any pin or nothing!
 
-#define BUFFPIXEL 30//I've experiment a little with this but not so many differences
+#if defined USE_TEENSY3_OPTIMIZED_CODE
+#define BUFFPIXEL 120//do not change this! It's a workaround to SD caching artifact introduced in SD optimized
+#else
+#define BUFFPIXEL 20//I've experiment a little with this but not so many differences
+#endif
 
 //instances
 RA8875 tft = RA8875(RA8875_CS, RA8875_RESET); //Teensy3/arduino's
