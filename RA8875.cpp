@@ -2255,7 +2255,7 @@ void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
     startSend();
 	SPI.transfer(RA8875_DATAWRITE);
 	while (count--) {
-	#if (ARDUINO >= 160) || TEENSYDUINO > 121
+	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		SPI.transfer16(*p);//should be fixed already
 	#else
 		SPI.transfer(*p >> 8);
@@ -2287,7 +2287,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
     startSend();
     SPI.transfer(RA8875_DATAREAD);
     SPI.transfer(0x00);//first byte it's dummy
-	#if (ARDUINO >= 160) || TEENSYDUINO > 121
+	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		color  = SPI.transfer16(0x0);
 	#else
 		color  = SPI.transfer(0x0);
@@ -2327,14 +2327,14 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 	#endif
     startSend();
 	SPI.transfer(RA8875_DATAREAD);
-	#if (ARDUINO >= 160) || TEENSYDUINO > 121
+	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		SPI.transfer16(0x0);//dummy
 	#else
 		SPI.transfer(0x0);//dummy
 		SPI.transfer(0x0);//dummy
 	#endif
     while (count--) {
-		#if (ARDUINO >= 160) || TEENSYDUINO > 121
+		#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 			color  = SPI.transfer16(0x0);
 		#else
 			color  = SPI.transfer(0x0);
@@ -3442,7 +3442,7 @@ void  RA8875::writeData16(uint16_t data)
 {
 	startSend();
 	SPI.transfer(RA8875_DATAWRITE);
-	#if (ARDUINO >= 160) || TEENSYDUINO > 121
+	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		SPI.transfer16(data);//should be fixed already
 	#else
 		SPI.transfer(data >> 8);
@@ -3803,7 +3803,7 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 				startSend();
 				SPI.transfer(RA8875_DATAWRITE);
 				for (i=0;i<w*scale;i++){
-					#if (ARDUINO >= 160) || TEENSYDUINO > 121
+					#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 						SPI.transfer16(buffer[i]);//should be fixed already
 					#else
 						SPI.transfer(buffer[i] >> 8);
