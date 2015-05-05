@@ -30,7 +30,7 @@ void setup()
   tft.print("HELLO WORLD!");
   //The transparent-move option uses the foreground colour as the transparent colour.
   tft.setTextColor(RA8875_BLUE);
-  tft.BTEMove(20,20,30,30,200,200,0,0,true);
+  tft.BTE_Move(20,20,30,30,200,200,0,0,true);
 }
 
 void loop() 
