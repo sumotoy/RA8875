@@ -5,7 +5,7 @@ RA8875 library
 <br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki
 
-##### Current Version: 0.69b34 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b35 (beta, re-download all library and read changes!!!)<br>
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
@@ -73,6 +73,7 @@ If you have troubles the old version it's in the folder OldVersions.
 * 0.69b31: Fixed Adafruit backlight issue, added htmlTo565 color conversion, better FT chip initialization
 * 0.69b32: Lot of changes, better text handle, added 'CENTER' to setCursor, fixed a lot of stuff, speedups
 * 0.69b34: Working SD examples, Added a pull req, fixed DUE issue.
+* 0.69b35: Lot of bugs fixed! Fixed an important issue with circle (RA8875 bug)
 
 
 ##### Description
@@ -150,6 +151,7 @@ The chip it's **NOT out-of-range-values tolerant!** (in contrast of the 90% of t
 Memory Clear full should clear all layers memory? Accordly datasheet seems yes but it doesn't work as it should. On Datasheet, memory clear can clear the current screen or the entire memory but there's very obscure commands like memory start clear and memory stop clear that are not documented... Grrr<br>
 During the fix of setRotation issues I found another bug, the RA8875 forget some parameter previously assigned when you touch the scan registers...Again solved by some library workaround<br>
 Another bug, the user uploaded chars cannot be sized. Once upped if you touch font size you will see garbage, this is clearly another bug, grr.<br>
+Jus a new discovery, the command DCR_CIRCLE_START has an hardware issue when a SPI over 10Mhz it's used, the circles result in garbage! It takes time to discover that but at the end I got it!<br>
 
 #### Wiring with your MCU
 I support only _native SPI_.<br>
