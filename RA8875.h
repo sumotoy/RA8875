@@ -2,8 +2,9 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b34
-	Correct some typo, fixed arduino DUE issue
+	Version:0.69b35
+	Added some BTE functions, added clearWindow
+	fixed circle bug at high SPI speed, fixed several problems
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -80,44 +81,36 @@ can be used: 2,6,9,10,15,20,21,22,23
 
 	-----------------------------------------------
 	in ms
-Test Pixels              29589  	30235	-
-Text                     4452  		3248	+
-Lines                    91834		91293	+
-Horiz/Vert Lines         59945		59202	+
-Rectangles (outline)     268058		267331	+
-Rectangles (filled)      267545		267858	-=
-Circles (filled)         158708		160738	-
-Circles (outline)        155279		157582	-
-Triangles (outline)      23003		22888	+
-Triangles (filled)       62884		62793	+
-Rounded rects (outline)  15845		15717	+
-Rounded rects (filled)   145686		145549	+
+Test Pixels              29589  	30235		-
+Text                     4452  		3248		+
+Lines                    91834		91293		+
+Horiz/Vert Lines         59945		59202		+
+Rectangles (outline)     268058		267331		+
+Rectangles (filled)      267545		267858		-=
+Circles (filled)         158708		160738		-
+Circles (outline)        155279		157582		-
+Triangles (outline)      23003		22888		+
+Triangles (filled)       62884		62793		+
+Rounded rects (outline)  15845		15717		+
+Rounded rects (filled)   145686		145549		+
 --------------------------------
+Screen fill              16532
+Test Pixel               46
+Test Pixels              30433
+Text                     4642
+Lines                    92605
+Horiz/Vert Lines         61942
+Rectangles (outline)     267831
+Rectangles (filled)      268369
+Circles (filled)         166639
+Circles (outline)        163032
+Triangles (outline)      23151
+Triangles (filled)       62935
+Rounded rects (outline)  129894
+Rounded rects (filled)   922718
 
 
-	color = (color << 8) | (color >> 8);    // swap
-    uint8_t blue  = ((color & 0x001F) << 3) | (color & 0x07)
-    uint8_t green = ((color & 0x07E0) >> 3) | ((color >> 9) & 0x03);
-    uint8_t red   = ((color & 0xF800) >> 8) | ((color >> 13) & 0x07);
-	
-uint16_t RA8875::rgbTo16(uint8_t r, uint8_t g, uint8_t b){
-    uint16_t color;
-    color  = ((r >> 3) <<  0);
-    color |= ((g >> 2) <<  5);
-    color |= ((b >> 3) << 11);
-	return color;
-}
 
-The suggested programming steps and registers setting are listed below as reference.pag130
-1. Setting destination position -> REG[58h], [59h], [5Ah], [5Bh]
-2. Setting BTE width register -> REG[5Ch], [5Dh]
-3. Setting BTE height register -> REG[5Eh], [5Fh]
-4. Setting register Destination = source -> REG[51h] = Ch
-5. Enable BTE function -> REG[50h] Bit7 = 1
-6. Enable REG[02h]
-7. Check STSR Bit7
-8. Write next image data
-9. Continue run step 7, 8 until image data = block image data. Or Check STSR Bit6
 
 */
 
@@ -226,7 +219,7 @@ static const uint8_t _RA8875colorMask[6] = {11,5,0,13,8,3};//for color masking, 
 
 class RA8875 : public Print {
  public:
-	void 		debugData(uint16_t data,uint8_t len=8);
+	//void 		debugData(uint16_t data,uint8_t len=8);
 //------------- Instance -------------------------
 	//#if defined(__MKL26Z64__)
 	//	RA8875(const uint8_t CS,const uint8_t RST=255,uint8_t spiInterface=0);//only Teensy LC
@@ -252,13 +245,15 @@ class RA8875 : public Print {
 	void    	sleep(boolean sleep);//put display in sleep or not
 	void 		brightness(uint8_t val);//ok
 	uint8_t 	readStatus(void);//used to verify when an operation has concluded
-	void		clearMemory(boolean full);//clear the RA8875 internal buffer (fully or current layer)
+	void 		clearMemory(bool stop=false);
+	//void		clearMemory(boolean full);//clear the RA8875 internal buffer (fully or current layer)
 //------------ Low Level functions -------------------------
 	void    	writeCommand(uint8_t d);
 	void  		writeData16(uint16_t data);
 //--------------area -------------------------------------
 	void		setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);//The working area where to draw on
 	void 		getActiveWindow(uint16_t &XL,uint16_t &XR ,uint16_t &YT ,uint16_t &YB);
+	void		clearActiveWindow(bool full=false);//it clears the active window
 	uint16_t 	width(void) const;//the phisical display width
 	uint16_t 	height(void) const;//the phisical display height
 	void		setRotation(uint8_t rotation); //rotate text and graphics
@@ -312,7 +307,6 @@ class RA8875 : public Print {
 	void 		setY(uint16_t y) ;
 	void 		setGraphicCursor(uint8_t cur);//0...7 Select a custom graphic cursor (you should upload first)
 	void 		showGraphicCursor(boolean cur);//show graphic cursor
-	void 		setPattern(uint8_t num, enum RA8875pattern p=P8X8);
 	//--------------- DRAW -------------------------
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
 	void 		drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y);
@@ -346,18 +340,27 @@ class RA8875 : public Print {
 	void 		setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);
 	void 		scroll(uint16_t x,uint16_t y);
 //-------------- DMA -------------------------------
+	void 		DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR);
+	void 		DMA_startAddress(unsigned long adrs);
+	void 		DMA_enable(void);
 	void 		drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum);
 //-------------- BTE --------------------------------------------
 	void 		BTE_size(uint16_t w, uint16_t h);
-	void	 	BTE_source(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
-	void		BTE_ROP_code(unsigned char setx);//TESTING
-	void 		BTE_enable(bool on);//TESTING
-	void 		BTE_dataMode(enum RA8875btedatam m);
-	void		BTE_Move(uint16_t SourceX, uint16_t SourceY, uint16_t Width, uint16_t Height, uint16_t DestX, uint16_t DestY, uint8_t SourceLayer=0, uint8_t DestLayer=0, bool Transparent = false, uint8_t ROP=RA8875_BTEROP_SOURCE, bool Monochrome=false, bool ReverseDir = false);
-//--------------GPIO & PWM -------------------------
+	void	 	BTE_fromTo(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
+	//void 		BTE_source_destination(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
+	void		BTE_ropcode(unsigned char setx);//
+	void 		BTE_enable(bool on);//
+	void 		BTE_dataMode(enum RA8875btedatam m);//CONT,RECT
+	void 		BTE_sourceLayer(uint8_t l);//1 or 2
+	void 		BTE_destinationLayer(uint8_t l);//1 or 2
+	void		BTE_move(uint16_t SourceX, uint16_t SourceY, uint16_t Width, uint16_t Height, uint16_t DestX, uint16_t DestY, uint8_t SourceLayer=0, uint8_t DestLayer=0, bool Transparent = false, uint8_t ROP=RA8875_BTEROP_SOURCE, bool Monochrome=false, bool ReverseDir = false);
+	//---------- pattern --------------------------------------------
+	void 		setPattern(uint8_t num, enum RA8875pattern p=P8X8);
+	void 		writePattern(uint16_t x,uint16_t y,const uint8_t *data,uint8_t size,bool setAW=true);
+//-------------- GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
-//--------------Touch Screen -------------------------
+//-------------- Touch Screen -------------------------
 #if !defined(USE_EXTERNALTOUCH)
 	void 		touchBegin(uint8_t intPin);//prepare Touch Screen driver
 	void    	touchEnable(boolean enabled);//enable/disable Touch Polling (disable INT)
@@ -402,7 +405,9 @@ using Print::write;
 		uint8_t _SPIint;
 	#endif
 	*/
-
+	#if defined(SPI_HAS_TRANSACTION)
+	volatile uint32_t	_maxspeed;
+	#endif
 	uint8_t 		 		_cs, _rst;
 	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 		uint8_t _miso, _mosi, _sclk;
@@ -501,8 +506,8 @@ using Print::write;
 	void 	clearTouchInt(void);
 	boolean touched(void);
 	#endif
-	void 	DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR);
-	void 	DMA_startAddress(unsigned long adrs);
+	//void 	DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR);
+	//void 	DMA_startAddress(unsigned long adrs);
 	void 	updateActiveWindow(bool full);
 	//---------------- moved to private functions (before where public) ------------
 	void 	changeMode(uint8_t m);//GRAPHIC,TEXT (now private)
@@ -522,6 +527,8 @@ using Print::write;
 	void 		startSend();
 	void 		endSend();
 
+	
+	
 
 	#if defined(NEEDS_SET_MODULE)//for Energia
 	void 		selectCS(uint8_t module);

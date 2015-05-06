@@ -38,7 +38,7 @@ void loop()
   testfillrects(RA8875_YELLOW, RA8875_MAGENTA);
   delay(500);
   tft.setActiveWindow(80,tft.width()-80,80,tft.height()-80);//this set the active window
-    tft.setCursor(tft.width()/2,tft.height()/2);
+    tft.setCursor(CENTER,CENTER);
     tft.setTextColor(RA8875_WHITE,RA8875_BLUE);
   if (alt > 0){
     tft.print("[clearScreen]");

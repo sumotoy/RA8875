@@ -372,6 +372,7 @@ from 0 to 255
 #define RA8875_BEWR1				  0x5D//BTE Width Register 1
 #define RA8875_BEHR0				  0x5E//BTE Height Register 0
 #define RA8875_BEHR1				  0x5F//BTE Height Register 1
+
 /* Pattern Set No for BTE            [0x66]
 ----- Bit 7 (Pattern Format)
 0: 8x8

@@ -23,6 +23,7 @@ getColorBpp	KEYWORD2
 setRotation	KEYWORD2
 getRotation	KEYWORD2
 setActiveWindow	KEYWORD2
+clearActiveWindow	KEYWORD2
 setForegroundColor	KEYWORD2
 setBackgroundColor	KEYWORD2
 setTransparentColor	KEYWORD2
@@ -110,9 +111,14 @@ BTE_source	KEYWORD2
 BTE_ROP_code	KEYWORD2
 BTE_enable	KEYWORD2
 BTE_dataMode	KEYWORD2
-BTE_Move	KEYWORD2
+BTE_move	KEYWORD2
 BTE_size	KEYWORD2
-
+BTE_fromTo	KEYWORD2
+DMA_enable	KEYWORD2
+BTE_sourceLayer	KEYWORD2
+BTE_destinationLayer	KEYWORD2
+setPattern	KEYWORD2
+writePattern	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################

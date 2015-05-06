@@ -36,8 +36,6 @@ void setup()
   //tft.setRotation(1);
 
   //RA8875 it's capable to draw graphic but also Text
-  //here we switch to TEXT mode
-  //tft.changeMode(TEXT);
   //now set a text color, background transparent
   tft.setTextColor(RA8875_WHITE);
   //use the classic print an println command
@@ -57,12 +55,10 @@ void setup()
   //automatically increased by chip, unfortunatly not
   //tracked by library but we can use a command for that...
   uint16_t currentX,currentY;
-  tft.getCursor(&currentX,&currentY);
+  tft.getCursor(currentX,&currentY);
   //now we have the location, lets draw a white pixel
-  //tft.changeMode(GRAPHIC);//first we swith in graphic mode
   tft.drawPixel(currentX,currentY,RA8875_WHITE);
   //did you see the white dot?
-  //tft.changeMode(TEXT);//go back to text mode
   tft.setFontScale(0);//font x1
   tft.setCursor(0,50);
   tft.setTextColor(RA8875_YELLOW);

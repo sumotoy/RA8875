@@ -5,29 +5,26 @@ Simple test of BTE block move
 #include <SPI.h>
 #include <RA8875.h>
 
+#define RA8875_RESET 9//any pin or nothing!
+
+#if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
+
+RA8875 tft = RA8875(3);//select SPI module 3
 /*
-Teensy3.x
-You are using 4 wire SPI here, so:
- MOSI:  11//Teensy3.x
- MISO:  12//Teensy3.x
- SCK:   13//Teensy3.x
- the rest of pin below:
+for module 3 (stellaris)
+ SCLK:  PD_0
+ MOSI:  PD_3
+ MISO:  PD_2
+ SS:    PD_1
  */
-
-#define RA8875_CS 10 //see below...
-/*
-Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
-*/
-#define RA8875_RESET 9//any pin or 255 to disable it!
-
-RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);
+#endif
 
 
 void setup() 
 {
   Serial.begin(38400);
-  long unsigned debug_start = millis ();
-  while (!Serial && ((millis () - debug_start) <= 400)) ;
+  //long unsigned debug_start = millis ();
+ // while (!Serial && ((millis () - debug_start) <= 400)) ;
   Serial.println("RA8875 start");
 
   tft.begin(RA8875_800x480);
