@@ -328,6 +328,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	#endif
 	if (_rst < 255){//time for hardware reset RA8875
 		pinMode(_rst, OUTPUT);
+		digitalWrite(_rst, HIGH);
+		delay(1);
 		digitalWrite(_rst, LOW);
 		delay(120);
 		digitalWrite(_rst, HIGH);
@@ -3074,9 +3076,9 @@ void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t
 		//if (w >= _width || h >= _height) return;
 		lineAddressing(x,y,w,h);
 
-		writeReg(RA8875_ELL_A0,r);
+		writeReg(RA8875_ELL_A0,r & 0xFF);
 		writeReg(RA8875_ELL_A1,r >> 8);
-		writeReg(RA8875_ELL_B0,r);
+		writeReg(RA8875_ELL_B0,r & 0xFF);
 		writeReg(RA8875_ELL_B1,r >> 8);
 
 		if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
