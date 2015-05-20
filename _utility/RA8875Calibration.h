@@ -1,16 +1,6 @@
 #ifndef _RA8875CAL_H_
 #define _RA8875CAL_H_
 
-/* TOUCH SCREEN AXIS INVERSION +++++++++++++++++++++++++++++++++++++++
-Some chinese product have both axis inverted (EastRising),
-you can uncomment INVERTETOUCH_Y or INVERTETOUCH_X or both
-if your display fall in that case! */
-#define INVERTETOUCH_Y
-#define INVERTETOUCH_X
-/* TOUCH SCREEN IN PIXELS ++++++++++++++++++++++++++++++++++++++++++++
-Normally Touch Screen return ADC values (0...1024) but decomment
-the following it will return values in pixels */
-//#define TOUCHINPIXELS
 
 /* Calibration Data --------------------------------*/
 /* ------------- TOUCH SCREEN CALIBRATION (how to) -----------
@@ -29,6 +19,7 @@ To perform the touch screen calibration, load libTouchSCalibration.ino and open 
 #define TOUCSRCAL_YLOW	0//153
 #define TOUCSRCAL_XHIGH	0//924
 #define TOUCSRCAL_YHIGH	0//917
+
 
 
 #endif
