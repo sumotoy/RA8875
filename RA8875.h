@@ -2,9 +2,10 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b35
+	Version:0.69b36
 	Added some BTE functions, added clearWindow
 	fixed circle bug at high SPI speed, fixed several problems
+	fixed resistive touch bugs due SPI speed and rotation
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -132,7 +132,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
 	_currentMode = 0;
-	_brightness = 255;
+	_brightness = 254;
 	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
 	_textSize = X16;
 	_fontSpacing = 0;
@@ -204,7 +204,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		_clearTInt = false;
 		_touchEnabled = false;
 		if (!touchCalibrated()) {//added by MorganSandercock
-			_tsAdcMinX = 0; _tsAdcMinY = 0; _tsAdcMaxX = 1024; _tsAdcMaxY = 1024;
+			_tsAdcMinX = 0; _tsAdcMinY = 0; _tsAdcMaxX = 1023; _tsAdcMaxY = 1023;
 		} else {
 			//We have a valid calibration in _utilities\RA8875Calibration.h
 			//Note that low may be a smaller value than high
@@ -220,7 +220,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	6,5,4:TP Sample Time Adjusting (000...111)
 	3:Touch Panel Wakeup Enable 0(disable),1(enable)
 	2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
-		_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
+		//_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
+		_TPCR0Reg = RA8875_TPCR0_WAIT_32768CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV128;
 	#endif
 	#if defined(USE_RA8875_KEYMATRIX)
 		_keyMatrixEnabled = false;
@@ -444,12 +445,6 @@ void RA8875::initialize()
 	backlight(true);
 	//set cursor at 0,0
 	setCursor(0,0);
-	/*
-	writeReg(RA8875_F_CURXL,(0 & 0xFF));
-	writeReg(RA8875_F_CURXH,(0 >> 8));
-	writeReg(RA8875_F_CURYL,(0 & 0xFF));
-	writeReg(RA8875_F_CURYH,(0 >> 8));
-	*/
 	//delay(1);
 	_inited = true;//from here we will go at high speed!
 	
@@ -739,8 +734,8 @@ void RA8875::setRotation(uint8_t rotation)//0.69b32 - less code
 			if (!touchCalibrated()) {
 				_tsAdcMinX = 0; 
 				_tsAdcMinY = 0; 
-				_tsAdcMaxX = 1024; 
-				_tsAdcMaxY = 1024;
+				_tsAdcMaxX = 1023; 
+				_tsAdcMaxY = 1023;
 			} else {
 				_tsAdcMinX = TOUCSRCAL_XLOW;
 				_tsAdcMinY = TOUCSRCAL_YLOW;
@@ -755,10 +750,10 @@ void RA8875::setRotation(uint8_t rotation)//0.69b32 - less code
 		scanDirection(1,0);
 		#if !defined(USE_EXTERNALTOUCH)
 			if (!touchCalibrated()) {
-				_tsAdcMinX = 1024; 
+				_tsAdcMinX = 1023; 
 				_tsAdcMinY = 0; 
 				_tsAdcMaxX = 0; 
-				_tsAdcMaxY = 1024;
+				_tsAdcMaxY = 1023;
 			} else {
 				_tsAdcMinX = TOUCSRCAL_XHIGH;
 				_tsAdcMinY = TOUCSRCAL_YLOW;
@@ -773,8 +768,8 @@ void RA8875::setRotation(uint8_t rotation)//0.69b32 - less code
 		scanDirection(1,1);
 		#if !defined(USE_EXTERNALTOUCH)
 			if (!touchCalibrated()) {
-				_tsAdcMinX = 1024; 
-				_tsAdcMinY = 1024; 
+				_tsAdcMinX = 1023; 
+				_tsAdcMinY = 1023; 
 				_tsAdcMaxX = 0; 
 				_tsAdcMaxY = 0;
 			} else {
@@ -792,8 +787,8 @@ void RA8875::setRotation(uint8_t rotation)//0.69b32 - less code
 		#if !defined(USE_EXTERNALTOUCH)
 			if (!touchCalibrated()) {
 				_tsAdcMinX = 0; 
-				_tsAdcMinY = 1024; 
-				_tsAdcMaxX = 1024; 
+				_tsAdcMinY = 1023; 
+				_tsAdcMaxX = 1023; 
 				_tsAdcMaxY = 0;
 			} else {
 				_tsAdcMinX = TOUCSRCAL_XLOW;
@@ -832,10 +827,10 @@ uint8_t RA8875::getRotation()
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
 /**************************************************************************/
-/*!		Upload user custom char or symbol to CGRAM, max 255
+/*!		Upload user custom char or symbol to CGRAM, max 254
 		Parameters:
 		symbol[]: an 8bit x 16 char in an array. Must be exact 16 bytes
-		address: 0...255 the address of the CGRAM where to store the char
+		address: 0...254 the address of the CGRAM where to store the char
 */
 /**************************************************************************/
 void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address) 
@@ -856,7 +851,7 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 /*!		Retrieve and print to screen the user custom char or symbol
 		User have to store a custom char before use this function
 		Parameters:
-		address: 0...255 the address of the CGRAM where char it's stored
+		address: 0...254 the address of the CGRAM where char it's stored
 		wide:0 for single 8x16 char, if you have wider chars that use 
 		more than a char slot they can be showed combined (see examples)
 */
@@ -1082,7 +1077,8 @@ void RA8875::setFont(enum RA8875fontSource s)
 /**************************************************************************/
 void RA8875::setFontFullAlign(boolean align) 
 {
-	align == true ? _FNCR1Reg |= (1 << 7) : _FNCR1Reg &= ~(1 << 7);
+	//align == true ? _FNCR1Reg |= (1 << 7) : _FNCR1Reg &= ~(1 << 7);
+	align != true ?  _FNCR1Reg &= ~(1 << 7) : _FNCR1Reg |= (1 << 7);
 	writeReg(RA8875_FNCR1,_FNCR1Reg);
 }
 
@@ -1204,11 +1200,14 @@ void RA8875::showCursor(enum RA8875tcursor c,bool blink)
     uint8_t cW = 0;
     uint8_t cH = 0;
 	_textCursorStyle = c;
+	c != NOCURSOR ? bitSet(_MWCR0Reg,6) : bitClear(_MWCR0Reg,6);
+	/*
     if (c != NOCURSOR) {
 		bitSet(_MWCR0Reg,6);
 	} else {
 		bitClear(_MWCR0Reg,6);
 	}
+	*/
     if (blink) _MWCR0Reg |= 0x20;//blink or not?
     writeReg(RA8875_MWCR0, _MWCR0Reg);//set cursor
     //writeReg(RA8875_MWCR1, MWCR1Reg);//close graphic cursor(needed?)
@@ -1237,7 +1236,7 @@ void RA8875::showCursor(enum RA8875tcursor c,bool blink)
 /**************************************************************************/
 /*!     Set cursor property blink and his rate
 		Parameters:
-		rate:blink speed (fast 0...255 slow)
+		rate:blink speed (fast 0...254 slow)
 */
 /**************************************************************************/
 void RA8875::setCursorBlinkRate(uint8_t rate)
@@ -1329,11 +1328,14 @@ void RA8875::setFontScale(uint8_t vscale,uint8_t hscale)
 /**************************************************************************/
 void RA8875::setFontAdvance(bool on)
 {
+	/*
 	if (on){
 		bitClear(_MWCR0Reg,1);
 	} else {
 		bitSet(_MWCR0Reg,1);
 	}
+	*/
+	on != true ? bitSet(_MWCR0Reg,1) : bitClear(_MWCR0Reg,1);
 	bitWrite(_commonTextPar,1,on);//0.69b22
 	writeReg(RA8875_MWCR0,_MWCR0Reg);
 }
@@ -1511,7 +1513,7 @@ void RA8875::textWrite(const char* buffer, uint16_t len)//0.69b32 faster println
 void RA8875::setColorBpp(uint8_t colors)
 {
 	if (colors != _color_bpp){//only if necessary
-		if (colors < 16) {//255
+		if (colors < 16) {
 			_color_bpp = 8;
 			writeReg(RA8875_SYSR,0x00);
 			if (_hasLayerLimits) _maxLayers = 2;
@@ -3212,7 +3214,7 @@ void RA8875::GPIOX(boolean on)
 		PWM out
 		Parameters:
 		pw:pwm selection (1,2)
-		p:0...255 rate
+		p:0...254 rate
 		
 */
 /**************************************************************************/
@@ -3232,7 +3234,7 @@ void RA8875::PWMout(uint8_t pw,uint8_t p)
 		Set the brightness of the backlight (if connected to pwm)
 		(basic controls pwm 1)
 		Parameters:
-		val:0...255
+		val:0...254
 */
 /**************************************************************************/
 void RA8875::brightness(uint8_t val) 
@@ -3403,60 +3405,44 @@ boolean RA8875::touched(void)
 	  Read 10bit internal ADC of RA8875 registers and perform corrections
 	  It will return always RAW data
 	  Parameters:
-	  x:out 0...1024
-	  Y:out 0...1024
-	  Modified 14/4/15 M Sandercock: remove range checking and inversions
+	  x:out 0...1023
+	  Y:out 0...1023
+	  Modified 20/5/15 Get rid of modifications it breaks the correct reading!!!!!!
 
 */
 /**************************************************************************/
 void RA8875::readTouchADC(uint16_t *x, uint16_t *y) 
 {
+	#if defined(SPI_HAS_TRANSACTION)
+	if (MAXSPISPEED > 10000000) _maxspeed = 10000000;
+	#endif
 	uint16_t tx =  readReg(RA8875_TPXH);
 	uint16_t ty =  readReg(RA8875_TPYH);
 	uint8_t temp = readReg(RA8875_TPXYL);
+	#if defined(SPI_HAS_TRANSACTION)
+	if (MAXSPISPEED > 10000000) _maxspeed = MAXSPISPEED;
+	#endif
 	tx <<= 2;
 	ty <<= 2;
 	tx |= temp & 0x03;        // get the bottom x bits
 	ty |= (temp >> 2) & 0x03; // get the bottom y bits
-	/*
-	#if defined (INVERTETOUCH_X)
-		tx = 1024 - tx;
-	#endif
-	
-	#if defined (INVERTETOUCH_Y)
-		ty = 1024 - ty;
-	#endif
-	//calibrate???
-	  #if defined(TOUCSRCAL_XLOW) && (TOUCSRCAL_XLOW != 0)
-		_tsAdcMinX = TOUCSRCAL_XLOW;
-		if (tx < TOUCSRCAL_XLOW) tx = TOUCSRCAL_XLOW;
-	  #endif
-	  
-	  #if defined(TOUCSRCAL_YLOW) && (TOUCSRCAL_YLOW != 0)
-		_tsAdcMinY = TOUCSRCAL_YLOW;
-		if (ty < TOUCSRCAL_YLOW) ty = TOUCSRCAL_YLOW;
-	  #endif
-	  
-	  #if defined(TOUCSRCAL_XHIGH) && (TOUCSRCAL_XHIGH != 0)
-		_tsAdcMaxX = TOUCSRCAL_XHIGH;
-		if (tx > TOUCSRCAL_XHIGH) tx = TOUCSRCAL_XHIGH;
-	  #endif
-	  
-	  #if defined(TOUCSRCAL_YHIGH) && (TOUCSRCAL_YHIGH != 0)
-		_tsAdcMaxY = TOUCSRCAL_YHIGH;
-		if (ty > TOUCSRCAL_YHIGH) ty = TOUCSRCAL_YHIGH;
-	  #endif
-	  */
-	 *x = tx;
-	 *y = ty;
+	  if (_portrait){
+		*x = ty;
+		*y = tx;
+	  } else {
+		tx = 1023 - tx;
+		ty = 1023 - ty;
+		*x = tx;
+		*y = ty;
+	  }
 }
 
 /**************************************************************************/
 /*!   
-	  Returns 10bit x,y data with TRUE scale (0...1024)
+	  Returns 10bit x,y data with TRUE scale (0...1023)
 	  Parameters:
-	  x:out 0...1024
-	  Y:out 0...1024
+	  x:out 0...1023
+	  Y:out 0...1023
 	  
 	Odd that this is called 'Raw' when it applies the calibrations.
 */
