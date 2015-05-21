@@ -14,6 +14,7 @@ RA8875	KEYWORD1
 #######################################
 displayOn	KEYWORD2
 sleep	KEYWORD2
+errorCode	KEYWORD2
 brightness	KEYWORD2
 clearMemory	KEYWORD2
 backlight	KEYWORD2

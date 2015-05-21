@@ -2,10 +2,11 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b36
+	Version:0.69b37
 	Added some BTE functions, added clearWindow
 	fixed circle bug at high SPI speed, fixed several problems
 	fixed resistive touch bugs due SPI speed and rotation
+	Added errorCode to help find out init issues.
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -248,6 +249,10 @@ class RA8875 : public Print {
 	uint8_t 	readStatus(void);//used to verify when an operation has concluded
 	void 		clearMemory(bool stop=false);
 	//void		clearMemory(boolean full);//clear the RA8875 internal buffer (fully or current layer)
+	uint8_t		errorCode(void);//0: no error,
+	/*
+	nan,nan,nan,nan,nan,CS-out-of-range,MOSI/MISO/SCLK-out-of-range,display-not-recognized
+	*/
 //------------ Low Level functions -------------------------
 	void    	writeCommand(uint8_t d);
 	void  		writeData16(uint16_t data);
@@ -438,7 +443,6 @@ using Print::write;
 	bool					_keyMatrixEnabled;
 	#endif
 	//system vars -------------------------------------------
-	bool					_unsupported;//if true, not supported board
 	bool					_inited;//true when init has been ended
 	bool					_sleep;
 	bool					_portrait;
@@ -450,6 +454,7 @@ using Print::write;
 	uint16_t				_activeWindowXR;
 	uint16_t				_activeWindowYT;
 	uint16_t				_activeWindowYB;
+	uint8_t					_errorCode;
 	//text vars ----------------------------------------------
 	uint16_t				_foreColor;
 	uint16_t				_backColor;

@@ -121,10 +121,10 @@ void RA8875::selectCS(uint8_t module)
 /**************************************************************************/
 void RA8875::begin(const enum RA8875sizes s,uint8_t colors) 
 {
+	_errorCode = 0;
 	_size = s;
 	_rotation = 0;
 	_portrait = false;
-	_unsupported = false;
 	_inited = false;
 	_sleep = false;
 	_hasLayerLimits = false;
@@ -194,7 +194,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			_initIndex = 3;
 		break;
 		default:
-		_unsupported = true;//error, not supported
+		bitSet(_errorCode,0);
 		return;
 	}
 	WIDTH = _width;
@@ -318,9 +318,13 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			SPI.setMISO(_miso);
 			SPI.setSCK(_sclk);
 		} else {
+			bitSet(_errorCode,1);
 			return;
 		}
-		if (!SPI.pinIsChipSelect(_cs)) return;
+		if (!SPI.pinIsChipSelect(_cs)) {
+			bitSet(_errorCode,2);
+			return;
+		}
 	#endif
 	SPI.begin();
 	#if !defined(ENERGIA)//energia needs this here
@@ -378,6 +382,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	#endif
 }
 
+uint8_t RA8875::errorCode(void) 
+{
+	return _errorCode;
+}
 /************************* Initialization *********************************/
 
 /**************************************************************************/
@@ -388,7 +396,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 /**************************************************************************/
 void RA8875::initialize() 
 {
-	if (_unsupported) return;//better stop here!
+	if (_errorCode != 0) return;//better stop here!
 	_inited = false;
 	if (_rst > 254) {//No Hard Reset? time for soft reset
 		writeCommand(RA8875_PWRR);
