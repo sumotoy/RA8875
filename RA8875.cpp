@@ -132,7 +132,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
 	_currentMode = 0;
-	_brightness = 254;
+	_brightness = 255;
 	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
 	_textSize = X16;
 	_fontSpacing = 0;
@@ -183,6 +183,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		break;
 		case RA8875_800x480:
 		case Adafruit_800x480:
+		case RA8875_800x480_5:
 			_width = 800;
 			_height = 480;
 			if (_color_bpp < 16){
@@ -191,7 +192,11 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 				_maxLayers = 1;
 			}
 			_hasLayerLimits = true;
-			_initIndex = 3;
+			if (_size == RA8875_800x480_5){//needs a special init
+				_initIndex = 4;
+			} else {
+				_initIndex = 3;
+			}
 		break;
 		default:
 		bitSet(_errorCode,0);
@@ -334,11 +339,11 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	if (_rst < 255){//time for hardware reset RA8875
 		pinMode(_rst, OUTPUT);
 		digitalWrite(_rst, HIGH);
-		delay(1);
+		delay(10);
 		digitalWrite(_rst, LOW);
 		delay(120);
 		digitalWrite(_rst, HIGH);
-		delay(20);
+		delay(200);
 	}
 #if defined(NEEDS_SET_MODULE)//energia specific
 	SPI.setModule(SPImodule);
@@ -398,10 +403,10 @@ void RA8875::initialize()
 {
 	if (_errorCode != 0) return;//better stop here!
 	_inited = false;
-	if (_rst > 254) {//No Hard Reset? time for soft reset
+	if (_rst == 255) {//No Hard Reset? time for soft reset
 		writeCommand(RA8875_PWRR);
 		writeData(RA8875_PWRR_SOFTRESET);
-		delay(10);
+		delay(20);
 		writeData(RA8875_PWRR_NORMAL);
 		delay(200);
 	}
@@ -835,10 +840,10 @@ uint8_t RA8875::getRotation()
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
 /**************************************************************************/
-/*!		Upload user custom char or symbol to CGRAM, max 254
+/*!		Upload user custom char or symbol to CGRAM, max 255
 		Parameters:
 		symbol[]: an 8bit x 16 char in an array. Must be exact 16 bytes
-		address: 0...254 the address of the CGRAM where to store the char
+		address: 0...255 the address of the CGRAM where to store the char
 */
 /**************************************************************************/
 void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address) 
@@ -859,7 +864,7 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 /*!		Retrieve and print to screen the user custom char or symbol
 		User have to store a custom char before use this function
 		Parameters:
-		address: 0...254 the address of the CGRAM where char it's stored
+		address: 0...255 the address of the CGRAM where char it's stored
 		wide:0 for single 8x16 char, if you have wider chars that use 
 		more than a char slot they can be showed combined (see examples)
 */
@@ -1244,7 +1249,7 @@ void RA8875::showCursor(enum RA8875tcursor c,bool blink)
 /**************************************************************************/
 /*!     Set cursor property blink and his rate
 		Parameters:
-		rate:blink speed (fast 0...254 slow)
+		rate:blink speed (fast 0...255 slow)
 */
 /**************************************************************************/
 void RA8875::setCursorBlinkRate(uint8_t rate)
@@ -3222,7 +3227,7 @@ void RA8875::GPIOX(boolean on)
 		PWM out
 		Parameters:
 		pw:pwm selection (1,2)
-		p:0...254 rate
+		p:0...255 rate
 		
 */
 /**************************************************************************/
@@ -3242,7 +3247,7 @@ void RA8875::PWMout(uint8_t pw,uint8_t p)
 		Set the brightness of the backlight (if connected to pwm)
 		(basic controls pwm 1)
 		Parameters:
-		val:0...254
+		val:0...255
 */
 /**************************************************************************/
 void RA8875::brightness(uint8_t val) 
@@ -4078,5 +4083,126 @@ void RA8875::gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8
 	}// End K
 } 
 
+/*---------------------------------------------------------------------------------------
+						KEYPAD - still working on
+						UNDER CONTRUCTION - PLEASE DO NOT ACTIVATE (NOT WORKING)
+****************************************************************************************/
+#if defined(USE_RA8875_KEYMATRIX)
+static const uint8_t DefaultKeyMap[(4*5)+2] = {
+    0,
+    1,  2,  3,  4,  5,  6,  7,  8,  9, 10,
+    11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    255
+};
 
-						 
+void RA8875::keypadInit(bool scanEnable, bool longDetect, uint8_t sampleTime, uint8_t scanFrequency,
+                             uint8_t longTimeAdjustment, bool interruptEnable, bool wakeupEnable)
+{
+    uint8_t reg = 0;
+	if (sampleTime > 3) sampleTime = 3;
+	if (scanFrequency > 7) scanFrequency = 7;
+	if (longTimeAdjustment > 3) scanFrequency = 3;
+    reg |= (scanEnable) ? 0x80 : 0x00;
+    reg |= (longDetect) ? 0x40 : 0x00;
+    reg |= (sampleTime & 0x03) << 4;
+    reg |= (scanFrequency & 0x07);
+    writeReg(RA8875_KSCR1, reg);   // KSCR1 - Enable Key Scan
+
+    reg = 0;
+    reg |= (wakeupEnable) ? 0x80 : 0x00;
+    reg |= (longTimeAdjustment & 0x03) << 2;
+    writeReg(RA8875_KSCR2, reg);  // KSCR2
+
+    reg = readReg(RA8875_INTC1);  // read INT
+    reg &= ~0x10;
+    reg |= (interruptEnable) ? 0x10 : 0x00;
+    writeReg(RA8875_INTC1, reg);  // write INT
+}
+
+
+boolean RA8875::keypadTouched(void)
+{
+    return (readReg(RA8875_INTC2) & 0x10); 
+}
+
+
+uint8_t RA8875::getKey(void)
+{
+	//#define GETC_DEV
+	uint8_t pKeyMap[(4*5)+2];
+	memcpy (pKeyMap,DefaultKeyMap,sizeof(DefaultKeyMap));
+#ifdef GETC_DEV
+    uint8_t keyCode1, keyCode2;
+#endif
+    uint8_t keyCode3;
+    static uint8_t count = 0;
+    uint8_t col, row;
+    uint8_t key;
+
+    while (!readable()) {
+		delayMicroseconds(20);//10
+    }
+    // read the key press number
+    uint8_t keyNumReg = readReg(RA8875_KSCR2) & 0x03;
+    count++;
+    switch (keyNumReg) {
+        case 0x01:      // one key
+            keyCode3 = readReg(RA8875_KSDR0);
+#ifdef GETC_DEV
+            keyCode2 = 0;
+            keyCode1 = 0;
+#endif
+            break;
+        case 0x02:      // two keys
+            keyCode3 = readReg(RA8875_KSDR1);
+#ifdef GETC_DEV
+            keyCode2 = readReg(RA8875_KSDR0);
+            keyCode1 = 0;
+#endif
+            break;
+        case 0x03:      // three keys
+            keyCode3 = readReg(RA8875_KSDR2);
+#ifdef GETC_DEV
+            keyCode2 = readReg(RA8875_KSDR1);
+            keyCode1 = readReg(RA8875_KSDR0);
+#endif
+            break;
+        default:         // no keys (key released)
+            keyCode3 = 0xFF;
+#ifdef GETC_DEV
+            keyCode2 = 0;
+            keyCode1 = 0;
+#endif
+            break;
+    }
+    if (keyCode3 == 0xFF) {
+        key = pKeyMap[0];                    // Key value 0
+    } else {
+        row = (keyCode3 >> 4) & 0x03;
+        col = (keyCode3 &  7);
+        key = row * 5 + col + 1;    // Keys value 1 - 20
+        if (key > 21) key = 21;
+        key = pKeyMap[key];
+        key |= (keyCode3 & 0x80);   // combine the key held flag
+    }
+#ifdef GETC_DEV // for Development only
+    setCursor(0,20);
+	print("   Reg: ");
+	println(keyNumReg);
+	print("   key1: ");
+	println(keyCode1);
+	print("   key2: ");
+	println(keyCode2);
+	print("   key3: ");
+	println(keyCode3);
+	print("  count: ");
+	println(count);
+	print("  key: ");
+	println(key);
+#endif
+    writeReg(RA8875_INTC2, 0x10);       // Clear KS status
+    return key;
+}
+
+#endif
+

@@ -2,11 +2,12 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b37
+	Version:0.69b38
 	Added some BTE functions, added clearWindow
 	fixed circle bug at high SPI speed, fixed several problems
 	fixed resistive touch bugs due SPI speed and rotation
 	Added errorCode to help find out init issues.
+	Added a new initializer to fix 800x480 5"
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -176,7 +177,7 @@ Rounded rects (filled)   922718
 #define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
 #endif
 
-enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480 };
+enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, RA8875_800x480_5, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480 };
 enum RA8875tcursor { NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
 enum RA8875tsize { X16=0,X24,X32 };//0,1,2
 enum RA8875fontSource { INT=0, EXT };//0,1
@@ -388,7 +389,20 @@ class RA8875 : public Print {
 	uint8_t 	getTouchState(void);
 	uint8_t 	getTScoordinates(uint16_t (*touch_coordinates)[2]);
 #endif
-
+//------------- Keyscan Matrix ------------------------------------------
+#if defined(USE_RA8875_KEYMATRIX)
+	void 	keypadInit(
+			bool scanEnable = true, 
+			bool longDetect = false, 
+			uint8_t sampleTime = 0, 		//0..3
+			uint8_t scanFrequency = 0, 		//0..7
+			uint8_t longTimeAdjustment = 0,	//0..3
+			bool interruptEnable = false, 
+			bool wakeupEnable = false
+	);
+	boolean keypadTouched(void);
+	uint8_t getKey(void);
+#endif
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -550,18 +564,38 @@ using Print::write;
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
 	//initialization parameters---------------------------------------------------------------------
-	const uint8_t initStrings[4][15] = {
+	const uint8_t initStrings[5][15] = {
 	{0x07,0x03,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
 	{0x07,0x03,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
 	{0x07,0x03,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
-	{0x07,0x03,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01} //3 -> 800x480
+	{0x07,0x03,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01},//3 -> 800x480
+	{0x07,0x03,0x82,0x3B,0x00,0x03,0x03,0x0B,0xDF,0x01,0x02,0x00,0x16,0x00,0x09} //4 -> 800x480_5
+	//0    1    2    3    4    5    6    7    8    9    10   11   12   13   14
 	};
+	/*
+	0: - sys clock -
+	1: - sys clock -
+	2: - sys clock -
+	3:LCD Horizontal Display Width
+	4:Horizontal Non-Display Period Fine Tuning Option
+	5:LCD Horizontal Non-Display Period
+	6:HSYNC Start Position
+	7:HSYNC Pulse Width
+	8:LCD Vertical Display Height 1
+	9:LCD Vertical Display Height 2
+	10:LCD Vertical Non-Display Period 1
+	11:LCD Vertical Non-Display Period 2
+	12:VSYNC Start Position Register 1
+	13:VSYNC Start Position Register 2
+	14:VSYNC Pulse Width Register
+	*/
 	//postburner PLL parameters (60Mhz)--------------------------------------------------------------
-	const uint8_t sysClockPar[4][2] = {
+	const uint8_t sysClockPar[5][2] = {
 	{0x0B,0x02},//0 -> 320x240
 	{0x0B,0x02},//1 -> 480x272
 	{0x0B,0x02},//2 -> 640x480
-	{0x0B,0x02} //3 -> 800x480
+	{0x0B,0x02},//3 -> 800x480
+	{0x0B,0x02} //4 -> 800x480_5
 	};
 };
 

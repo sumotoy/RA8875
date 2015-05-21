@@ -120,6 +120,9 @@ BTE_sourceLayer	KEYWORD2
 BTE_destinationLayer	KEYWORD2
 setPattern	KEYWORD2
 writePattern	KEYWORD2
+keypadInit	KEYWORD2
+keypadTouched	KEYWORD2
+getKey	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
@@ -127,6 +130,7 @@ writePattern	KEYWORD2
 RA8875_320x240	LITERAL1
 RA8875_480x272	LITERAL1
 RA8875_800x480	LITERAL1
+RA8875_800x480_5	LITERAL1
 RA8875_640x480	LITERAL1
 Adafruit_480x272	LITERAL1
 Adafruit_800x480	LITERAL1
