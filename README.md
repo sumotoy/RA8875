@@ -113,6 +113,7 @@ The problem is that chip needs time to perform a command! In brief, the scenario
 You tell it to draw a rect by send rect macros command and colors, the chip starts it's job but you cannot send another command until has finished it's job so you have to check it's register or the WAIT pin before send another command.<br>
 This almost for every command. Also drawing bitmap images it's a slow job, there's not a way to send chunks of data, at list I haven't find a working way, the only fast way to get a picture fast on screen is use internal DMA and a optional SPI Flash memory pre-programmed and controlled directly by the chip!<br>
 Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip.<br>
+After several months digging inside the crowdly world of RA8875 registers I find out that this chip has quite a lot hardware bugs and issues so developing this library was (and still...) a nightmare so please be patient!<br>
 
 #### RA8875 in short
 
