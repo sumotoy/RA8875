@@ -149,11 +149,13 @@ https://github.com/sumotoy/RA8875/wiki/EastRising-and-Buydisplay-SPI-configurati
 There's another **hardware issue on MISO** that's a problem only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!), Paul Stoffregen discover the MISO bug that it's not tristate:<br>
 https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices<br><br>
 The chip it's **NOT out-of-range-values tolerant!** (in contrast of the 90% of the other commercial drivers) If a value it's out of range you can experience various screen weirdness like garbage, white screen or chip freeze! This forced me to carefully surround many function with data range checks.<br><br>
-Memory Clear full should clear all layers memory? Accordly datasheet seems yes but it doesn't work as it should. On Datasheet, memory clear can clear the current screen or the entire memory but there's very obscure commands like memory start clear and memory stop clear that are not documented... Grrr<br>
+*Memory Clear full should clear all layers memory?* Accordly datasheet seems yes but it doesn't work as it should. On Datasheet, memory clear can clear the current screen or the entire memory but there's very obscure commands like memory start clear and memory stop clear that are not documented... Grrr<br>
 During the fix of setRotation issues I found another bug, the RA8875 forget some parameter previously assigned when you touch the scan registers...Again solved by some library workaround<br>
-Another bug, the user uploaded chars cannot be sized. Once upped if you touch font size you will see garbage, this is clearly another bug, grr.<br>
-Jus a new discovery, the command DCR_CIRCLE_START has an hardware issue when a SPI over 10Mhz it's used, the circles result in garbage! It takes time to discover that but at the end I got it!<br>
-Another hardware bug! TPXH,TPYH,TPXYL registers cannot be writed at more than 10Mhz or I got garbage!<br>
+Another bug, the *user uploaded chars cannot be sized*. Once upped if you touch font size you will see garbage, this is clearly another bug, grr.<br>
+**The 10Mhz ceiling for some register**<br>
+Accordly datasheet the hardware limit for RA8875 should be 12Mhz, I'm currently find out that 14Mhz it's the top limit but some register cannot be writed at more than 10Mhz!<br>
+The command *DCR_CIRCLE_START has an hardware issue when a SPI over 10Mhz* it's used, the circles result in garbage!<br>
+*Registers TPXH,TPYH,TPXYL cannot be writed at more than 10Mhz* or result in garbage!<br>
 
 #### Wiring with your MCU
 I support only _native SPI_.<br>
