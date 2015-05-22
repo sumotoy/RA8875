@@ -52,35 +52,6 @@ This library will work also with the Adafruit board but was mainly coded for the
   - A lot of examples.
 
 
-#### About RA8875 chip
-This is amazing device, if you read the capabilities you will shocked but all come at a price...<br>
-It cannot act as framebuffer device so forget video and fast loading images even using it's 16 bit bus, it have almost every drawing functions internally hardware accellerated so it's perfectly suitable for drawing interfaces and text mixed to graphics fast and without using cpu resources.<br>
-Since all drawing commands are mostly macros, it has a MASSIVE amount of registers, prolly one of the biggest resource driven chip I ever see, really hudge datasheet, it takes a lot of time go deep inside it.<br>
-Do you think that driving with 8 or 16 bit interface will be much faster than Serial? I really don't think so!
-The problem is that chip needs time to perform a command! In brief, the scenario it's something like this:<br>
-You tell it to draw a rect by send rect macros command and colors, the chip starts it's job but you cannot send another command until has finished it's job so you have to check it's register or the WAIT pin before send another command.<br>
-This almost for every command. Also drawing bitmap images it's a slow job, there's not a way to send chunks of data, at list I haven't find a working way, the only fast way to get a picture fast on screen is use internal DMA and a optional SPI Flash memory pre-programmed and controlled directly by the chip!<br>
-Since it's not a great advantage to use it with 8/16 parallel interface I choosed 4 Wire SPI because it's prolly the best choice for this chip.<br>
-After several months digging inside the crowdly world of RA8875 registers I find out that this chip has quite a lot hardware bugs and issues so developing this library was (and still...) a nightmare so please be patient!<br>
-
-#### RA8875 in short
-
-* full accellerated drawing functions.
-* support for TFT till 800x480.
-* onboard resistive touch screen driver.
-* onboard 4x5 keypad controller driver.
-* internal font chip.
-* external optional font chip.
-* external optional SPI flash chip.
-* 2 x PWM generators.
-* 2 x GPIOX.
-* BTE hardware engine.
-* DMA access to font rom and SPI flash.
-* 256 user configurable fonts.
-* Patterns support.
-* user configurable graphic cursors.
-* Layers support <s>(not for screen larger than 480x272)</s> (limited to 256 colors for screens > 480x272).
-* configurable INT pin.
 
 
 #### Wiring with your MCU
