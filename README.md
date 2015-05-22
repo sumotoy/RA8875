@@ -23,59 +23,7 @@ I love Teensy 3 MCU's, so every library has special features for this micro. You
 
 ##### Beta changes:
 
-Be careful since until beta 0.70 things will change a lot so you better not use in your project or you will forced to modify your code! This is necessary because this library use a lot of command (RA8875 it's a really complex chip)<br><br>
-From *0.68b7* I have finally breaked the SPI speed bottleneck and fixed SPIMode so better you test if it's still working for you, please note that high SPI speeds needs short and firmly soldered cables, if your project have not this needed features you may have to tune the *SPI_MULT* parameter in the R8875.h file from the actual value to a lower one, even at 1 (that act as was before the SPI speedup)<br>
-<br>
-
-* 0.49b1:<s>Fixed 800x480 initialization</s>
-* 0.49b7:Complete rebuilded touch screen stuff, now much easier and super easy to calibrate
-(note: this version have different Touch Screen approach so commands changed! Examples where updated to reflect changes)
-* 0.49b8:new command writeTo very useful for write to layers (1,2), pattern,cgram,cursor,etc. A great example of how using layers!
-* 0.49b9:Fixed a silly error in display identifier that not enable GPIOx when adafruit stuff is used. Another attemp (I hope the last!) to get 800x480 initialization fixed.
-* 0.49b10:Added support for user custom fonts and example.
-* 0.49b11:Changed name for user char upload/show, custom font can be designed wide as needed, better example for that, officially fixed 800x480 compatibility and examples verified with arduino uno.
-* 0.49b12:Added a softReset workaround if the rst pin is not used. Fixed bubbles example in AVR. Say ByeBye to useless command softReset();
-* 0.51:First compatibility test with Energia IDE (stellaris,tiva,etc.) passed but not tested!
-* 0.55:Tested and worked (all examples except SD) with **Stellaris** and **Energia 0013 IDE**. All examples now works with any MCU (stellaris included). Due recently changes in Arduino 1.0.6 IDE haved to change all examples.
-* 0.60:Introduced compatibility if used width [PJRC Audio Board!](http://www.pjrc.com/store/teensy3_audio.html). <s>Still fixing this but plan to release fully compatible for next release in these days.</s> Tested and working really fast with PJRC Audio Board! I was able to visualize almost in realtime 238 bands from the fft with touch screen and 5x4 matrix switch support as well. Examples coming soon (only for Teensy3.x and Audio Board).
-* 0.64:High optimizations for Teensy3, now uses DMA SPI and several drawing commands optimized. Not deeply tested btw.
-* 0.65:Fix a typo for DUE (thanks for point me to this). Now compile with IDE 1.5.8 and DUE but still untested (wait for user feedbacks!).
-* 0.66: Github app gived me some code sincronization problems so code online failed to update. The actual fix for DUE should works (Thanks DrewJaworskiRIS to point me this issue).
-* 0.67:Added compatibility with Teensyduino 1.21b and IDE 1.6.x
-* 0.68:Again changes for Teensyduino 1.22b, in theory it should work as is in Teensyduino 1.20.
-* 0.69 (pre-release): A lot of changes, dropped useless alternative SPI pins config (can be easily done in setup),
-corrected some errors in drawFastVLine,drawFastHLine,drawRect,fillRect,drawRoundRect,fillRoundRect, dropped hyperdrive since it's useless for a 6.6Mhz SPI,support for 16 bit transfer, starting support for alternate SPI1 for Teensy LC, etc. etc. This version has major changes so if you currently using an old version you probably have small differences.
-If you have troubles the old version it's in the folder OldVersions.
-* 0.69b2: Full 8 bit color support! This allow user with screen over 272*480 size to use layers!.
-* 0.69b3: Small fixes.
-* 0.69b4: (Probably) better 800x480 initialization (someone confirm, please!), fixed 640x480 compatibility.
-* 0.69b5: RA8875 needs SPIMode3 and not SPIMode0, I've fixed this.
-* 0.69b6: Another fix on 800x480 initialization sequence.
-* 0.69b7: Dropped SPI speed bottleneck! Now I can reach the hardware limit of the chip (from 6.6Mhz to 21Mhz!) Thanks Christoph to point me to the SystemClock that I was think is the Xtal but at the end it's not!
-* 0.69b8: Fixed some typo, rst pin not working with Teensy (now yes), cleaned up a little.
-* 0.69b9:b8 was broken, b9 have many fixes and separate user settings file, still try to fix 8 bit layers on 800x480
-* 0.69b10: text it's faster than ever, changed useLayer (now not needed to be called), rebuilded showCursors (now easier with 4 different cursors, check demo basicTextFunctions,fixed Triangle, faster SPI.
-* 0.69b11: internal changes
-* 0.69b12: changeMode function it's now automatic and will be private soon.
-* 0.69b15: fixed several errors and added more functionalities by M.Sanderscock. Confirmed 800x480 works.
-* 0.69b18: FIXED 8 BIT COLOR! fixed sleep sequence, added a couple of functions.
-* 0.69b19: Fixed a couple of examples, memoryClear now works as it should.
-* 0.69b21: All rotation issues seems fixed!!! You can run any example in any rotation mode, no issues.
-* 0.69b22: fixed println in portrait, fixed getCursor in portrait
-* 0.69b23: fixed scroll in portrait mode plus other small things...
-* 0.69b24: fixed clearScreen functionality,added getActiveWindow,some other fixes.
-* 0.69b25: faster text/graphic change, support the capacitive touchscreen based on FT5206, included gesture.
-* 0.69b26: Now can succesfully send block of pixels fast!Added conversion from 24 bit to 16 bit.
-* 0.69b27: Font rendering alpha test included (plus several test fonts). It's an alpha so don't complain.
-* 0.69b28: Faster font rendering, use rows instead pixels.
-* 0.69b29: Minor changes, added scale to the font rendering (that it's still an early alpha!).
-* 0.69b30: All examples reordered, faster drawing thanks to better color management.
-* 0.69b31: Fixed Adafruit backlight issue, added htmlTo565 color conversion, better FT chip initialization
-* 0.69b32: Lot of changes, better text handle, added 'CENTER' to setCursor, fixed a lot of stuff, speedups
-* 0.69b34: Working SD examples, Added a pull req, fixed DUE issue.
-* 0.69b35: Lot of bugs fixed! Fixed an important issue with circle (RA8875 bug)
-* 0.69b36: Fixed resistive touch issues, fixed a bug in RA8875 that prevent correct reading of Touch coordinates at more than 10Mhz SPI
-
+Be careful since until beta 0.70 things will change a lot so you better not use in your project or you will forced to modify your code! This is necessary because this library use a lot of command (RA8875 it's a really complex chip)<br>
 
 ##### Description
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teensy LC and Arduino's (and I hope for other MCU's).<br>
