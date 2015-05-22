@@ -9,20 +9,25 @@ RA8875 library
 Current beta **tested only with**:
 
 * Teensy 3.1, Stellaris
-* EastRising RA8875 5"Inch (480x272) in SPI mode<br>
-* EastRising RA8875 7"Inch (800x480) in SPI mode<br>
-<b>NOTE</b>:If your do not work please ask here, I've <b>VERIFIED</b> that works.<br>
+* EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
+* EastRising RA8875 7"Inch (800x480) with resistive Touch or FT chip capacitive<br>
 
 A couple of users tested also with:
 * Arduino UNO, Arduino YUN
 * Arduino MEGA
-* Adafruit RA8875 board w 800x600 and 480x272 displays
+* Adafruit RA8875 board with 7" (800x600) and 5" (480x272) displays
+
+NOT tested at all:
+* Waveshare displays
+* Eastrising 5" (800x480)
+* Any 640x480
+* 
+<b>NOTE</b>:If your do not work please ask here.<br>
 
 ##### Teensy notes:
 I love Teensy 3 MCU's, so every library has special features for this micro. You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
 
 ##### Beta changes:
-
 Be careful since until beta 0.70 things will change a lot so you better not use in your project or you will forced to modify your code! This is necessary because this library use a lot of command (RA8875 it's a really complex chip)<br>
 
 ##### Description
@@ -52,10 +57,8 @@ This library will work also with the Adafruit board but was mainly coded for the
   - A lot of examples.
 
 
-
-
 #### Wiring with your MCU
-I support only _native SPI_.<br>
+I support *only* _native SPI_.<br>
 **MOSI,MISO,SCK** pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)<br>
 For **RST** it's your choice, it's really possible use _any_ pin. Apparently only Adafruit board need this, the 2 chinese boards I've tested have internal reset circuit so it's optional<br>
 For **CS** pin you have to choose between these pin on **Teensy3.1: 2,6,9,10,15,20,21,22,23**. Arduino UNO,MEGA and almost all 8 bit variants can use any pin, DUE maybe need special pins (please check DUE datasheet)<br>
