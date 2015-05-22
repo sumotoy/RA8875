@@ -83,31 +83,6 @@ After several months digging inside the crowdly world of RA8875 registers I find
 * configurable INT pin.
 
 
-#### RA8875 chip bugs!
-I discovered several bugs in the chip.<br><br>
-**Registers**<br>
-Register **0x10** (SYSR). Changing bit 3 to 1 should set (accordly datasheet) the 65K color feature.<br>
-In real life this set apparently set almost all drawing functions to 65K color BUT _drawing single pixel it result in a 256 color!_. I spent a lot of time to discover that I need to set bit 3,2 to 1 to solve the problem, sent a note to RAiO to correct datasheet.<br><br>
-Register **0xB3** (should be SSAR3), part of the 32 bit addressing of the DMA start address... Was purposely erased on all last datasheet, still present in many application notes, what the hell I have to do to address 32bit data?<br><br>
-**Hardware issues with SPI lines**<br>
-**IF YOU OWN A EASTRISING from BuyDisplay please read this!!**<br>
-Thanks to the help of The Experimentalist was discovered that those display have pullups on any SPI output! This cause any type of malfunction with other SPI devices and even damage processor pin in some case. The display affected are the 5" and 7", black PCB, see this page<br>
-
-https://github.com/sumotoy/RA8875/wiki/EastRising-and-Buydisplay-SPI-configuration-and-wiring
-
-<br>
-There's another **hardware issue on MISO** that's a problem only if you are not planning to use any other SPI devices together with RA8875 (example, the SD card holder!), Paul Stoffregen discover the MISO bug that it's not tristate:<br>
-https://github.com/sumotoy/RA8875/wiki/Fix-compatibility-with-other-SPI-devices<br><br>
-The chip it's **NOT out-of-range-values tolerant!** (in contrast of the 90% of the other commercial drivers) If a value it's out of range you can experience various screen weirdness like garbage, white screen or chip freeze! This forced me to carefully surround many function with data range checks.<br>
-The **Reset Pin** should completely reset RA8875 but in the real world some register it's not reset, the only way it's a power cicle, no matter how much time you pull low the reset pin. Even software reset have the same issue, this it's evident when you switchover libraries (example, this with Adafruit one)<br>
-*Memory Clear full should clear all layers memory?* Accordly datasheet seems yes but it doesn't work as it should. On Datasheet, memory clear can clear the current screen or the entire memory but there's very obscure commands like memory start clear and memory stop clear that are not documented... Grrr<br>
-During the fix of setRotation issues I found another bug, the RA8875 forget some parameter previously assigned when you touch the scan registers...Again solved by some library workaround<br>
-Another bug, the *user uploaded chars cannot be sized*. Once upped if you touch font size you will see garbage, this is clearly another bug, grr.<br>
-**The 10Mhz ceiling for some register**<br>
-Accordly datasheet the hardware limit for RA8875 should be 12Mhz, I'm currently find out that 14Mhz it's the top limit but some register cannot be writed at more than 10Mhz!<br>
-The command *DCR_CIRCLE_START has an hardware issue when a SPI over 10Mhz* it's used, the circles result in garbage!<br>
-*Registers TPXH,TPYH,TPXYL cannot be writed at more than 10Mhz* or result in garbage!<br>
-
 #### Wiring with your MCU
 I support only _native SPI_.<br>
 **MOSI,MISO,SCK** pins will be differ between MCU's (UNO and Teensy3 uses 11,12,13) but DUE and other are different so check!)<br>
