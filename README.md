@@ -44,7 +44,6 @@ This library will work also with the Adafruit board but was mainly coded for the
   - 8 bit and 16 bit color depth support
   - Layer support (now support large screen but only at 256 colors)
   - Scalable complexity, start with basics but you can go trough...
-  - All communication protocols supported
   - Support for the many external ROM Font chip
   - Support for the external SPI FLASH
   - Working with Teensy 3.x, Teensy LC, Arduino's, Energia IDE supported MCU's (stellaris, etc.)
@@ -54,6 +53,7 @@ This library will work also with the Adafruit board but was mainly coded for the
   - Can use capacitive and resistive touch screen, the capacitive with gesture and max 5 concurrent touches.
   - Full rotation support.
   - External copyright free fonts support plus large font rendering.
+  - Support for Keypad Matrix.
   - A lot of examples.
 
 
