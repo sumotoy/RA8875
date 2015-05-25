@@ -29,6 +29,7 @@ NOT tested at all:
 The long awaited 0.70 it's almost ready it will introduce many changes:
 - No more changes in functions and parameters so it will be enough stable for projects.
 - Optimized code.
+- 0 compiler warnings.
 - Faster AVR SPI! 8 bit MCU has bottleneck on SPI, I will introduce a faster SPI routine.
 - Fixed the Text color bug (hardware bug of RA8875). The RA8875 has global color but new code will solve this.
 - Full keypad support.
