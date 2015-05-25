@@ -38,6 +38,7 @@ The long awaited 0.70 it's almost ready it will introduce many changes:
 - Fixed initialization problems with some 800x480 5" screens.
 - Support for enhanced SPI for DUE.
 - Support for alternative enhanched wire library for Teensy 3,3.1 and LC.
+- Support for the second SPI channel for Teensy LC.
 - And more to come....
 
 ##### Beta changes:
