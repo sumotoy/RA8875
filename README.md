@@ -25,6 +25,20 @@ NOT tested at all:
 * 
 <b>NOTE</b>:If your do not work please ask here.<br>
 
+##### Beta 0.70 it's on the corner!
+The long awaited 0.70 it's almost ready it will introduce many changes:
+- No more changes in functions and parameters so it will be enough stable for projects.
+- Optimized code.
+- Faster AVR SPI! 8 bit MCU has bottleneck on SPI, I will introduce a faster SPI routine.
+- Fixed the Text color bug (hardware bug of RA8875). The RA8875 has global color but new code will solve this.
+- Full keypad support.
+- A new autocenter parameter for setCursor let you precisely center text inside objects.
+- Support for color grandients.
+- Fixed initialization problems with some 800x480 5" screens.
+- Support for enhanced SPI for DUE.
+- Support for alternative enhanched wire library for Teensy 3,3.1 and LC.
+- And more to come....
+
 ##### Beta changes:
 Be careful since until beta 0.70 things will change a lot so you better not use in your project or you will forced to modify your code! This is necessary because this library use a lot of command (RA8875 it's a really complex chip)<br>
 
