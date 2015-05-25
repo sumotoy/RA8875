@@ -26,7 +26,6 @@ unsigned long testFillScreen() {
 
 unsigned long testText() {
   tft.clearScreen();
-  //tft.changeMode(TEXT);
   tft.setTextColor(RA8875_WHITE);
   tft.setFontScale(0);
   unsigned long start = micros();
@@ -48,7 +47,6 @@ unsigned long testText() {
   tft.println("with my blurglecruncheon,");
   tft.println("see if I don't!");
   unsigned long result = micros() - start;
-  //tft.changeMode(GRAPHIC);
   return result;
 }
 

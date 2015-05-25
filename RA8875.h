@@ -389,20 +389,7 @@ class RA8875 : public Print {
 	uint8_t 	getTouchState(void);
 	uint8_t 	getTScoordinates(uint16_t (*touch_coordinates)[2]);
 #endif
-//------------- Keyscan Matrix ------------------------------------------
-#if defined(USE_RA8875_KEYMATRIX)
-	void 	keypadInit(
-			bool scanEnable = true, 
-			bool longDetect = false, 
-			uint8_t sampleTime = 0, 		//0..3
-			uint8_t scanFrequency = 0, 		//0..7
-			uint8_t longTimeAdjustment = 0,	//0..3
-			bool interruptEnable = false, 
-			bool wakeupEnable = false
-	);
-	boolean keypadTouched(void);
-	uint8_t getKey(void);
-#endif
+
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
