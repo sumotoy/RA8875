@@ -27,7 +27,8 @@ NOT tested at all:
 
 ##### Beta 0.70 it's on the corner!
 The long awaited 0.70 it's almost ready it will introduce many changes:
-- No more changes in functions and parameters so it will be enough stable for projects.
+- **Everithing it's 2x times faster!** Raised up max SPI speed to 20Mhz.
+- No more name changes in functions and parameters.
 - Optimized code.
 - 0 compiler warnings.
 - Faster AVR SPI! 8 bit MCU has bottleneck on SPI, I will introduce a faster SPI routine.
