@@ -1,6 +1,11 @@
 #ifndef _RA8875USERSETTINGS_H_
 #define _RA8875USERSETTINGS_H_
 /* ---------------------------- USER SETTINGS --------------------------------------*/
+/* [USE_RA8875_SEPARATE_TEXT_COLOR] +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+RA8875 set color globally, this mean that if you set text color white and after you create
+a red circle, every text after that will result red text. Enabling this feature your text
+will always maintain the choosed color. */
+#define USE_RA8875_SEPARATE_TEXT_COLOR
 
 /* [EXTERNAL USER DEFINED TOUCH CONTROLLER] ++++++++++++++++++++++++++++++++++++++++++
 Some TFT come with capacitive touch screen or you may decide to use a better
@@ -65,57 +70,59 @@ JIS0208,
 LATIN/GREEK/ARABIC */
 #define	_DFT_RA8875_EXTFONTROMCODING	GB2312
 
-/* SPI MAX SPEED it's ONLY used in SPI Transaction mode ++++++++++++++++++++++++++++
-it ensure the max and correct speed for accessing RA8875 in Read/Write...
-Datasheet it's clear:
-
+/*----------------------------------------------------------------------------------
+									SPI SPEED
+----------------------------------------------------------------------------------*/
+/* Accordly RA8875 datasheet the READ cycles and WRITE cycles have different speed:
 System clock/3(only write cycle), System clock/6(with read cycle)
-
 MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
-Not all MCU are capable to work at those speeds. Those parameters should work fine.
+Not all MCU are capable to work at those speeds. Following parameters should already be fine.
+DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very slow.
 */
-#if defined(SPI_HAS_TRANSACTION)// your IDE support SPI_HAS_TRANSACTION
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) //teensy 3 , 3.1
-		#define MAXSPISPEED 			14000000//14000000 it's the max SPI freq without artifacts
-	#elif defined(__MKL26Z64__)							 //teensy LC	 (12 or 24 Mhz max)
-		#define MAXSPISPEED 			12000000
-	#elif defined(__SAM3X8E__)							 // due
-		#define MAXSPISPEED 			8000000//was 6600000
-	#else												 //rest of the world
-		#define MAXSPISPEED 			8000000//was 4000000
-	#endif
-#else// legacy SPI
-/* SPI MAX SPEED) +++++++++++++++++++
-	it ensure the max and correct speed for accessing RA8875 in Read/Write...
-*/
-	#if defined(__SAM3X8E__)							 // due
-		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-		#define SPI_SPEED_READ SPI_CLOCK_DIV8
-	#else												 //rest of the world included UNO, etc.
-		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-		#define SPI_SPEED_READ SPI_CLOCK_DIV8
-	#endif
-#endif
 
-/* SPI MAX SPEED (Energia IDE doesn't have SPI Transaction) +++++++++++++++++++
-	it ensure the max and correct speed for accessing RA8875 in Read/Write...
-*/
-#if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
-	#if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
-		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-		#define SPI_SPEED_READ SPI_CLOCK_DIV8
-	#elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
-		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-		#define SPI_SPEED_READ SPI_CLOCK_DIV8
-	#elif defined(__MSP430MCU__)//MSP430???
-		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-		#define SPI_SPEED_READ SPI_CLOCK_DIV4
-	#elif defined(TMS320F28069)//C2000???
-		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-		#define SPI_SPEED_READ SPI_CLOCK_DIV4
-	#elif defined(__CC3200R1M1RGC__)//CC3200???
-		#define SPI_SPEED_WRITE SPI_CLOCK_DIV4
-		#define SPI_SPEED_READ SPI_CLOCK_DIV4
+#if defined(SPI_HAS_TRANSACTION)//SPI transaction enabled library----------------------
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) //Teensy 3.0 , 3.1
+		const static uint32_t MAXSPISPEED	= 23000000;
+	#elif defined(__MKL26Z64__)							 //Teensy LC (12 or 24 Mhz max)
+		const static uint32_t MAXSPISPEED	= 12000000;	 //default SPI main speed TeensyLC
+	#elif defined(__SAM3X8E__)							 //DUE
+		const static uint32_t MAXSPISPEED	= 20000000;
+	#else												 //rest of the world (UNO, etc)
+		const static uint32_t MAXSPISPEED	= 8000000;
+	#endif
+#else// legacy SPI library-------------------------------------------------------------
+	#if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
+		#if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV8
+		#elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV8
+		#elif defined(__MSP430MCU__)//MSP430???
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV4
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV8
+		#elif defined(TMS320F28069)//C2000???
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV4
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV8
+		#elif defined(__CC3200R1M1RGC__)//CC3200???
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV4
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV8
+		#endif
+	#else
+		#if defined(__SAM3X8E__)// DUE
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4	//84 divided by 4 = 21Mhz
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV6	//10.5Mhz
+		#else//rest of the world included UNO, etc.
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV2	//UNO = 4Mhz
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV4
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV2
+		#endif
 	#endif
 #endif
 

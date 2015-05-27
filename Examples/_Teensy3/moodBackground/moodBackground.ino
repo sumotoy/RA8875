@@ -44,7 +44,7 @@ inline int angle_to_channel(float a) {
 
 void loop() {
   uint16_t clr = (((angle_to_channel(angle-4*PI/3)>>1) & 0xF8) << 8) | (((angle_to_channel(angle-2*PI/3)) & 0xFC) << 3) | ((angle_to_channel(angle)>>1) >> 3);
-  tft.fillScreen(clr);
+  tft.fillWindow(clr);
 
   angle += 0.01;
   if(angle > PI)

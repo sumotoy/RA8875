@@ -34,6 +34,27 @@ float cx, cy;
 float zoom = 1.0f;
 
 
+void setup() 
+{
+  Serial.begin(9600);
+  //while (!Serial) {;}
+  Serial.println("RA8875 start");
+
+  tft.begin(RA8875_800x480);
+
+  cx = -0.086f;
+  cy = 0.85f;
+}
+
+
+void loop() 
+{
+  mandelbrot(-2.0f*zoom+cx, -1.5f*zoom+cy, 2.0f*zoom+cx, 1.5f*zoom+cy);
+  zoom *= 0.7f;
+  if(zoom <= 0.00001f)
+    zoom = 1.0f;	
+}
+
 void mandelbrot(float x1, float y1, float x2, float y2) {
   unsigned int i,j;
   uint16_t iter;
@@ -59,24 +80,3 @@ void mandelbrot(float x1, float y1, float x2, float y2) {
   }
 }
 
-void setup() 
-{
-  Serial.begin(9600);
-  //while (!Serial) {;}
-  Serial.println("RA8875 start");
-
-  /* Initialise the display using 'RA8875_480x272' or 'RA8875_800x480' */
-  tft.begin(RA8875_480x272);
-
-  cx = -0.086f;
-  cy = 0.85f;
-}
-
-
-void loop() 
-{
-  mandelbrot(-2.0f*zoom+cx, -1.5f*zoom+cy, 2.0f*zoom+cx, 1.5f*zoom+cy);
-  zoom *= 0.7f;
-  if(zoom <= 0.00001f)
-    zoom = 1.0f;	
-}

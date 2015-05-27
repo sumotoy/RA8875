@@ -24,10 +24,43 @@ for module 3 (stellaris)
 
 float p = 3.1415926;
 
+void setup() 
+{
+  tft.begin(RA8875_800x480);
+}
+
+uint8_t rot = 0;
+void loop(){
+  tft.setRotation(rot);
+  testdrawtext("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur adipiscing ante sed nibh tincidunt feugiat. Maecenas enim massa, fringilla sed malesuada et, malesuada sit amet turpis. Sed porttitor neque ut ante pretium vitae malesuada nunc bibendum. Nullam aliquet ultrices massa eu hendrerit. Ut sed nisi lorem. In vestibulum purus a tortor imperdiet posuere. ", RA8875_WHITE);
+  delay(1000);
+  tftPrintTest();
+  delay(1000);
+  testlines(RA8875_YELLOW);
+  delay(500);
+  testfastlines(RA8875_RED, RA8875_BLUE);
+  delay(500);
+  testdrawrects(RA8875_GREEN);
+  delay(500);
+  testfillrects(RA8875_YELLOW, RA8875_MAGENTA);
+  delay(500);
+  tft.fillWindow();
+  testfillcircles(10, RA8875_BLUE);
+  testdrawcircles(10, RA8875_WHITE);
+  delay(500);
+  testroundrects();
+  delay(500);
+  testtriangles();
+  delay(500);
+  mediabuttons();
+  delay(1000);
+  if (rot > 3) rot = 0;
+  rot++;
+}
 
 void mediabuttons() {
   // play
-  tft.fillScreen(RA8875_BLACK);
+  tft.fillWindow();
   tft.fillRoundRect(25, 10, 78, 60, 8, RA8875_WHITE);
   tft.fillTriangle(42, 20, 42, 60, 90, 40, RA8875_RED);
   delay(500);
@@ -48,7 +81,7 @@ void mediabuttons() {
 
 
 void tftPrintTest() {
-  tft.fillScreen();
+  tft.fillWindow();
   tft.setCursor(0, 30);
   tft.setTextColor(RA8875_RED);
   tft.setFontScale(1);
@@ -64,7 +97,7 @@ void tftPrintTest() {
   tft.print(1234.567);
   delay(1500);
   tft.setCursor(0, 0);
-  tft.fillScreen(RA8875_BLACK);
+  tft.fillWindow();
   tft.setTextColor(RA8875_WHITE);
   tft.setFontScale(0);
   tft.println("Hello World!");
@@ -86,7 +119,7 @@ void tftPrintTest() {
 }
 
 void testroundrects() {
-  tft.fillScreen();
+  tft.fillWindow();
   uint16_t color = 100;
   uint16_t i;
   uint8_t t;
@@ -109,7 +142,7 @@ void testroundrects() {
 }
 
 void testtriangles() {
-  tft.fillScreen();
+  tft.fillWindow();
   uint16_t maxw = tft.width()-1;
   uint16_t maxh = tft.height()-1;
   uint16_t k,t;
@@ -117,7 +150,7 @@ void testtriangles() {
     for(t = 0 ; t <= 30; t+=1) {
       tft.fillTriangle(random(0,maxw), random(0,maxh), random(0,maxw), random(0,maxh), random(0,maxw), random(0,maxh), random(0x0000,0xFFFF));
     }
-    tft.fillScreen(RA8875_BLACK);
+    tft.fillWindow();
   }
 }
 
@@ -145,7 +178,7 @@ void testfillcircles(uint8_t radius, uint16_t color) {
 void testdrawrects(uint16_t color) {
   uint16_t x;
   uint8_t inc = 4;
-  tft.fillScreen();
+  tft.fillWindow();
   for (x=0; x < tft.width(); x+=inc) {
     tft.drawRect((tft.width()/2) - (x/2), (tft.height()/2) - (x/2) , x, x, color);
   }
@@ -154,7 +187,7 @@ void testdrawrects(uint16_t color) {
 void testfillrects(uint16_t color1, uint16_t color2) {
   uint16_t x;
   uint8_t inc = 4;
-  tft.fillScreen();
+  tft.fillWindow();
   for (x=tft.width()-1; x > inc; x-=inc) {
     tft.fillRect((tft.width()/2) - (x/2), (tft.height()/2) - (x/2) , x, x, color1);
     tft.drawRect((tft.width()/2) - (x/2), (tft.height()/2) - (x/2) , x, x, color2);
@@ -164,7 +197,7 @@ void testfillrects(uint16_t color1, uint16_t color2) {
 void testfastlines(uint16_t color1, uint16_t color2) {
   uint16_t x,y;
   uint8_t inc = 5;
-  tft.fillScreen(RA8875_BLACK);
+  tft.fillWindow(RA8875_BLACK);
   for (y=0; y < tft.height(); y+=inc) {
     tft.drawFastHLine(0, y, tft.width(), color1);
   }
@@ -174,7 +207,7 @@ void testfastlines(uint16_t color1, uint16_t color2) {
 }
 
 void testdrawtext(const char *text, uint16_t color) {
-  tft.fillScreen();
+  tft.fillWindow();
   tft.setFontScale(0);
   tft.setCursor(0,0);
   tft.setTextColor(color);
@@ -187,7 +220,7 @@ void testlines(uint16_t color) {
   uint16_t x,y;
   uint8_t incr = 3;
 
-  tft.fillScreen();
+  tft.fillWindow();
   for (x=0; x < tft.width(); x+=incr) {
     tft.drawLine(0, 0, x, maxh, color);
   }
@@ -195,7 +228,7 @@ void testlines(uint16_t color) {
     tft.drawLine(0, 0, maxw, y, color);
   }
 
-  tft.fillScreen();
+  tft.fillWindow();
   for (x=0; x < tft.width(); x+=incr) {
     tft.drawLine(maxw, 0, x, maxh, color);
   }
@@ -203,7 +236,7 @@ void testlines(uint16_t color) {
     tft.drawLine(maxw, 0, 0, y, color);
   }
 
-  tft.fillScreen();
+  tft.fillWindow();
   for (x=0; x < tft.width(); x+=incr) {
     tft.drawLine(0, maxh, x, 0, color);
   }
@@ -211,7 +244,7 @@ void testlines(uint16_t color) {
     tft.drawLine(0, maxh, maxw, y, color);
   }
 
-  tft.fillScreen();
+  tft.fillWindow();
   for (x=0; x < tft.width(); x+=incr) {
     tft.drawLine(maxw, maxh, x, 0, color);
   }
@@ -220,36 +253,4 @@ void testlines(uint16_t color) {
   }
 }
 
-void setup() 
-{
-  tft.begin(RA8875_800x480);
-}
 
-uint8_t rot = 0;
-void loop(){
-  tft.setRotation(rot);
-  testdrawtext("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur adipiscing ante sed nibh tincidunt feugiat. Maecenas enim massa, fringilla sed malesuada et, malesuada sit amet turpis. Sed porttitor neque ut ante pretium vitae malesuada nunc bibendum. Nullam aliquet ultrices massa eu hendrerit. Ut sed nisi lorem. In vestibulum purus a tortor imperdiet posuere. ", RA8875_WHITE);
-  delay(1000);
-  tftPrintTest();
-  delay(1000);
-  testlines(RA8875_YELLOW);
-  delay(500);
-  testfastlines(RA8875_RED, RA8875_BLUE);
-  delay(500);
-  testdrawrects(RA8875_GREEN);
-  delay(500);
-  testfillrects(RA8875_YELLOW, RA8875_MAGENTA);
-  delay(500);
-  tft.fillScreen(RA8875_BLACK);
-  testfillcircles(10, RA8875_BLUE);
-  testdrawcircles(10, RA8875_WHITE);
-  delay(500);
-  testroundrects();
-  delay(500);
-  testtriangles();
-  delay(500);
-  mediabuttons();
-  delay(1000);
-  if (rot > 3) rot = 0;
-  rot++;
-}

@@ -10,17 +10,6 @@ If you modify or get better result please let me know
 
 
 
-// Color definitions
-#define	BLACK   0x0000
-#define	BLUE    0x001F
-#define	RED     0xF800
-#define	GREEN   0x07E0
-#define CYAN    0x07FF
-#define MAGENTA 0xF81F
-#define YELLOW  0xFFE0  
-#define WHITE   0xFFFF
-
-
 volatile int16_t curVal1 = 0;
 volatile int16_t oldVal1 = 0;
 volatile int16_t curVal2 = 0;
@@ -47,7 +36,7 @@ RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);
 
 void setup() {
   //Serial.begin(9600);
-  tft.begin(RA8875_480x272);
+  tft.begin(RA8875_800x480);
   drawGauge(63,63,63);
   drawGauge(63*3+4,63,63);
   drawGauge(63*5+8,63,63);
@@ -60,21 +49,21 @@ void loop(void) {
   curVal3 = map(analogRead(A2),0,1023,1,254);
   
   if (oldVal1 != curVal1){
-    drawNeedle(curVal1,oldVal1,63,63,63,GREEN,BLACK);
+    drawNeedle(curVal1,oldVal1,63,63,63,RA8875_GREEN,RA8875_BLACK);
     oldVal1 = curVal1;
   }
   if (oldVal2 != curVal2){
-    drawNeedle(curVal2,oldVal2,63*3+4,63,63,CYAN,BLACK);
+    drawNeedle(curVal2,oldVal2,63*3+4,63,63,RA8875_CYAN,RA8875_BLACK);
     oldVal2 = curVal2;
   }
   if (oldVal3 != curVal3){
-    drawNeedle(curVal3,oldVal3,63*5+8,63,63,MAGENTA,BLACK);
+    drawNeedle(curVal3,oldVal3,63*5+8,63,63,RA8875_MAGENTA,RA8875_BLACK);
     oldVal3 = curVal3;
   }
 }
 
 void drawGauge(uint16_t x,uint16_t y,uint16_t r) {
-  tft.drawCircle(x, y, r,WHITE);//draw instrument container
+  tft.drawCircle(x, y, r,RA8875_WHITE);//draw instrument container
   faceHelper(x,y,r,150,390,1.3);//draw major ticks
   if (r > 15) faceHelper(x,y,r,165,375,1.1);//draw minor ticks
 
@@ -89,7 +78,7 @@ void faceHelper(uint16_t x,uint16_t y,uint16_t r,int from,int to,float dev){
     fromSecY = sin(dsec) * (r / dev);
     toSecX = cos(dsec) * r;
     toSecY = sin(dsec) * r;
-    tft.drawLine(1 + x + fromSecX,1 + y + fromSecY,1 + x + toSecX,1 + y + toSecY,WHITE);
+    tft.drawLine(1 + x + fromSecX,1 + y + fromSecY,1 + x + toSecX,1 + y + toSecY,RA8875_WHITE);
   }
 }
 
@@ -120,14 +109,14 @@ void drawPointerHelper(int16_t val,uint16_t x,uint16_t y,uint16_t r,uint16_t col
   float dsec, toSecX, toSecY;
   int16_t minValue = 0;
   int16_t maxValue = 255;
-  int fromDegree = 150;//start
-  int toDegree = 240;//end
+  float fromDegree = 150.0;//start
+  float toDegree = 240.0;//end
   if (val > maxValue) val = maxValue;
   if (val < minValue) val = minValue;
-  dsec = (((float)(uint16_t)(val - minValue) / (float)(uint16_t)(maxValue - minValue) * toDegree) + fromDegree) * (PI / 180);
+  dsec = (((float)(val - minValue) / (float)(maxValue - minValue) * toDegree) + fromDegree) * (PI / 180.0);
   toSecX = cos(dsec) * (r / 1.35);
   toSecY = sin(dsec) * (r / 1.35);
-  tft.drawLine(x, y, 1 + x + toSecX, 1 + y + toSecY, color);
+  tft.drawLine(x, y, 1 + x + (int16_t)toSecX, 1 + y + (int16_t)toSecY, color);
   tft.fillCircle(x,y,2,color);
 }
 

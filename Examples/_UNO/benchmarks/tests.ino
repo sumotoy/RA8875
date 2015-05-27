@@ -1,5 +1,5 @@
 unsigned long testPixel() {
-  tft.clearScreen();
+  tft.fillWindow();
   unsigned long start = micros();
   tft.drawPixel(0, 0, RA8875_WHITE);
   return micros() - start;
@@ -7,7 +7,7 @@ unsigned long testPixel() {
 
 unsigned long testPixels() {
   int green = 0;
-  tft.clearScreen();
+  tft.fillWindow();
   unsigned long start = micros();
   for (uint16_t i = 0; i < tft.width(); i++) {
     if (green > 255) green = 0;
@@ -18,9 +18,9 @@ unsigned long testPixels() {
 }
 
 unsigned long testFillScreen() {
-  tft.clearScreen();
+  tft.fillWindow();
   unsigned long start = micros();
-  tft.fillScreen(RA8875_RED);
+  tft.fillWindow(RA8875_RED);
   return micros() - start;
 }
 
@@ -55,23 +55,23 @@ unsigned long testLines(uint16_t color) {
   unsigned long t = 0;
   uint16_t i;
 
-  tft.clearScreen();
+  tft.fillWindow();
 
   start = micros();
   for (i = 0; i < tft.width(); i += 6) tft.drawLine(0, 0, i, tft.height() - 1, color);
   for (i = 0; i < tft.height(); i += 6) tft.drawLine(0, 0, tft.width() - 1, i, color);
   t = micros() - start;//exclude clear screen from count
-  tft.clearScreen();
+  tft.fillWindow();
   start = micros();
   for (i = 0; i < tft.width(); i += 6) tft.drawLine(tft.width() - 1, 0, i, tft.height() - 1, color);
   for (i = 0; i < tft.height(); i += 6) tft.drawLine(tft.width() - 1, 0, 0, i, color);
   t += micros() - start;
-  tft.clearScreen();
+  tft.fillWindow();
   start = micros();
   for (i = 0; i < tft.width(); i += 6) tft.drawLine(0, tft.height() - 1, i, 0, color);
   for (i = 0; i < tft.height(); i += 6) tft.drawLine(0, tft.height() - 1, tft.width() - 1, i, color);
   t += micros() - start;
-  tft.clearScreen();
+  tft.fillWindow();
   start = micros();
   for (i = 0; i < tft.width(); i += 6) tft.drawLine(tft.width() - 1, tft.height() - 1, i, 0, color);
   for (i = 0; i < tft.height(); i += 6) tft.drawLine(tft.width() - 1, tft.height() - 1, 0, i, color);
@@ -95,7 +95,7 @@ unsigned long testRects(uint16_t color) {
   uint16_t cx = tft.width() / 2;
   uint16_t cy = tft.height() / 2;
   uint16_t n = min(tft.width(), tft.height());
-  tft.clearScreen();
+  tft.fillWindow();
   start = micros();
   for (i = 2; i < n; i += 6) {
     i2 = i / 2;
@@ -111,7 +111,7 @@ unsigned long testFilledRects(uint16_t color1, uint16_t color2) {
   int           n, i, i2,
                 cx = tft.width()  / 2,
                 cy = tft.height() / 2;
-  tft.fillScreen();
+  tft.fillWindow();
   n     = min(tft.width(), tft.height());
   start = micros();
   for (i = 2; i < n; i += 6) {
@@ -133,7 +133,7 @@ unsigned long testFilledCircles(uint8_t radius, uint16_t color1, uint16_t color2
   uint16_t x;
   uint16_t y;
   uint16_t r2 = radius * 2;
-  tft.clearScreen();
+  tft.fillWindow();
   start = micros();
   for (x = radius; x < tft.width(); x += r2) {
     for (y = radius; y < tft.height(); y += r2) {
@@ -150,7 +150,6 @@ unsigned long testCircles(uint8_t radius, uint16_t color) {
   uint16_t x;
   uint16_t y;
   uint16_t r2 = radius * 2;
-  //tft.clearScreen();
   start = micros();
   for (x = 0; x < (tft.width() - radius); x += r2) {
     for (y = 0; y < (tft.height() - radius); y += r2) {
@@ -166,7 +165,7 @@ unsigned long testTriangles(uint16_t color) {
   uint16_t cx = (tft.width() / 2) - 1;
   uint16_t cy = (tft.height() / 2) - 1;
   uint16_t n = min(cx, cy);
-  tft.clearScreen();
+  tft.fillWindow();
   start = micros();
   for (i = 0; i < n; i += 5) {
     // peak,bottom left,bottom right
@@ -182,7 +181,7 @@ unsigned long testFilledTriangles(uint16_t color1, uint16_t color2) {
   uint16_t cx = (tft.width() / 2) - 1;
   uint16_t cy = (tft.height() / 2) - 1;
   uint16_t n = min(cx, cy);
-  tft.clearScreen();
+  tft.fillWindow();
   start = micros();
   for (i = n; i > 10; i -= 5) {
     start = micros();
@@ -200,7 +199,7 @@ unsigned long testFilledTriangles(uint16_t color1, uint16_t color2) {
 unsigned long testFilledRoundRects() {
   unsigned long start;
   uint16_t i, d;
-  tft.fillScreen(RA8875_BLACK);
+  tft.fillWindow();
   if (tft.getRotation() != 1 && tft.getRotation() != 3) {
     d = tft.height() - 1;
   } else {
@@ -216,7 +215,7 @@ unsigned long testFilledRoundRects() {
 unsigned long testRoundRects() {
   unsigned long start;
   uint16_t i, d;
-  tft.fillScreen(RA8875_BLACK);
+  tft.fillWindow();
   if (tft.getRotation() != 1 && tft.getRotation() != 3) {
     d = tft.height() - 1;
   } else {
@@ -230,7 +229,7 @@ unsigned long testRoundRects() {
 }
 
 void test(uint8_t rot) {
-  tft.fillScreen();
+  tft.clearScreen();
   tft.setRotation(rot);
   tft.setCursor(CENTER,CENTER);
   tft.setTextColor(RA8875_WHITE);

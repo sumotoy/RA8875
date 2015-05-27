@@ -37,8 +37,7 @@ uint8_t rot = 0;
 
 void loop() 
 {
-
-  tft.fillScreen();
+  tft.fillWindow();
   tft.setRotation(rot);
   tft.setCursor(0,0);
   tft.print("[rotation ");
@@ -59,4 +58,5 @@ void loop()
   if (rot > 3) rot = 0;
   rot++;
 }
+
 

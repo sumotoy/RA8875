@@ -34,61 +34,45 @@ void setup()
   tft.begin(RA8875_800x480);
   //tft.setRotation(1);
 
-  //RA8875 it's capable to draw graphic but also Text
-  //now set a text color, background transparent
-  tft.setTextColor(RA8875_WHITE);
-  //use the classic print an println command
-  tft.print("Hello World");
-  //by default the text location is set to 0,0
-  //now set it at 50,20 pixels and different color
-  tft.setCursor(50,20);//set cursor work in pixel!!!
-  //this time we not using transparent background
-  tft.setTextColor(RA8875_RED,RA8875_GREEN);
-  tft.print("Hello World");
-  //by default we using the internal font
-  //so some manipulation it's possible
-  tft.setFontScale(1);//font x2
-  tft.setTextColor(RA8875_RED);
-  tft.print("Hello World");
-  //You notice that font location has been 
-  //automatically increased by chip, unfortunatly not
-  //tracked by library but we can use a command for that...
-  uint16_t currentX,currentY;
-  tft.getCursor(currentX,currentY);
-  //now we have the location, lets draw a white pixel
-  tft.drawPixel(currentX,currentY,RA8875_WHITE);
-  //did you see the white dot?
-  tft.setFontScale(0);
-  tft.setCursor(0,50);
-  tft.setTextColor(RA8875_YELLOW);
-  tft.println("ABCDEF 1 2 3 4");//this time println!
-  tft.setFontSpacing(5);//now give 5 pix spacing
-  tft.println("ABCDEF 1 2 3 4");
-  tft.setFontSpacing(0);//reset
-  tft.setFontScale(2);
-  tft.setTextColor(RA8875_BLUE,RA8875_BLACK);
+
+tft.println("Once upon a midnight dreary, while I pondered, weak and weary,");
+tft.println("Over many a quaint and curious volume of forgotten lore,");
+tft.println("While I nodded, nearly napping, suddenly there came a tapping,");
+tft.println("As of some one gently rapping, rapping at my chamber door.");
+tft.println("'Tis some visitor,' I muttered, 'tapping at my chamber door Only this, and nothing more.'");
+tft.println("");
+tft.println("Ah, distinctly I remember it was in the bleak December,");
+tft.println("And each separate dying ember wrought its ghost upon the floor.");
+tft.println("Eagerly I wished the morrow;- vainly I had sought to borrow");
+tft.println("From my books surcease of sorrow- sorrow for the lost Lenore-");
+tft.println("For the rare and radiant maiden whom the angels name Lenore-");
+tft.println("Nameless here for evermore.");
 }
 
-uint16_t i = 0;
 
-void loop() 
+
+void loop()
 {
-  tft.setScrollWindow(0,320,0,60);	//Specifies scrolling activity area
-  i=0; 
-  while(i++<60){
-    delay(10); 
-    tft.scroll(i,i);
-  } //Note:  scroll offset value must be less than  scroll setting range
-  while(i-->0){
-    delay(10); 
-    tft.scroll(i,i);
-  }       
-  while(i++<60){
-    delay(10); 
-    tft.scroll(i,i);
+  tft.setScrollWindow(0, tft.width()-1, 0, 80);	//Specifies scrolling activity area
+  uint16_t i;
+  for (i = 0;i < 80; i++){
+    tft.scroll(0, i);
+    delay(10);
   }
-  while(i-->0){
-    delay(10); 
-    tft.scroll(i,i);
+  delay(500);
+  for (i = 79;i >0; i--){
+    tft.scroll(0, i);
+    delay(10);
   }
+  delay(500);
+  for (i = 0;i < tft.width(); i++){
+    tft.scroll(i, 0);
+    delay(5);
+  }
+  delay(500);
+  for (i = tft.width()-1;i > 0; i--){
+    tft.scroll(i, 0);
+    delay(5);
+  }
+  delay(500);
 }

@@ -1,6 +1,41 @@
 #ifndef _RA8875CONF_H_
 #define _RA8875CONF_H_
 
+	//initialization parameters---------------------------------------------------------------------
+	const static uint8_t initStrings[5][15] = {
+	{0x07,0x03,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)
+	{0x07,0x03,0x82,0x3B,0x00,0x01,0x00,0x05,0x0F,0x01,0x02,0x00,0x07,0x00,0x09},//1 -> 480x272 (10)
+	{0x07,0x03,0x01,0x4F,0x05,0x0F,0x01,0x00,0xDF,0x01,0x0A,0x00,0x0E,0x00,0x01},//2 -> 640x480
+	{0x07,0x03,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01},//3 -> 800x480
+	{0x07,0x03,0x81,0x63,0x00,0x03,0x03,0x0B,0xDF,0x01,0x1F,0x00,0x16,0x00,0x01} //4 -> 800x480_ALT
+	//0    1    2    3    4    5    6    7    8    9    10   11   12   13   14
+	};
+	/*
+	0: - sys clock -
+	1: - sys clock -
+	2: - sys clock -
+	3:LCD Horizontal Display Width
+	4:Horizontal Non-Display Period Fine Tuning Option
+	5:LCD Horizontal Non-Display Period
+	6:HSYNC Start Position
+	7:HSYNC Pulse Width
+	8:LCD Vertical Display Height 1
+	9:LCD Vertical Display Height 2
+	10:LCD Vertical Non-Display Period 1
+	11:LCD Vertical Non-Display Period 2
+	12:VSYNC Start Position Register 1
+	13:VSYNC Start Position Register 2
+	14:VSYNC Pulse Width Register
+	*/
+	//PostBurner PLL parameters --------------------------------------------------------------
+	const static uint8_t sysClockPar[5][2] = {
+	{0x0B,0x01},//0 -> 320x240
+	{0x0B,0x01},//1 -> 480x272
+	{0x0B,0x01},//2 -> 640x480
+	{0x0B,0x01},//3 -> 800x480
+	{0x0B,0x01} //4 -> 800x480_ALT
+	};
+	
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            System & Configuration Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -577,7 +612,14 @@ If pattern Format = 16x16 then Pattern Set [1:0] is valid */
 //                            GPIO
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define RA8875_GPIOX            	  0xC7
-
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//                            KEY-MATRIX
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#define RA8875_KSCR1            	  0xC0 //Key-Scan Control Register 1 (KSCR1)
+#define RA8875_KSCR2            	  0xC1 //Key-Scan Controller Register 2 (KSCR2)
+#define RA8875_KSDR0            	  0xC2 //Key-Scan Data Register (KSDR0)
+#define RA8875_KSDR1            	  0xC3 //Key-Scan Data Register (KSDR1)
+#define RA8875_KSDR2            	  0xC4 //Key-Scan Data Register (KSDR2)
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                         Interrupt Control Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -587,5 +629,4 @@ If pattern Format = 16x16 then Pattern Set [1:0] is valid */
 	#define RA8875_INTCx_DMA        	  0x08
 	#define RA8875_INTCx_TP         	  0x04
 	#define RA8875_INTCx_BTE        	  0x02
-
 #endif

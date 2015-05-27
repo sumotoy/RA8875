@@ -21,7 +21,7 @@ for module 3 (stellaris)
  */
 #endif
 
-void setup() 
+void setup()
 {
   Serial.begin(38400);
   long unsigned debug_start = millis ();
@@ -31,7 +31,7 @@ void setup()
   tft.begin(RA8875_800x480);
   //following it's already by begin function but
   //if you like another background color....
-  tft.fillScreen(RA8875_BLACK);//fill screen black
+  tft.fillWindow(RA8875_BLACK);//fill window black
   //now set a text color, background transparent
   tft.setTextColor(RA8875_WHITE);
   Serial.println(tft.getFontWidth(true));
@@ -40,9 +40,9 @@ void setup()
   tft.print("Hello World");
   //by default the text location is set to 0,0
   //now set it at 50,20 pixels and different color
-  tft.setCursor(50,20);//set cursor work in pixel!!!
+  tft.setCursor(50, 20); //set cursor work in pixel!!!
   //this time we not using transparent background
-  tft.setTextColor(RA8875_RED,RA8875_GREEN);
+  tft.setTextColor(RA8875_RED, RA8875_GREEN);
   tft.print("Hello World");
   //by default we using the internal font
   //so some manipulation it's possible
@@ -51,79 +51,83 @@ void setup()
   Serial.println(tft.getFontHeight());
   tft.setTextColor(RA8875_RED);
   tft.print("Hello World");
-  //You notice that font location has been 
+  //You notice that font location has been
   //automatically increased by chip, unfortunatly not
   //tracked by library but we can use a command for that...
-  uint16_t currentX,currentY;
-  tft.getCursor(currentX,currentY);
+  int16_t currentX, currentY;
+  tft.getCursor(currentX, currentY);
   //now we have the location, lets draw a white pixel
-  tft.drawPixel(currentX,currentY,RA8875_WHITE);//did you see the white dot?
+  tft.drawPixel(currentX, currentY, RA8875_WHITE); //did you see the white dot?
   tft.setFontScale(0);//font x0
   //here's an alternative...
   //tft.setFontScale(0,1);vScale,hScale arbitrary v & h scaling
-  tft.setCursor(0,50);
+  tft.setCursor(0, 50);
   tft.setTextColor(RA8875_YELLOW);
   tft.println("ABCDEF 1 2 3 4");//this time println!
   tft.setFontSpacing(5);//now give 5 pix spacing
   tft.println("ABCDEF 1 2 3 4");
   tft.setFontSpacing(0);//reset
-  //here's an useful feature of setCursor
-  tft.setCursor(CENTER,CENTER);//this set text exact in the screen regardless his lenght and scale
+  //here's a useful feature of setCursor
+  tft.setCursor(CENTER, CENTER); //this set text exact in the screen regardless his lenght and scale
   tft.setFontScale(1);//font x2
   tft.print("I'm in the center");
-  //tft.setFontRotate(true);
-  //tft.println("ABCDEF 1 2 3 4");
-  //tft.setFontRotate(false);
+  //now use the autocenter feature
+  tft.setFontScale(0);//x0
+  tft.drawRect((tft.width() / 2) - 25, (tft.height() / 2) - 100, 50, 50, RA8875_RED);
+  tft.setTextColor(RA8875_YELLOW);
+  //this will center the text
+  tft.setCursor((tft.width() / 2), (tft.height() / 2) - 75, true);
+  tft.print("AB");
   tft.setFontScale(0);//font x2
-  tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
-  tft.setCursor(50,100);
+  tft.setTextColor(RA8875_CYAN, RA8875_BLACK);
+  tft.setCursor(50, 100);
   tft.print("Cursor Example: IBEAM");
-  tft.showCursor(IBEAM,true);//activate cursor iBeam blinking
+  tft.showCursor(IBEAM, true); //activate cursor iBeam blinking
   delay(3000);
-  tft.setCursor(50,100);
+  tft.setCursor(50, 100);
   tft.print("Cursor Example: UNDER");
-  tft.showCursor(UNDER,true);//activate cursor iBeam blinking
+  tft.showCursor(UNDER, true); //activate cursor iBeam blinking
   delay(3000);
-  tft.setCursor(50,100);
+  tft.setCursor(50, 100);
   tft.print("Cursor Example: BLOCK");
-  tft.showCursor(BLOCK,true);//activate cursor iBeam blinking
+  tft.showCursor(BLOCK, true); //activate cursor iBeam blinking
   delay(3000);
-  tft.setCursor(50,100);
+  tft.setCursor(50, 100);
   tft.print("                        ");
-  tft.showCursor(NOCURSOR,false);//deactivate cursor
+  tft.showCursor(NOCURSOR, false); //deactivate cursor
   delay(1000);
-  tft.setFontScale(0,3);//font x0,x3
-  tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
+  tft.setFontScale(0, 3); //font x0,x4
+  tft.setTextColor(RA8875_CYAN, RA8875_BLACK);
   //here's another unusual command, setFontAdvance enable/disable font advance
   //so you don't have to use setCursor a lot when you need to update numbers on screen
-  tft.setFontAdvance(false);//turn off autoAdvance
-  tft.setCursor(100,100);
-  for(uint8_t i=0;i<10;i++){
-    tft.print(i,DEC);
+  tft.cursorIncrement(false);//turn off autoAdvance
+  tft.setCursor(100, 100);
+  for (uint8_t i = 0; i < 10; i++) {
+    tft.print(i, DEC);
     delay(200);
   }
   tft.print(" ");
-  tft.setFontAdvance(true);//back to normal
-  tft.setFontScale(2);//font x2
-  tft.setTextColor(RA8875_BLUE,RA8875_BLACK);
+  tft.cursorIncrement(true);//back to normal
+  tft.setFontScale(2);//font x3
+  tft.setTextColor(RA8875_BLUE, RA8875_BLACK);
 }
 
 unsigned long i = 0;
 
-void loop() 
+void loop()
 {
-  tft.setCursor(50,100);
+  tft.setCursor(50, 100);
   if (i > 999) {
-    tft.setTextColor(RA8875_CYAN,RA8875_BLACK);
+    tft.setTextColor(RA8875_CYAN, RA8875_BLACK);
   }
   if (i > 9999) {
-    tft.setTextColor(RA8875_MAGENTA,RA8875_BLACK);
+    tft.setTextColor(RA8875_MAGENTA, RA8875_BLACK);
   }
   if (i > 99999) {
-    tft.setTextColor(RA8875_RED,RA8875_BLACK);
+    tft.setTextColor(RA8875_RED, RA8875_BLACK);
   }
   if (i > 999999) i = 0;
-  tft.print(i,DEC);
+  tft.print(i, DEC);
   delay(1);
   i++;
 }
