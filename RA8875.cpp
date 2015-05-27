@@ -3066,7 +3066,7 @@ void RA8875::slowDownSPI(bool slow)
 			} else {
 				#if defined(__MKL26Z64__)	
 					if (_altSPI){
-						_maxspeed = 23000000;//TeensyLC max SPI speed on alternate SPI
+						_maxspeed = 22000000;//TeensyLC max SPI speed on alternate SPI
 					} else {
 						_maxspeed = MAXSPISPEED;
 					}
@@ -4186,4 +4186,170 @@ void RA8875::gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8
 		allwidth+=w;
 	}// End K
 } 
+
+/*---------------------------------------------------------------------------------------
+						KEYPAD - still working on
+						UNDER CONTRUCTION - PLEASE DO NOT ACTIVATE (NOT WORKING)
+****************************************************************************************/
+#if defined(USE_RA8875_KEYMATRIX)
+static const uint8_t DefaultKeyMap[(4*5)+2] = {
+    0,
+    1,  2,  3,  4,  5,  6,  7,  8,  9, 10,
+    11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    255
+};
+
+void RA8875::keypadInit(bool scanEnable, bool longDetect, uint8_t sampleTime, uint8_t scanFrequency,
+                             uint8_t longTimeAdjustment, bool interruptEnable, bool wakeupEnable)
+{
+    uint8_t reg = 0;
+	if (sampleTime > 3) sampleTime = 3;
+	if (scanFrequency > 7) scanFrequency = 7;
+	if (longTimeAdjustment > 3) scanFrequency = 3;
+    reg |= (scanEnable) ? 0x80 : 0x00;
+    reg |= (longDetect) ? 0x40 : 0x00;
+    reg |= (sampleTime & 0x03) << 4;
+    reg |= (scanFrequency & 0x07);
+    writeReg(RA8875_KSCR1, reg);   // KSCR1 - Enable Key Scan
+
+    reg = 0;
+    reg |= (wakeupEnable) ? 0x80 : 0x00;
+    reg |= (longTimeAdjustment & 0x03) << 2;
+    writeReg(RA8875_KSCR2, reg);  // KSCR2
+
+    reg = readReg(RA8875_INTC1);  // read INT
+    reg &= ~0x10;
+    reg |= (interruptEnable) ? 0x10 : 0x00;
+    writeReg(RA8875_INTC1, reg);  // write INT
+}
+
+
+boolean RA8875::keypadTouched(void)
+{
+    return (readReg(RA8875_INTC2) & 0x10); 
+}
+
+//#define GETC_DEV
+uint8_t RA8875::getKey(void)
+{
+	uint8_t pKeyMap[(4*5)+2];
+	memcpy (pKeyMap,DefaultKeyMap,(4*5)+2);
+
+#ifdef GETC_DEV
+    uint8_t keyCode1, keyCode2;
+#endif
+    uint8_t keyCode3;
+    static uint8_t count = 0;
+    uint8_t col, row;
+    uint8_t key;
+	/*	
+    while (!keypadTouched()) {
+		delayMicroseconds(10);//10
+    }
+	*/
+    // read the key press number
+    uint8_t keyNumReg = readReg(RA8875_KSCR2) & 0x03;
+    count++;
+    switch (keyNumReg) {
+        case 0x01:      // one key
+            keyCode3 = readReg(RA8875_KSDR0);
+#ifdef GETC_DEV
+            keyCode2 = 0;
+            keyCode1 = 0;
+#endif
+            break;
+        case 0x02:      // two keys
+            keyCode3 = readReg(RA8875_KSDR1);
+#ifdef GETC_DEV
+            keyCode2 = readReg(RA8875_KSDR0);
+            keyCode1 = 0;
+#endif
+            break;
+        case 0x03:      // three keys
+            keyCode3 = readReg(RA8875_KSDR2);
+#ifdef GETC_DEV
+            keyCode2 = readReg(RA8875_KSDR1);
+            keyCode1 = readReg(RA8875_KSDR0);
+#endif
+            break;
+        default:         // no keys (key released)
+            keyCode3 = 0xFF;
+#ifdef GETC_DEV
+            keyCode2 = 0;
+            keyCode1 = 0;
+#endif
+            break;
+    }
+    if (keyCode3 == 0xFF) {
+        key = pKeyMap[0];                    // Key value 0
+    } else {
+        row = (keyCode3 >> 4) & 0x03;
+        col = (keyCode3 &  7);
+        key = row * 5 + col + 1;    // Keys value 1 - 20
+        if (key > 21) key = 21;
+        key = pKeyMap[key];
+        key |= (keyCode3 & 0x80);   // combine the key held flag
+    }
+#ifdef GETC_DEV // for Development only
+    setCursor(0,20);
+	setTextColor(0xFFFF,0x0000);
+	print("              ");
+	setCursor(0,20);
+	print("   Reg: ");
+	println(keyNumReg);
+	print("   key1: ");
+	println(keyCode1);
+	print("   key2: ");
+	println(keyCode2);
+	print("   key3: ");
+	println(keyCode3);
+	print("  count: ");
+	println(count);
+	print("    key: ");
+	println(key);
+#endif
+    writeReg(RA8875_INTC2, 0x10);       // Clear KS status
+    return key;
+}
+
+
+void RA8875::enableKeyScan(bool on)
+{
+    if (on) {
+        writeReg(RA8875_KSCR1, (1 << 7) | (0 << 4 ) | 1 );       // enable key scan
+    } else {
+        writeReg(RA8875_KSCR1, (0 << 7));
+    }
+}
+ 
+uint8_t RA8875::getKeyValue(void)
+{
+    uint8_t data = 0xFF;
+    data = readReg(RA8875_KSDR0);
+
+    delay(1);
+	#ifdef GETC_DEV
+	if (data != 255){
+		setTextColor(0xFFFF,0x0000);
+		setCursor(0,20);
+		print("                ");
+		setCursor(0,20);
+		print("Reg: ");
+		println(data);
+	}
+	#endif
+    // Clear key interrupt status
+	uint8_t temp = readReg(RA8875_INTC2);
+    writeReg(RA8875_INTC2,temp | 0x10);
+    return data;
+}
+ 
+boolean RA8875::isKeyPress(void)
+{
+    uint8_t temp = readReg(RA8875_INTC2);
+    if (temp & 0x10) return true;
+    return false;
+}
+
+#endif
 
