@@ -344,7 +344,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		}
 		SPI.begin();
 	#elif defined(__MKL26Z64__)//TeensyLC
-		#if defined(TEENSYDUINO > 121)//not supported prior 1.22!
+		#if TEENSYDUINO > 121//not supported prior 1.22!
 		if (_altSPI){
 			SPI1.begin();
 		} else {
@@ -3057,34 +3057,37 @@ void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, boo
 	  [private]
 */
 /**************************************************************************/
+
+#if defined(_FASTCPU)
 void RA8875::slowDownSPI(bool slow)
 {
 	#if defined(SPI_HAS_TRANSACTION)
-		#if defined(_FASTCPU)
-			if (slow){
-				_maxspeed = 10000000;
-			} else {
-				#if defined(__MKL26Z64__)	
-					if (_altSPI){
-						_maxspeed = 22000000;//TeensyLC max SPI speed on alternate SPI
-					} else {
-						_maxspeed = MAXSPISPEED;
-					}
-				#else
+		if (slow){
+			_maxspeed = 10000000;
+		} else {
+			#if defined(__MKL26Z64__)	
+				if (_altSPI){
+					_maxspeed = 22000000;//TeensyLC max SPI speed on alternate SPI
+				} else {
 					_maxspeed = MAXSPISPEED;
-				#endif
-			}
-		#endif
+				}
+			#else
+				_maxspeed = MAXSPISPEED;
+			#endif
+		}
 	#else
-		#if defined(_FASTCPU)
-			if (slow){
-				SPI.setClockDivider(SPI_SPEED_SAFE);
-			} else {
-				SPI.setClockDivider(SPI_SPEED_WRITE);
-			}
-		#endif
+		if (slow){
+			SPI.setClockDivider(SPI_SPEED_SAFE);
+		} else {
+			SPI.setClockDivider(SPI_SPEED_WRITE);
+		}
 	#endif
 }
+#else
+void RA8875::slowDownSPI(bool slow)
+{
+}
+#endif
 
 /**************************************************************************/
 /*!
