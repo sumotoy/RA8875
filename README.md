@@ -6,7 +6,7 @@ RA8875 library
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.69b36 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b50 (beta, re-download all library and read changes!!!)<br>
 
 Current beta **tested only with**:
 * Teensy 3.1, Stellaris
@@ -24,6 +24,8 @@ NOT tested at all:
 * Any 640x480
 * 
 <b>NOTE</b>:If your do not work please ask here.<br>
+
+##### Current version 0.69b50, it's the first preview of the 0.70! There's a lot of changes.<br>
 
 ##### Beta 0.70 it's on the corner!
 The long awaited 0.70 it's almost ready it will introduce many changes:
