@@ -1,0 +1,12 @@
+{
+  "name": "RA8875",
+  "keywords": "display, spi, tft",
+  "description": "RAiO RA8875 display driver",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/sumotoy/RA8875.git"
+  },
+  "frameworks": "arduino",
+  "platforms": "atmelavr"
+}
