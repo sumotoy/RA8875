@@ -25,7 +25,11 @@ NOT tested at all:
 * 
 <b>NOTE</b>:If your do not work please ask here.<br>
 
-##### Current version 0.69b50, it's the first preview of the 0.70! There's a lot of changes.<br>
+##### Current version 0.69b50, it's the first preview of the 0.70! Please read!!!.<br>
+The current version introduce massive changes to fit the 0.70 milestone, some function has changed name,
+most of the code has been retouched but more or less this is the definitive scheme of the final library. The only
+functions will change a bit it's in the area of rendering text (by using user fonts) and keypad. The current beta it's faster than any previous version but next beta will have optimized code for AVR and full SPI extended support for DUE and introduce some missed drawing command (arcs).<br>
+
 
 ##### Beta 0.70 it's on the corner!
 The long awaited 0.70 it's almost ready it will introduce many changes:
