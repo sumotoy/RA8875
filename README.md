@@ -31,7 +31,7 @@ The current version introduce massive changes to fit the 0.70 milestone, some fu
 most of the code has been retouched but more or less this is the definitive scheme of the final library. The only
 functions will change a bit it's in the area of rendering text (by using user fonts) and keypad. The current beta it's faster than any previous version<br>
 **0.69b60**<br>
-Faster optimized code for AVR (checked), faster code for DUE (not checked), introduced **drawArc** (the only missed graphic macro but very flexible and draw in degrees!), hyperfast **getCursor** and library tracking of the current cursor position without any SPI call to RA, **fixed a lot of bugs**, color problems with text, etc. New examples, even a **Pong game**.<br>
+Faster optimized code for AVR (checked), faster code for DUE (not checked), introduced **drawArc** (the only missed graphic macro but very flexible and draw in degrees!), hyperfast **getCursor** and library tracking of the current cursor position without any SPI call to RA, **fixed a lot of bugs**, color problems with text, etc, fixed gPrint (for large text and user font) but still not enabled for rotation. New examples, even a **Pong game**.<br>
 
 
 ##### Beta 0.70 it's on the corner!
