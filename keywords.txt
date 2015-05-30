@@ -57,6 +57,7 @@ drawCurve	KEYWORD2
 fillCurve	KEYWORD2
 drawRoundRect	KEYWORD2
 fillRoundRect	KEYWORD2
+drawArc	KEYWORD2
 touchBegin	KEYWORD2
 touchEnable	KEYWORD2
 touchDetect	KEYWORD2
@@ -81,6 +82,8 @@ setGraphicCursor	KEYWORD2
 showGraphicCursor	KEYWORD2
 getCursor	KEYWORD2
 getCursorFast	KEYWORD2
+getCursorX	KEYWORD2
+getCursorY	KEYWORD2
 width	KEYWORD2
 height	KEYWORD2
 setScrollWindow	KEYWORD2

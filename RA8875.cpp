@@ -4,13 +4,16 @@
 #if defined (USE_FT5206_TOUCH)
 	#include "Wire.h"
 	static volatile boolean _touched = false;
+	static const uint8_t _ctpAdrs = 0x38;
+	static const uint8_t coordRegStart[5] = {0x03,0x09,0x0F,0x15,0x1B};
 #endif
 
 
 #ifdef SPI_HAS_TRANSACTION
 //static SPISettings settings;
-static uint32_t	_maxspeed;
+	static uint32_t	_maxspeed;
 #endif
+
 
 /**************************************************************************/
 /*!
@@ -145,14 +148,18 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_sleep = false;
 	_hasLayerLimits = false;
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
-		_textForeColor = 0xFFFF;
-		_textBackColor = 0x0000;
+		_textForeColor = _RA8875_DEFAULTTXTFRGRND;
+		#if defined(_RA8875_DEFAULTTXTBKGRND)
+			_textBackColor = _RA8875_DEFAULTTXTBKGRND;
+		#else
+			_textBackColor = 0x0000;
+		#endif
 		_recoverTextColor = false;
 	#endif
 	_maxLayers = 2;
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
-	_currentMode = 0;
+	_currentMode = false;
 	_brightness = 255;
 	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
 	_textSize = X16;
@@ -177,6 +184,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_fontInterline = 0;
 	_fontFamily = STANDARD;
 	_textCursorStyle = NOCURSOR;
+	_arcAngleMax = ARC_ANGLE_MAX;
+	_arcAngleOffset = ARC_ANGLE_OFFSET;
 	_color_bpp = 16;
 	_colorIndex = 0;
 	if (colors != 16) {
@@ -230,6 +239,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	}
 	WIDTH = _width;
 	HEIGHT = _height;
+	_activeWindowXL = 0;
+	_activeWindowXR = WIDTH;
+	_activeWindowYT = 0;
+	_activeWindowYB = HEIGHT;
 	#if !defined(USE_EXTERNALTOUCH)
 		_touchPin = 255;
 		_clearTInt = false;
@@ -254,9 +267,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		//_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
 		_TPCR0Reg = RA8875_TPCR0_WAIT_32768CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV128;
 	#endif
-	#if defined(USE_RA8875_KEYMATRIX)
-		_keyMatrixEnabled = false;
-	#endif
+
 /* Display Configuration Register	  [0x20]
 	  7: (Layer Setting Control) 0:one Layer, 1:two Layers
 	  6,5,4: (na)
@@ -330,6 +341,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 
 	//------------------------------- Start SPI initialization ------------------------------------------
 	#if defined(__MK20DX128__) || defined(__MK20DX256__)//Teensy 3,3.1
+		//always uses SPI ransaction
 		if ((_mosi == 11 || _mosi == 7) && (_miso == 12 || _miso == 8) && (_sclk == 13 || _sclk == 14)) {//valid SPI pins?
 			SPI.setMOSI(_mosi);
 			SPI.setMISO(_miso);
@@ -344,6 +356,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		}
 		SPI.begin();
 	#elif defined(__MKL26Z64__)//TeensyLC
+		//always uses SPI ransaction
 		#if TEENSYDUINO > 121//not supported prior 1.22!
 		if (_altSPI){
 			SPI1.begin();
@@ -356,11 +369,41 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			bitSet(_errorCode,3);
 		#endif
 	#else//all the rest (DUE,UNO,ENERGIA)
-		SPI.begin();
+		#if defined(SPI_HAS_TRANSACTION) || defined(ENERGIA) || defined(__SAM3X8E__)
+		//all the rest (except 8Bt arduino) needs SPI.begin(); here
+			SPI.begin();
+		#endif
 	#endif
+	
 	#if !defined(ENERGIA)//everyone but energia
-		pinMode(_cs, OUTPUT);
-		digitalWrite(_cs, HIGH);
+		#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//all Tensy's 32bit
+			pinMode(_cs, OUTPUT);
+			digitalWrite(_cs, HIGH);
+		#elif defined(__SAM3X8E__)// DUE
+			#if defined(SPI_DUE_MODE_EXTENDED)//in mode extended you can use only follow pins
+				if (_cs == 4 || _cs == 10 || _cs == 52) {
+					#if defined(_FASTSSPORT)
+						csport = portOutputRegister(digitalPinToPort(_cs));
+						cspinmask = digitalPinToBitMask(_cs);
+						*csport |= cspinmask;//hi
+					#else
+						pinMode(_cs, OUTPUT);
+						digitalWrite(_cs, HIGH);
+					#endif
+				} else {
+					bitSet(_errorCode,2);
+					return;
+				}
+			#else//DUE in normal SPI mode
+				csport = portOutputRegister(digitalPinToPort(_cs));
+				cspinmask = digitalPinToBitMask(_cs);
+				*csport |= cspinmask;//hi
+			#endif
+		#else//UNO and other 8 bit arduino's
+			csport = portOutputRegister(digitalPinToPort(_cs));//pinMode(_cs, OUTPUT);
+			cspinmask = digitalPinToBitMask(_cs);
+			*csport |= cspinmask;//hi //digitalWrite(_cs, HIGH);
+		#endif
 	#endif
 	if (_rst != 255){//time for hardware reset RA8875
 		pinMode(_rst, OUTPUT);
@@ -371,22 +414,30 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		digitalWrite(_rst, HIGH);
 		delay(300);//200
 	}
-#if defined(NEEDS_SET_MODULE)//energia specific
-	SPI.setModule(SPImodule);
-#endif
+	
+	#if defined(ENERGIA) && defined(NEEDS_SET_MODULE)//energia specific
+		SPI.setModule(SPImodule);
+	#endif
 
 	//set SPI SPEED, starting at low speed, after init will raise up!
-#if defined(SPI_HAS_TRANSACTION)
+	#if defined(SPI_HAS_TRANSACTION)
 		_maxspeed = 4000000;//we start in low speed here!
 		//settings = SPISettings(_maxspeed, MSBFIRST, SPI_MODE3);
-#else//do not use SPItransactons
-		SPI.setClockDivider(SPI_SPEED_SAFE);
-		delay(1);
-		SPI.setDataMode(SPI_MODE3);
-#endif
+	#else//do not use SPItransactons
+		#if defined (__AVR__)//8 bit arduino's
+			SPI.begin();
+			SPI.setClockDivider(SPI_SPEED_SAFE);
+			delay(1);
+			SPI.setDataMode(SPI_MODE3);
+		#else
+			SPI.setClockDivider(SPI_SPEED_SAFE);
+			delay(1);
+			SPI.setDataMode(SPI_MODE3);
+		#endif
+	#endif
 	#if defined(ENERGIA)//dunno why but energia wants this here or not work!
-	pinMode(_cs, OUTPUT);
-	digitalWrite(_cs, HIGH);
+		pinMode(_cs, OUTPUT);
+		digitalWrite(_cs, HIGH);
 	#endif
 	//SPI initialization done
 	if (_errorCode != 0) return;//ouch, error/s.Better stop here!
@@ -394,10 +445,16 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	//------- time for capacitive touch stuff -----------------
 	#if defined (USE_FT5206_TOUCH)
 		Wire.begin();
-		#if ARDUINO >= 157
-			Wire.setClock(400000UL); // Set I2C frequency to 400kHz
+		#if defined(__SAM3X8E__)
+			// Force 400 KHz I2C, rawr! (Uses pins 20, 21 for SDA, SCL)
+			TWI1->TWI_CWGR = 0;
+			TWI1->TWI_CWGR = ((VARIANT_MCK / (2 * 400000)) - 4) * 0x101;
 		#else
-			TWBR = ((F_CPU / 400000UL) - 16) / 2; // Set I2C frequency to 400kHz
+			#if ARDUINO >= 157
+				Wire.setClock(400000UL); // Set I2C frequency to 400kHz
+			#else
+				TWBR = ((F_CPU / 400000UL) - 16) / 2; // Set I2C frequency to 400kHz
+			#endif
 		#endif
 		delay(10);
 		initFT5206();//initialize FT5206 controller
@@ -422,7 +479,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 void RA8875::initialize() 
 {
 	_inited = false;
-	if (_rst == 255) {//No Hard Reset? time for soft reset
+	if (_rst == 255) {// soft reset time ?
 		writeCommand(RA8875_PWRR);
 		writeData(RA8875_PWRR_SOFTRESET);
 		delay(20);
@@ -432,7 +489,6 @@ void RA8875::initialize()
 	//set the sysClock
 	setSysClock(initStrings[_initIndex][0],initStrings[_initIndex][1],initStrings[_initIndex][2]);
 	//color space setup
-	
 	if (_color_bpp < 16){//256
 		writeReg(RA8875_SYSR,0x00);//256
 		_colorIndex = 8;
@@ -453,28 +509,53 @@ void RA8875::initialize()
 	writeReg(RA8875_VSTR0,initStrings[_initIndex][12]);	//VSYNC Start Position Register 0
 	writeReg(RA8875_VSTR1,initStrings[_initIndex][13]);	//VSYNC Start Position Register 1
 	writeReg(RA8875_VPWR,initStrings[_initIndex][14]);	//VSYNC Pulse Width Register
-	setActiveWindow(0,(WIDTH-1),0,(HEIGHT-1));//set the active window
-	clearActiveWindow();
+	updateActiveWindow(true);//set the whole screen as active
+	//clearActiveWindow();
 	delay(10); //100
 	setCursorBlinkRate(DEFAULTCURSORBLINKRATE);//set default blink rate
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
 	setFont(INT);	//set internal font use
-	_backTransparent = false;//0.69b30
 	//postburner PLL!
 	setSysClock(sysClockPar[_initIndex][0],sysClockPar[_initIndex][1],initStrings[_initIndex][2]);
 	_inited = true;//from here we will go at high speed!
-	slowDownSPI(false);
-	//_inited = true;//from here we will go at high speed!
+	#if defined(_FASTCPU)
+		slowDownSPI(false);
+	#else
+		#if defined(SPI_HAS_TRANSACTION)
+			_maxspeed = MAXSPISPEED;
+		#else
+			SPI.setClockDivider(SPI_SPEED_WRITE);
+		#endif
+	#endif
 	delay(1);
-	setRotation(0);
-	setTextColor(RA8875_WHITE);
-	//clearMemory(true);
-	clearMemory();
+	clearMemory();//clearMemory(true);
 	delay(1);
 	displayOn(true);//turn On Display
 	delay(1);
+	fillWindow(_RA8875_DEFAULTBACKLIGHT);//set screen black
 	backlight(true);
-	//set cursor at 0,0
+	setRotation(_RA8875_DEFAULTSCRROT);
+
+	#if defined(_RA8875_DEFAULTTXTBKGRND)
+		#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
+			setForegroundColor(_textForeColor);
+			setBackgroundColor(_textBackColor);
+		#else
+			setForegroundColor(_RA8875_DEFAULTTXTFRGRND);
+			setBackgroundColor(_RA8875_DEFAULTTXTBKGRND);
+		#endif
+		_backTransparent = false;
+		_FNCR1Reg &= ~(1 << 6);//clear
+	#else
+		#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
+			setForegroundColor(_textForeColor);
+		#else
+			setForegroundColor(_RA8875_DEFAULTTXTFRGRND);
+		#endif
+		_backTransparent = true;
+		_FNCR1Reg |= (1 << 6);//set
+	#endif
+	writeReg(RA8875_FNCR1,_FNCR1Reg);
 	setCursor(0,0);
 }
 
@@ -650,14 +731,32 @@ void RA8875::setActiveWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB)
 		swapvals(XR,YB);
 	}
 	
-	if (XR >= WIDTH) XR = WIDTH-1;
-	if (YB >= HEIGHT) YB = HEIGHT-1;
+	if (XR >= WIDTH) XR = WIDTH;
+	if (YB >= HEIGHT) YB = HEIGHT;
 	
 	_activeWindowXL = XL;
 	_activeWindowXR = XR;
 	_activeWindowYT = YT;
 	_activeWindowYB = YB;
 	updateActiveWindow(false);
+}
+
+/**************************************************************************/
+/*!		
+		Set the Active Window as FULL SCREEN
+*/
+/**************************************************************************/
+void RA8875::setActiveWindow(void)
+{
+	_activeWindowXL = 0;
+	_activeWindowXR = WIDTH;
+	_activeWindowYT = 0;
+	_activeWindowYB = HEIGHT;
+	if (_portrait){
+		swapvals(_activeWindowXL,_activeWindowYT);
+		swapvals(_activeWindowXR,_activeWindowYB);
+	}
+	updateActiveWindow(true);
 }
 
 /**************************************************************************/
@@ -710,16 +809,17 @@ uint16_t RA8875::height(void) const {
 		[private]
 */
 /**************************************************************************/
-void RA8875::changeMode(uint8_t m) 
+void RA8875::changeMode(bool m) 
 {
 	if (m == _currentMode) return;
 	writeCommand(RA8875_MWCR0);
-	if (m != 0){//text
+	//if (m != 0){//text
+	if (m){//text
 		_MWCR0Reg |= (1 << 7);
-		_currentMode = 1;
+		_currentMode = true;
 	} else {//graph
 		_MWCR0Reg &= ~(1 << 7);
-		_currentMode = 0;
+		_currentMode = false;
 	}
 	writeData(_MWCR0Reg);
 }
@@ -865,7 +965,8 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 {
 	uint8_t tempMWCR1 = readReg(RA8875_MWCR1);//thanks MorganSandercock
 	uint8_t i;
-	if (_currentMode != 0) changeMode(0);
+	//if (_currentMode != 0) changeMode(0);
+	if (_currentMode) changeMode(false);//we are in text mode?
 	writeReg(RA8875_CGSR,address);
 	writeTo(CGRAM);
 	writeCommand(RA8875_MRWC);
@@ -887,6 +988,7 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 void RA8875::showUserChar(uint8_t symbolAddrs,uint8_t wide) 
 {
 	if (_currentMode != 1) changeMode(1);
+	if (!_currentMode) changeMode(true);//we are in graph mode?
 	uint8_t oldRegState = _FNCR0Reg;
 	uint8_t i;
 	bitSet(oldRegState,7);//set to CGRAM
@@ -1264,6 +1366,18 @@ void RA8875::getCursorFast(int16_t &x, int16_t &y)
 	y = _cursorY;
 	if (_portrait) swapvals(x,y);
 }
+
+int16_t RA8875::getCursorX(void)
+{
+	if (_portrait) return _cursorY;
+	return _cursorX;
+}
+
+int16_t RA8875::getCursorY(void)
+{
+	if (_portrait) return _cursorX;
+	return _cursorY;
+}
 /**************************************************************************/
 /*!     Show/Hide text cursor
 		Parameters:
@@ -1526,7 +1640,8 @@ void RA8875::textWrite(const char* buffer, uint16_t len)//0.69b32 faster println
 	uint16_t i;
 	const uint8_t currentFontW = 8;
 	const uint8_t currentFontH = 16;
-	if (_currentMode != 1) changeMode(1);
+	//if (_currentMode != 1) changeMode(1);
+	if (!_currentMode) changeMode(true);//we are in graph mode?
 	if (len == 0) len = strlen(buffer);
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		if (_recoverTextColor){
@@ -1596,6 +1711,7 @@ void RA8875::textWrite(const char* buffer, uint16_t len)//0.69b32 faster println
 				//write a normal char
 				writeData(buffer[i]);
 				waitBusy(0x80);
+				_cursorX += currentFontW;
 		}
 	}
 }
@@ -2025,7 +2141,8 @@ void RA8875::DMA_enable(void)
 /**************************************************************************/
 void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum)
 {  
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
 	if (_portrait){//0.69b21 -have to check this, not verified
 		swapvals(x,y);
 		swapvals(w,h);
@@ -2077,7 +2194,8 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 
 void  RA8875::BTE_move(int16_t SourceX, int16_t SourceY, int16_t Width, int16_t Height, int16_t DestX, int16_t DestY, uint8_t SourceLayer, uint8_t DestLayer,bool Transparent, uint8_t ROP, bool Monochrome, bool ReverseDir)
 {
-	if (_currentMode != 0) changeMode(0);//avoid useless calls
+	//if (_currentMode != 0) changeMode(0);//avoid useless calls
+	if (_currentMode) changeMode(false);//we are in text mode?
 	/*
 	if (_portrait) {
 		swapvals(SourceX,SourceY);
@@ -2109,35 +2227,10 @@ void  RA8875::BTE_move(int16_t SourceX, int16_t SourceY, int16_t Width, int16_t 
 	}
 
 	waitBusy(0x40); //Check that another BTE operation is not still in progress
-	//BTE_size(Width,Height);
-	//BTE_fromTo(SourceX,DestX,SourceY,DestY);
 	BTE_moveFrom(SourceX,SourceY);
 	BTE_size(Width,Height);
 	BTE_moveTo(DestX,DestY);
-	/*
-	//from
-	writeReg(RA8875_HSBE0, SourceX & 0xFF);
-	writeReg(RA8875_HSBE1, SourceX >> 8);
-	writeReg(RA8875_VSBE0, SourceY & 0xFF);
-	writeReg(RA8875_VSBE1, SourceY >> 8);
-	
-	//size
-	writeReg(RA8875_BEWR0, Width & 0xFF);
-	writeReg(RA8875_BEWR1, Width >> 8);
-	writeReg(RA8875_BEHR0, Height & 0xFF);
-	writeReg(RA8875_BEHR1, Height >> 8);
-
-	//to
-	writeReg(RA8875_HDBE0, DestX & 0xFF);
-	writeReg(RA8875_HDBE1, DestX >> 8);
-	writeReg(RA8875_VDBE0, DestY & 0xFF);
-	writeReg(RA8875_VDBE1, DestY >> 8);
-	*/
-
-	//ROP function and BTE operation mode
-	//writeReg(RA8875_BECR1, ROP); 
 	BTE_ropcode(ROP);
-
 	//Execute BTE! (This selects linear addressing mode for the monochrome source data)
 	if (Monochrome) writeReg(RA8875_BECR0, 0xC0); else writeReg(RA8875_BECR0, 0x80);
 	waitBusy(0x40);
@@ -2189,46 +2282,7 @@ void RA8875::BTE_moveTo(int16_t DX,int16_t DY)
 	writeReg(RA8875_VDBE0,DY & 0xFF);
 	writeReg(RA8875_VDBE1,DY >> 8);
 }	
-/**************************************************************************/
-/*!
 
-*/
-/**************************************************************************/
-
-
-/*
-void RA8875::BTE_source_destination(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY)
-{
-	uint8_t temp0,temp1;
-	if (_portrait){//0.69b21 -have to check this, not verified
-		swapvals(SX,SY);
-		swapvals(DX,DY);
-	}
-
-    writeReg(RA8875_HSBE0,SX & 0xFF);//BTE horizontal position of read/write data
-    writeReg(RA8875_HSBE1,SX >> 8);//BTE horizontal position of read/write data   
-
-    writeReg(RA8875_HDBE0,DX & 0xFF);//BTE written to the target horizontal position
-    writeReg(RA8875_HDBE1,DX >> 8);//BET written to the target horizontal position	
-
-    writeReg(RA8875_VSBE0,SY);//BTE vertical position of read/write data
-	
-	temp0 = SY >> 8;   
-	temp1 = readReg(RA8875_VSBE1);
-	temp1 &= 0x80;
-    temp0 = temp0 | temp1; 
-	writeReg(RA8875_VSBE1,temp0);//BTE vertical position of read/write data  
-  
-    writeReg(RA8875_VDBE0,DY);//BTE written to the target  vertical  position
-	
-	temp0 = DY >> 8;   
-	temp1 = readReg(RA8875_VDBE1);
-	temp1 &= 0x80;
-	temp0 = temp0 | temp1;	
-	writeReg(RA8875_VDBE1,temp0);//BET written to the target  vertical  position 
-
-}
-*/
 /**************************************************************************/
 /*! TESTING
 	Use a ROP code EFX
@@ -2445,7 +2499,8 @@ void RA8875::writePattern(int16_t x,int16_t y,const uint8_t *data,uint8_t size,b
 	setActiveWindow(x,x+size-1,y,y+size-1);
 	setXY(x,y);
 	
-	if (_currentMode != 0) changeMode(0);//avoid useless calls
+	//if (_currentMode != 0) changeMode(0);//avoid useless calls
+	if (_currentMode) changeMode(false);//we are in text mode?
 	writeCommand(RA8875_MRWC);
 	for (i=0;i<(size*size);i++) {
 		writeData(data[i*2]);
@@ -2547,7 +2602,8 @@ void RA8875::writeTo(enum RA8875writes d)
 /**************************************************************************/
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
 	writeData16(color); 
@@ -2565,17 +2621,31 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 /**************************************************************************/
 void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 {
-    if (_currentMode != 0) changeMode(0);//we are in text mode?
+    //if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
     setXY(x,y);
     writeCommand(RA8875_MRWC);
     startSend();
-	SPI.transfer(RA8875_DATAWRITE);
+	#if defined(__AVR__) && defined(_FASTSSPORT)
+		spiwrite(RA8875_DATAWRITE);
+	#else
+		SPI.transfer(RA8875_DATAWRITE);
+	#endif
 	while (count--) {
-	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
+	#if !defined(ENERGIA) && !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		SPI.transfer16(*p);
 	#else
-		SPI.transfer(*p >> 8);
-		SPI.transfer(*p & 0xFF);
+		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			SPI.transfer(_cs, *p >> 8, SPI_CONTINUE); 
+			SPI.transfer(_cs, *p & 0xFF, SPI_LAST);
+		#else
+			#if defined(__AVR__) && defined(_FASTSSPORT)
+				spiwrite16(*p);
+			#else
+				SPI.transfer(*p >> 8);
+				SPI.transfer(*p & 0xFF);
+			#endif
+		#endif
 	#endif
         p++;
     }
@@ -2594,20 +2664,40 @@ void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 uint16_t RA8875::getPixel(int16_t x, int16_t y)
 {
     uint16_t color;
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
     setXY(x,y);
     writeCommand(RA8875_MRWC);
-	slowDownSPI(true);
+	#if defined(_FASTCPU)
+		slowDownSPI(true);
+	#endif
     startSend();
-    SPI.transfer(RA8875_DATAREAD);
-    SPI.transfer(0x00);//first byte it's dummy
+	#if defined(__AVR__) && defined(_FASTSSPORT)
+		spiwrite(RA8875_DATAREAD);
+		spiwrite(0x00);
+	#else
+		SPI.transfer(RA8875_DATAREAD);
+		SPI.transfer(0x00);//first byte it's dummy
+	#endif
 	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		color  = SPI.transfer16(0x0);
 	#else
-		color  = SPI.transfer(0x0);
-		color |= (SPI.transfer(0x0) << 8);
+		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			color  = SPI.transfer(_cs, 0x0, SPI_CONTINUE); 
+			color |= (SPI.transfer(_cs, 0x0, SPI_LAST) << 8);
+		#else
+			#if defined(__AVR__) && defined(_FASTSSPORT)
+				color  = spiread();
+				color |= (spiread() << 8);
+			#else
+				color  = SPI.transfer(0x0);
+				color |= (SPI.transfer(0x0) << 8);
+			#endif
+		#endif
 	#endif
-	slowDownSPI(false);
+	#if defined(_FASTCPU)
+		slowDownSPI(false);
+	#endif
     endSend();
     return color;
 }
@@ -2620,11 +2710,12 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
     if (_currentMode != 0) changeMode(0);//we are in text mode?
     setXY(x,y);
     writeCommand(RA8875_MRWC);
-	slowDownSPI(true);
-
+	#if defined(_FASTCPU)
+		slowDownSPI(true);
+	#endif
     startSend();
 	SPI.transfer(RA8875_DATAREAD);
-	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
+	#if !defined(ENERGIA) && !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		SPI.transfer16(0x0);//dummy
 	#else
 		SPI.transfer(0x0);//dummy
@@ -2639,8 +2730,9 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 		#endif
         *p++ = color;
     }
-	slowDownSPI(false);
-	
+	#if defined(_FASTCPU)
+		slowDownSPI(false);
+	#endif
     endSend();
 }
 */
@@ -2663,7 +2755,8 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_recoverTextColor = true;
 	#endif
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
 	
 	if (_portrait) {//0.69b21
 		swapvals(x0,y0);
@@ -2677,7 +2770,6 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 	lineAddressing(x0,y0,x1,y1);
 	
 	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid 3 useless SPI calls
-	
 	writeReg(RA8875_DCR,0x80);
 	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 }
@@ -2779,6 +2871,9 @@ void RA8875::fillWindow(uint16_t color)
 	writeCommand(RA8875_DCR);
 	writeData(0xB0);
 	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
+	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
+		_recoverTextColor = true;
+	#endif
 }
 
 /**************************************************************************/
@@ -2792,9 +2887,13 @@ void RA8875::fillWindow(uint16_t color)
 /**************************************************************************/
 void RA8875::clearScreen(uint16_t color)//0.69b24
 {  
+	/*
 	updateActiveWindow(true);//temporarily set all window
 	fillWindow(color);
 	updateActiveWindow(false);//go back to the old win settings
+	*/
+	setActiveWindow();
+	fillWindow(color);
 }
 
 /**************************************************************************/
@@ -3028,7 +3127,8 @@ void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 /**************************************************************************/
 void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled)//0.69b32 fixed an undocumented hardware limit
 {
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
 	if (_portrait) swapvals(x0,y0);//0.69b21
 
 	//checkLimitsHelper(x0,y0);
@@ -3045,10 +3145,14 @@ void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, boo
 	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 
 	writeCommand(RA8875_DCR);
-	slowDownSPI(true);
+	#if defined(_FASTCPU)
+		slowDownSPI(true);
+	#endif
 	filled == true ? writeData(RA8875_DCR_CIRCLE_START | RA8875_DCR_FILL) : writeData(RA8875_DCR_CIRCLE_START | RA8875_DCR_NOFILL);
 	waitPoll(RA8875_DCR, RA8875_DCR_CIRCLE_STATUS);//ZzZzz
-	slowDownSPI(false);
+	#if defined(_FASTCPU)
+		slowDownSPI(false);
+	#endif
 }
 
 /**************************************************************************/
@@ -3083,10 +3187,6 @@ void RA8875::slowDownSPI(bool slow)
 		}
 	#endif
 }
-#else
-void RA8875::slowDownSPI(bool slow)
-{
-}
 #endif
 
 /**************************************************************************/
@@ -3097,7 +3197,7 @@ void RA8875::slowDownSPI(bool slow)
 /**************************************************************************/
 void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled)
 {
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+
 	if (_portrait) {//0.69b21
 		swapvals(x,y);
 		swapvals(w,h);
@@ -3105,7 +3205,8 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 
 	if (w < 1) return;//why draw invisible rects?
 	if (h < 1) return;//why draw invisible rects?
-	//checkLimitsHelper(x,y);
+	checkLimitsHelper(x,y);
+	if (_currentMode) changeMode(false);//we are in text mode?
 
 	lineAddressing(x,y,w,h);
 	
@@ -3125,7 +3226,8 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 /**************************************************************************/
 void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled)
 {
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
 	if (_portrait) {//0.69b21
 		swapvals(x0,y0);
 		swapvals(x1,y1);
@@ -3158,7 +3260,8 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 /**************************************************************************/
 void RA8875::ellipseCurveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart,uint16_t color, bool filled)
 {
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
 	if (_portrait) {//0.69b21
 		swapvals(xCenter,yCenter);
 		swapvals(longAxis,shortAxis);
@@ -3191,13 +3294,22 @@ void RA8875::ellipseCurveHelper(int16_t xCenter, int16_t yCenter, int16_t longAx
 /**************************************************************************/
 /*!
 	  helper function for rounded Rects
+	  PARAMETERS
+	  x:
+	  y:
+	  w:
+	  h:
+	  r:
+	  color:
+	  filled:
 	  [private]
 */
 /**************************************************************************/
 //this one it's a little nightmare, I have actually bypassed all limiting stuff to test out
 void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled)
 {
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
 	if (_portrait) {//0.69b21
 		swapvals(x,y);
 		swapvals(w,h);
@@ -3250,23 +3362,165 @@ void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t
 		waitPoll(RA8875_ELLIPSE, RA8875_DCR_LINESQUTRI_STATUS);
 }
 
-
-
 /**************************************************************************/
 /*!
-		common helper for check value limiter
-		[private]
+	  helper function for draw arcs in degrees
+	  DrawArc function thanks to Jnmattern and his Arc_2.0 (https://github.com/Jnmattern)
+	  Adapted for DUE by Marek Buriak https://github.com/marekburiak/ILI9341_Due
+	  Re-Adapted for this library by sumotoy
+	  PARAMETERS
+	  cx: center x
+	  cy: center y
+	  radius: the radius of the arc
+	  thickness:
+	  start: where arc start in degrees
+	  end:	 where arc end in degrees
+	  color:
+	  [private]
 */
 /**************************************************************************/
-void RA8875::checkLimitsHelper(int16_t &x,int16_t &y)
-{
-	if (x < 0) x = 0;
-	if (y < 0) y = 0;
-	if (x >= WIDTH) x = WIDTH - 1;
-	if (y >= HEIGHT) y = HEIGHT -1;
-	x = x;
-	y = y;
+void RA8875::drawArcHelper(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float start, float end, uint16_t color) {
+	if (_currentMode) changeMode(false);//we are in text mode?
+	int16_t xmin = 65535, xmax = -32767, ymin = 32767, ymax = -32767;
+	float cosStart, sinStart, cosEnd, sinEnd;
+	float r, t;
+	float startAngle, endAngle;
+
+	startAngle = (start / _arcAngleMax) * 360;	// 252
+	endAngle = (end / _arcAngleMax) * 360;		// 807
+
+	while (startAngle < 0) startAngle += 360;
+	while (endAngle < 0) endAngle += 360;
+	while (startAngle > 360) startAngle -= 360;
+	while (endAngle > 360) endAngle -= 360;
+
+
+	if (startAngle > endAngle) {
+		drawArcHelper(cx, cy, radius, thickness, ((startAngle) / (float)360) * _arcAngleMax, _arcAngleMax, color);
+		drawArcHelper(cx, cy, radius, thickness, 0, ((endAngle) / (float)360) * _arcAngleMax, color);
+	} else {
+		// Calculate bounding box for the arc to be drawn
+		cosStart = cosDegrees(startAngle);
+		sinStart = sinDegrees(startAngle);
+		cosEnd = cosDegrees(endAngle);
+		sinEnd = sinDegrees(endAngle);
+
+		r = radius;
+		// Point 1: radius & startAngle
+		t = r * cosStart;
+		if (t < xmin) xmin = t;
+		if (t > xmax) xmax = t;
+		t = r * sinStart;
+		if (t < ymin) ymin = t;
+		if (t > ymax) ymax = t;
+
+		// Point 2: radius & endAngle
+		t = r * cosEnd;
+		if (t < xmin) xmin = t;
+		if (t > xmax) xmax = t;
+		t = r * sinEnd;
+		if (t < ymin) ymin = t;
+		if (t > ymax) ymax = t;
+
+		r = radius - thickness;
+		// Point 3: radius-thickness & startAngle
+		t = r * cosStart;
+		if (t < xmin) xmin = t;
+		if (t > xmax) xmax = t;
+		t = r * sinStart;
+		if (t < ymin) ymin = t;
+		if (t > ymax) ymax = t;
+
+		// Point 4: radius-thickness & endAngle
+		t = r * cosEnd;
+		if (t < xmin) xmin = t;
+		if (t > xmax) xmax = t;
+		t = r * sinEnd;
+		if (t < ymin) ymin = t;
+		if (t > ymax) ymax = t;
+		// Corrections if arc crosses X or Y axis
+		if ((startAngle < 90) && (endAngle > 90)) ymax = radius;
+		if ((startAngle < 180) && (endAngle > 180)) xmin = -radius;
+		if ((startAngle < 270) && (endAngle > 270)) ymin = -radius;
+
+		// Slopes for the two sides of the arc
+		float sslope = (float)cosStart / (float)sinStart;
+		float eslope = (float)cosEnd / (float)sinEnd;
+		if (endAngle == 360) eslope = -1000000;
+		int ir2 = (radius - thickness) * (radius - thickness);
+		int or2 = radius * radius;
+		for (int x = xmin; x <= xmax; x++) {
+			bool y1StartFound = false, y2StartFound = false;
+			bool y1EndFound = false, y2EndSearching = false;
+			int y1s = 0, y1e = 0, y2s = 0;//, y2e = 0;
+			for (int y = ymin; y <= ymax; y++) {
+				int x2 = x * x;
+				int y2 = y * y;
+
+				if (
+					(x2 + y2 < or2 && x2 + y2 >= ir2) && (
+					(y > 0 && startAngle < 180 && x <= y * sslope) ||
+					(y < 0 && startAngle > 180 && x >= y * sslope) ||
+					(y < 0 && startAngle <= 180) ||
+					(y == 0 && startAngle <= 180 && x < 0) ||
+					(y == 0 && startAngle == 0 && x > 0)
+					) && (
+					(y > 0 && endAngle < 180 && x >= y * eslope) ||
+					(y < 0 && endAngle > 180 && x <= y * eslope) ||
+					(y > 0 && endAngle >= 180) ||
+					(y == 0 && endAngle >= 180 && x < 0) ||
+					(y == 0 && startAngle == 0 && x > 0)))
+				{
+					if (!y1StartFound) {	//start of the higher line found
+						y1StartFound = true;
+						y1s = y;
+					} else if (y1EndFound && !y2StartFound) {//start of the lower line found
+						y2StartFound = true;
+						y2s = y;
+						y += y1e - y1s - 1;	// calculate the most probable end of the lower line (in most cases the length of lower line is equal to length of upper line), in the next loop we will validate if the end of line is really there
+						if (y > ymax - 1) {// the most probable end of line 2 is beyond ymax so line 2 must be shorter, thus continue with pixel by pixel search
+							y = y2s;	// reset y and continue with pixel by pixel search
+							y2EndSearching = true;
+						}
+					} else if (y2StartFound && !y2EndSearching) {
+						// we validated that the probable end of the lower line has a pixel, continue with pixel by pixel search, in most cases next loop with confirm the end of lower line as it will not find a valid pixel
+						y2EndSearching = true;
+					}
+				} else {
+					if (y1StartFound && !y1EndFound) {//higher line end found
+						y1EndFound = true;
+						y1e = y - 1;
+						drawFastVLine(cx + x, cy + y1s, y - y1s, color);
+						if (y < 0) {
+							y = abs(y); // skip the empty middle
+						}
+						else
+							break;
+					} else if (y2StartFound) {
+						if (y2EndSearching) {
+							// we found the end of the lower line after pixel by pixel search
+							drawFastVLine(cx + x, cy + y2s, y - y2s, color);
+							y2EndSearching = false;
+							break;
+						} else {
+							// the expected end of the lower line is not there so the lower line must be shorter
+							y = y2s;	// put the y back to the lower line start and go pixel by pixel to find the end
+							y2EndSearching = true;
+						}
+					}
+				}
+			}
+			if (y1StartFound && !y1EndFound){
+				y1e = ymax;
+				drawFastVLine(cx + x, cy + y1s, y1e - y1s + 1, color);
+			} else if (y2StartFound && y2EndSearching)	{// we found start of lower line but we are still searching for the end
+														// which we haven't found in the loop so the last pixel in a column must be the end
+				drawFastVLine(cx + x, cy + y2s, ymax - y2s + 1, color);
+			}
+		}
+	}
 }
+
 
 /**************************************************************************/
 /*!
@@ -3280,13 +3534,13 @@ void RA8875::updateActiveWindow(bool full)
 		// X
 		writeReg(RA8875_HSAW0,0);
 		writeReg(RA8875_HSAW1,0);   
-		writeReg(RA8875_HEAW0,(WIDTH-1) & 0xFF);
-		writeReg(RA8875_HEAW1,(WIDTH-1) >> 8);
+		writeReg(RA8875_HEAW0,(WIDTH) & 0xFF);
+		writeReg(RA8875_HEAW1,(WIDTH) >> 8);
 		// Y 
 		writeReg(RA8875_VSAW0,0);
 		writeReg(RA8875_VSAW1,0); 
-		writeReg(RA8875_VEAW0,(HEIGHT-1) & 0xFF); 
-		writeReg(RA8875_VEAW1,(HEIGHT-1) >> 8);
+		writeReg(RA8875_VEAW0,(HEIGHT) & 0xFF); 
+		writeReg(RA8875_VEAW1,(HEIGHT) >> 8);
 	} else {
 		// X
 		writeReg(RA8875_HSAW0,_activeWindowXL & 0xFF);
@@ -3314,9 +3568,10 @@ void RA8875::lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 	if (y0 > HEIGHT-1) y0 = HEIGHT -1;
 	if (x1 > WIDTH-1) x1 = WIDTH - 1;
 	if (y1 > HEIGHT-1) y1 = HEIGHT -1;
-	*/
+	
 	checkLimitsHelper(x0,y0);
 	checkLimitsHelper(x1,y1);
+	*/
 	//X0
 	writeReg(RA8875_DLHSR0,x0 & 0xFF);
 	writeReg(RA8875_DLHSR1,x0 >> 8);
@@ -3356,6 +3611,27 @@ void RA8875::curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 	writeReg(RA8875_ELL_B0,y1 & 0xFF);
 	writeReg(RA8875_ELL_B1,y1 >> 8);
 }
+
+
+
+float RA8875::cosDegrees(float angle)
+{
+	float radians = angle / (float)360 * 2 * PI;
+	return cos(radians);
+}
+
+float RA8875::sinDegrees(float angle)
+{
+	float radians = angle / (float)360 * 2 * PI;
+	return sin(radians);
+}
+
+void RA8875::setArcParams(float arcAngleMax, int arcAngleOffset)
+{
+	_arcAngleMax = arcAngleMax;
+	_arcAngleOffset = arcAngleOffset;
+}
+
 
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3564,11 +3840,15 @@ boolean RA8875::touched(void)
 /**************************************************************************/
 void RA8875::readTouchADC(uint16_t *x, uint16_t *y) 
 {
-	slowDownSPI(true);
+	#if defined(_FASTCPU)
+		slowDownSPI(true);
+	#endif
 	uint16_t tx =  readReg(RA8875_TPXH);
 	uint16_t ty =  readReg(RA8875_TPYH);
 	uint8_t remain = readReg(RA8875_TPXYL);
-	slowDownSPI(false);
+	#if defined(_FASTCPU)
+		slowDownSPI(false);
+	#endif
 	tx <<= 2;
 	ty <<= 2;
 	tx |= remain & 0x03;        // get the bottom x bits
@@ -3688,7 +3968,15 @@ void RA8875::sleep(boolean sleep)
 			//1)turn off backlight
 			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(false);
 			//2)decelerate SPI clock
-			slowDownSPI(true);
+			#if defined(_FASTCPU)
+				slowDownSPI(true);
+			#else
+				#if defined(SPI_HAS_TRANSACTION)
+					_maxspeed = 4000000;
+				#else
+					SPI.setClockDivider(SPI_SPEED_READ);
+				#endif
+			#endif
 			//3)set PLL to default
 			setSysClock(0x07,0x03,0x02);
 			//4)display off & sleep
@@ -3705,7 +3993,15 @@ void RA8875::sleep(boolean sleep)
 			writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON);//disp on
 			delay(20);
 			//4)resume SPI speed
-			slowDownSPI(false);
+			#if defined(_FASTCPU)
+				slowDownSPI(false);
+			#else
+				#if defined(SPI_HAS_TRANSACTION)
+					_maxspeed = MAXSPISPEED;
+				#else
+					SPI.setClockDivider(SPI_SPEED_WRITE);
+				#endif
+			#endif
 			//5)PLL afterburn!
 			setSysClock(sysClockPar[_initIndex][0],sysClockPar[_initIndex][1],initStrings[_initIndex][2]);
 			//5)turn on backlight
@@ -3760,8 +4056,18 @@ uint8_t RA8875::readReg(uint8_t reg)
 void RA8875::writeData(uint8_t data) 
 {
 	startSend();
-	SPI.transfer(RA8875_DATAWRITE);
-	SPI.transfer(data);
+	#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+		SPI.transfer(_cs, RA8875_DATAWRITE, SPI_CONTINUE); 
+		SPI.transfer(_cs, data, SPI_LAST);
+	#else
+		#if defined(__AVR__) && defined(_FASTSSPORT)
+			spiwrite(RA8875_DATAWRITE);
+			spiwrite(data);
+		#else
+			SPI.transfer(RA8875_DATAWRITE);
+			SPI.transfer(data);
+		#endif
+	#endif
 	endSend();
 }
 
@@ -3775,12 +4081,25 @@ void RA8875::writeData(uint8_t data)
 void  RA8875::writeData16(uint16_t data) 
 {
 	startSend();
-	SPI.transfer(RA8875_DATAWRITE);
-	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
+	#if defined(__AVR__) && defined(_FASTSSPORT)
+		spiwrite(RA8875_DATAWRITE);
+	#else
+		SPI.transfer(RA8875_DATAWRITE);
+	#endif
+	#if !defined(ENERGIA) && !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		SPI.transfer16(data);
 	#else
-		SPI.transfer(data >> 8);
-		SPI.transfer(data);
+		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			SPI.transfer(_cs, highByte(data), SPI_CONTINUE); 
+			SPI.transfer(_cs, lowByte(data), SPI_LAST);
+		#else
+			#if defined(__AVR__) && defined(_FASTSSPORT)
+				spiwrite16(data);
+			#else
+				SPI.transfer(data >> 8);
+				SPI.transfer(data);
+			#endif
+		#endif
 	#endif
 	endSend();
 }
@@ -3799,8 +4118,18 @@ uint8_t RA8875::readData(bool stat)
 		if (_inited) SPI.setClockDivider(SPI_SPEED_READ);
 	#endif
 	startSend();
-	stat == true ? SPI.transfer(RA8875_CMDREAD) : SPI.transfer(RA8875_DATAREAD);
-	uint8_t x = SPI.transfer(0x0);
+	#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+		stat == true ? SPI.transfer(_cs, RA8875_CMDREAD, SPI_CONTINUE) : SPI.transfer(_cs, RA8875_DATAREAD, SPI_CONTINUE);
+		uint8_t x = SPI.transfer(_cs, 0x0, SPI_LAST);
+	#else
+		#if defined(__AVR__) && defined(_FASTSSPORT)
+			stat == true ? spiwrite(RA8875_CMDREAD) : spiwrite(RA8875_DATAREAD);
+			uint8_t x = spiread();
+		#else
+			stat == true ? SPI.transfer(RA8875_CMDREAD) : SPI.transfer(RA8875_DATAREAD);
+			uint8_t x = SPI.transfer(0x0);
+		#endif
+	#endif
 	endSend();
 	#if defined(SPI_HAS_TRANSACTION)
 		if (_inited) _maxspeed = oldSpeed;
@@ -3831,8 +4160,18 @@ uint8_t	RA8875::readStatus(void)
 void RA8875::writeCommand(uint8_t d) 
 {
 	startSend();
-	SPI.transfer(RA8875_CMDWRITE);
-	SPI.transfer(d);
+	#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+		SPI.transfer(_cs, RA8875_CMDWRITE, SPI_CONTINUE); 
+		SPI.transfer(_cs, d, SPI_LAST);
+	#else
+		#if defined(__AVR__) && defined(_FASTSSPORT)
+			spiwrite(RA8875_CMDWRITE);
+			spiwrite(d);
+		#else
+			SPI.transfer(RA8875_CMDWRITE);
+			SPI.transfer(d);
+		#endif
+	#endif
 	endSend();
 }
 
@@ -3845,16 +4184,26 @@ void RA8875::writeCommand(uint8_t d)
 void RA8875::startSend()
 {
 #if defined(SPI_HAS_TRANSACTION)
-	//SPI.beginTransaction(settings);
 	SPI.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
-	//Serial.println(_maxspeed,DEC);
 #elif !defined(ENERGIA)
 	cli();//protect from interrupts
 #endif
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 	digitalWriteFast(_cs, LOW);
 #else
-	digitalWrite(_cs, LOW);
+	#if !defined(ENERGIA)//UNO,DUE,ETC.
+		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
+			//nothing
+		#else//DUE (normal),UNO,ETC.
+			#if defined(_FASTSSPORT)
+				*csport &= ~cspinmask;
+			#else
+				digitalWrite(_cs, LOW);
+			#endif
+		#endif
+	#else//ENERGIA
+		digitalWrite(_cs, LOW);
+	#endif
 #endif
 }
 
@@ -3868,7 +4217,19 @@ void RA8875::endSend()
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 	digitalWriteFast(_cs, HIGH);
 #else
-	digitalWrite(_cs, HIGH);
+	#if !defined(ENERGIA)
+		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
+			//nothing
+		#else//DUE (normal),UNO,ETC.
+			#if defined(_FASTSSPORT)
+				*csport |= cspinmask;
+			#else
+				digitalWrite(_cs, HIGH);
+			#endif
+		#endif
+	#else//ENERGIA
+		digitalWrite(_cs, HIGH);
+	#endif
 #endif
 #if defined(SPI_HAS_TRANSACTION)
 	SPI.endTransaction();
@@ -3918,10 +4279,18 @@ void RA8875::initFT5206(void)
 
 void RA8875::regFT5206(uint8_t reg,uint8_t val)
 {
+    // save I2C bitrate
+	#if !defined(__SAM3X8E__)
+		uint8_t twbrbackup = TWBR;
+		TWBR = 12; // upgrade to 400KHz!
+	#endif
 	Wire.beginTransmission(_ctpAdrs);
 	Wire.write(reg);
 	Wire.write(val);
 	Wire.endTransmission(_ctpAdrs);
+	#if !defined(__SAM3X8E__)
+		TWBR = twbrbackup;
+	#endif
 }
 
 bool RA8875::touched(bool safe)
@@ -3955,7 +4324,7 @@ uint8_t RA8875::getTouchLimit(void)
 
 void RA8875::updateTS(void)
 {
-    Wire.requestFrom((uint8_t)_ctpAdrs, (uint8_t)28); //get 28 registers
+    Wire.requestFrom((uint8_t)_ctpAdrs,(uint8_t)28); //get 28 registers
     uint8_t index = 0;
     while(Wire.available()) {
       _cptRegisters[index++] = Wire.read();//fill registers
@@ -3995,7 +4364,6 @@ uint8_t RA8875::getTScoordinates(uint16_t (*touch_coordinates)[2])
 				touch_coordinates[i-1][1] = (((_cptRegisters[coordRegStart[i-1]] & 0x0f) << 8) | _cptRegisters[coordRegStart[i-1] + 1]);
 			break;
 		}
-
 		if (i == _maxTouch) return i;
 	} 
     return _currentTouches;
@@ -4079,7 +4447,8 @@ void RA8875::gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,c
 /**************************************************************************/
 void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1)
 {
-	if (_currentMode != 0) changeMode(0);//we are in text mode?
+	//if (_currentMode != 0) changeMode(0);//we are in text mode?
+	if (_currentMode) changeMode(false);//we are in text mode?
 	if (scale < 1) scale = 1;
 	unsigned int offset;
 	unsigned char by = 0, mask = 0;
@@ -4125,13 +4494,30 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 				setXY(x+allwidth,idy+y+(j/NrBytes));
 				writeCommand(RA8875_MRWC);
 				startSend();
-				SPI.transfer(RA8875_DATAWRITE);
+				#if defined(__AVR__) && defined(_FASTSSPORT)
+					spiwrite(RA8875_DATAWRITE);
+				#else
+					SPI.transfer(RA8875_DATAWRITE);
+				#endif
 				for (i=0;i<w*scale;i++){
 					#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 						SPI.transfer16(buffer[i]);//should be fixed already
 					#else
-						SPI.transfer(buffer[i] >> 8);
-						SPI.transfer(buffer[i] & 0xFF);
+						#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+							SPI.transfer(_cs, buffer[i] >> 8, SPI_CONTINUE); 
+							if (i != (w*scale)-1){
+								SPI.transfer(_cs, buffer[i] & 0xFF, SPI_CONTINUE);
+							} else {
+								SPI.transfer(_cs, buffer[i] & 0xFF, SPI_LAST);
+							}
+						#else
+							#if defined(__AVR__) && defined(_FASTSSPORT)
+								spiwrite16(buffer[i]);
+							#else
+								SPI.transfer(buffer[i] >> 8);
+								SPI.transfer(buffer[i] & 0xFF);
+							#endif
+						#endif
 					#endif
 				}
 				endSend();
@@ -4190,169 +4576,4 @@ void RA8875::gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8
 	}// End K
 } 
 
-/*---------------------------------------------------------------------------------------
-						KEYPAD - still working on
-						UNDER CONTRUCTION - PLEASE DO NOT ACTIVATE (NOT WORKING)
-****************************************************************************************/
-#if defined(USE_RA8875_KEYMATRIX)
-static const uint8_t DefaultKeyMap[(4*5)+2] = {
-    0,
-    1,  2,  3,  4,  5,  6,  7,  8,  9, 10,
-    11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    255
-};
-
-void RA8875::keypadInit(bool scanEnable, bool longDetect, uint8_t sampleTime, uint8_t scanFrequency,
-                             uint8_t longTimeAdjustment, bool interruptEnable, bool wakeupEnable)
-{
-    uint8_t reg = 0;
-	if (sampleTime > 3) sampleTime = 3;
-	if (scanFrequency > 7) scanFrequency = 7;
-	if (longTimeAdjustment > 3) scanFrequency = 3;
-    reg |= (scanEnable) ? 0x80 : 0x00;
-    reg |= (longDetect) ? 0x40 : 0x00;
-    reg |= (sampleTime & 0x03) << 4;
-    reg |= (scanFrequency & 0x07);
-    writeReg(RA8875_KSCR1, reg);   // KSCR1 - Enable Key Scan
-
-    reg = 0;
-    reg |= (wakeupEnable) ? 0x80 : 0x00;
-    reg |= (longTimeAdjustment & 0x03) << 2;
-    writeReg(RA8875_KSCR2, reg);  // KSCR2
-
-    reg = readReg(RA8875_INTC1);  // read INT
-    reg &= ~0x10;
-    reg |= (interruptEnable) ? 0x10 : 0x00;
-    writeReg(RA8875_INTC1, reg);  // write INT
-}
-
-
-boolean RA8875::keypadTouched(void)
-{
-    return (readReg(RA8875_INTC2) & 0x10); 
-}
-
-//#define GETC_DEV
-uint8_t RA8875::getKey(void)
-{
-	uint8_t pKeyMap[(4*5)+2];
-	memcpy (pKeyMap,DefaultKeyMap,(4*5)+2);
-
-#ifdef GETC_DEV
-    uint8_t keyCode1, keyCode2;
-#endif
-    uint8_t keyCode3;
-    static uint8_t count = 0;
-    uint8_t col, row;
-    uint8_t key;
-	/*	
-    while (!keypadTouched()) {
-		delayMicroseconds(10);//10
-    }
-	*/
-    // read the key press number
-    uint8_t keyNumReg = readReg(RA8875_KSCR2) & 0x03;
-    count++;
-    switch (keyNumReg) {
-        case 0x01:      // one key
-            keyCode3 = readReg(RA8875_KSDR0);
-#ifdef GETC_DEV
-            keyCode2 = 0;
-            keyCode1 = 0;
-#endif
-            break;
-        case 0x02:      // two keys
-            keyCode3 = readReg(RA8875_KSDR1);
-#ifdef GETC_DEV
-            keyCode2 = readReg(RA8875_KSDR0);
-            keyCode1 = 0;
-#endif
-            break;
-        case 0x03:      // three keys
-            keyCode3 = readReg(RA8875_KSDR2);
-#ifdef GETC_DEV
-            keyCode2 = readReg(RA8875_KSDR1);
-            keyCode1 = readReg(RA8875_KSDR0);
-#endif
-            break;
-        default:         // no keys (key released)
-            keyCode3 = 0xFF;
-#ifdef GETC_DEV
-            keyCode2 = 0;
-            keyCode1 = 0;
-#endif
-            break;
-    }
-    if (keyCode3 == 0xFF) {
-        key = pKeyMap[0];                    // Key value 0
-    } else {
-        row = (keyCode3 >> 4) & 0x03;
-        col = (keyCode3 &  7);
-        key = row * 5 + col + 1;    // Keys value 1 - 20
-        if (key > 21) key = 21;
-        key = pKeyMap[key];
-        key |= (keyCode3 & 0x80);   // combine the key held flag
-    }
-#ifdef GETC_DEV // for Development only
-    setCursor(0,20);
-	setTextColor(0xFFFF,0x0000);
-	print("              ");
-	setCursor(0,20);
-	print("   Reg: ");
-	println(keyNumReg);
-	print("   key1: ");
-	println(keyCode1);
-	print("   key2: ");
-	println(keyCode2);
-	print("   key3: ");
-	println(keyCode3);
-	print("  count: ");
-	println(count);
-	print("    key: ");
-	println(key);
-#endif
-    writeReg(RA8875_INTC2, 0x10);       // Clear KS status
-    return key;
-}
-
-
-void RA8875::enableKeyScan(bool on)
-{
-    if (on) {
-        writeReg(RA8875_KSCR1, (1 << 7) | (0 << 4 ) | 1 );       // enable key scan
-    } else {
-        writeReg(RA8875_KSCR1, (0 << 7));
-    }
-}
- 
-uint8_t RA8875::getKeyValue(void)
-{
-    uint8_t data = 0xFF;
-    data = readReg(RA8875_KSDR0);
-
-    delay(1);
-	#ifdef GETC_DEV
-	if (data != 255){
-		setTextColor(0xFFFF,0x0000);
-		setCursor(0,20);
-		print("                ");
-		setCursor(0,20);
-		print("Reg: ");
-		println(data);
-	}
-	#endif
-    // Clear key interrupt status
-	uint8_t temp = readReg(RA8875_INTC2);
-    writeReg(RA8875_INTC2,temp | 0x10);
-    return data;
-}
- 
-boolean RA8875::isKeyPress(void)
-{
-    uint8_t temp = readReg(RA8875_INTC2);
-    if (temp & 0x10) return true;
-    return false;
-}
-
-#endif
 

@@ -8,7 +8,9 @@ Not tested with Energia!
 
 #include <SPI.h>
 #include <RA8875.h>
+#if defined(USE_FT5206_TOUCH)
 #include <Wire.h>
+#endif
 
 #define RA8875_RESET      9                 
 #define RA8875_INT        2
@@ -20,7 +22,11 @@ Not tested with Energia!
 #endif
 
 #if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
-RA8875 tft = RA8875(3);//select SPI module 3
+#if defined(USE_FT5206_TOUCH)
+RA8875 tft = RA8875(3,RA8875_RESET,RA8875_INT);//select SPI module 3
+#else
+RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
+#endif
 /*
 for module 3 (stellaris)
 SCLK:  PD_0
@@ -30,6 +36,7 @@ SS:    PD_1
 */
 #endif
 
+
 void setup(){
   /*
   Serial.begin(38400);
@@ -37,16 +44,21 @@ void setup(){
   while (!Serial && ((millis () - debug_start) <= 5000)) ;
   */
   tft.begin(RA8875_800x480);
-  tft.setTextColor(0xFFFF,0x0000);
+  tft.setTextColor(RA8875_WHITE,RA8875_BLACK);
+  #if defined(USE_FT5206_TOUCH)
   //the following set the max touches (max 5)
   //it can be placed inside loop but BEFORE touched()
   //to limit dinamically the touches (for example to 1)
   tft.setTouchLimit(MAXTOUCHLIMIT);
   //tft.setRotation(0);//this works in any rotation mode!
   tft.armTouchISR(true);//touch screen interrupt it's armed
+  #else
+  tft.print("you should open RA8875UserSettings.h file and uncomment USE_FT5206_TOUCH!");
+  #endif
 }
 
 void loop(){
+  #if defined(USE_FT5206_TOUCH)
   if (tft.touched()){//if touched(true) detach isr
   //at this point we need to fill the FT5206 registers...
     tft.updateTS();//now we have the data inside library
@@ -76,4 +88,5 @@ void loop(){
     tft.armTouchISR();//rearm ISR if needed (touched(true))
     //otherwise it doesn't do nothing...
   }
+  #endif
 }

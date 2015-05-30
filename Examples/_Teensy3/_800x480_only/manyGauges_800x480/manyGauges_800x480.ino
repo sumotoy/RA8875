@@ -7,9 +7,10 @@ If you modify or get better result please let me know
 */
 #include <SPI.h>
 #include <RA8875.h>
+#include <math.h>
 
 
-volatile int16_t curVal[6] = {0, 0, 0, 0, 0, 0};
+volatile int16_t curVal[6] = {-1, -1, -1, -1, -1, -1};
 volatile int16_t oldVal[6] = {0, 0, 0, 0, 0, 0};
 const int16_t posx[6] = {63, 193, 323, 453, 583, 713};
 const int16_t posy[6] = {63, 63, 63, 63, 63, 63};
@@ -45,17 +46,25 @@ RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
 
 
 void setup() {
-  //Serial.begin(9600);
+  Serial.begin(38400);
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
   tft.begin(RA8875_800x480);
   for (uint8_t i = 0; i < 6; i++) {
-    drawGauge(posx[i], 63, 63);
+    drawGauge(posx[i], posy[i], radius[i]);
   }
 }
 
 void loop(void) {
   for (uint8_t i = 0; i < 6; i++) {
+    curVal[i] = random(255);
+    //curVal[i] =255;
+    drawNeedle(i,RA8875_BLACK);
+    //delay(1000);
+    /*
     curVal[i] = map(analogRead(analogIn[i]), 0, 1024, 1, 255);
     drawNeedle(i,RA8875_BLACK);
+    */
   }
 }
 
@@ -68,15 +77,17 @@ void drawGauge(uint16_t x, uint16_t y, uint16_t r) {
 }
 
 void faceHelper(uint16_t x, uint16_t y, uint16_t r, int from, int to, float dev) {
-  float dsec, fromSecX, fromSecY, toSecX, toSecY;
+  float dsec,rdev;
+  uint16_t w,h,nx,ny;
   int i;
+  rdev = r / dev;
   for (i = from; i <= to; i += 30) {
-    dsec = i * (PI / 180);
-    fromSecX = cos(dsec) * (r / dev);
-    fromSecY = sin(dsec) * (r / dev);
-    toSecX = cos(dsec) * r;
-    toSecY = sin(dsec) * r;
-    tft.drawLine(1 + x + fromSecX, 1 + y + fromSecY, 1 + x + toSecX, 1 + y + toSecY, RA8875_WHITE);
+    dsec = i * (PI / 180.0);
+    nx = (uint16_t)(1 + x + (cos(dsec) * rdev));
+    ny = (uint16_t)(1 + y + (sin(dsec) * rdev));
+    w =  (uint16_t)(1 + x + (cos(dsec) * r));
+    h =  (uint16_t)(1 + y + (sin(dsec) * r));
+    tft.drawLine(nx, ny, w, h, RA8875_WHITE);
   }
 }
 
@@ -85,7 +96,7 @@ void drawNeedle(uint8_t index, uint16_t bcolor) {
   if (oldVal[index] != curVal[index]) {
   if (curVal[index] > oldVal[index]) {
     for (i = oldVal[index]; i <= curVal[index]; i++) {
-      drawPointerHelper(index,i - 1, posx[index], posy[index], radius[index], bcolor);
+      if (i > 0) drawPointerHelper(index,i - 1, posx[index], posy[index], radius[index], bcolor);
       drawPointerHelper(index,i, posx[index], posy[index], radius[index], needleColors[index]);
       if ((curVal[index] - oldVal[index]) < (128)) delay(1);//ballistic
     }
@@ -104,17 +115,35 @@ void drawNeedle(uint8_t index, uint16_t bcolor) {
   }
   oldVal[index] = curVal[index];
   }
+  //oldVal[index] = curVal[index];
 }
 
 void drawPointerHelper(uint8_t index,int16_t val, uint16_t x, uint16_t y, uint16_t r, uint16_t color) {
-  float dsec, toSecX, toSecY;
+  float dsec;
   const int16_t minValue = 0;
   const int16_t maxValue = 255;
   if (val > maxValue) val = maxValue;
   if (val < minValue) val = minValue;
   dsec = (((float)(uint16_t)(val - minValue) / (float)(uint16_t)(maxValue - minValue) * degreesVal[index][1]) + degreesVal[index][0]) * (PI / 180);
-  toSecX = cos(dsec) * (r / 1.35);
-  toSecY = sin(dsec) * (r / 1.35);
-  tft.drawLine(x, y, 1 + x + toSecX, 1 + y + toSecY, color);
+  uint16_t w = (uint16_t)(1 + x + (cos(dsec) * (r / 1.35)));
+  uint16_t h = (uint16_t)(1 + y + (sin(dsec) * (r / 1.35)));
+  /*
+  min: x:713 | y:63 | w:673 | h:87
+  min: x:713 | y:63 | w:754 | h:87
+  */
+  /*
+  if (index == 5){
+  Serial.print("x:");
+  Serial.print(x);
+  Serial.print(" | y:");
+  Serial.print(y);
+  Serial.print(" | w:");
+  Serial.print(w);
+  Serial.print(" | h:");
+  Serial.print(h);
+  Serial.print("\n");
+  }
+  */
+  tft.drawLine(x, y, w, h, color);
   tft.fillCircle(x, y, 2, color);
 }

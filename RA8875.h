@@ -2,8 +2,9 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b50
-	Lot of changes! This is the 0.70 preview!
+	Version:0.69b60
+	This is the 0.70 preview!
+	Added support for DUE SPI extended, faster AVR code, drawArc
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -16,7 +17,16 @@ and PaintYourDragon to bring us something almost working for free!).
 -------------------------------------------------------------------------------------
 I spent quite a lot of time to improve and bring to life all features so if you clone,
 copy or modify please leave all my original notes intact!
-
+-------------------------------------------------------------------------------------
+					     >>>>>>>>>>>> Thanks to <<<<<<<<<<<<<<<
+-------------------------------------------------------------------------------------
+Teensy 3.1, a tiny MCU but monster of performances at tiny price, Arduino should learn...
+Paul Stoffregen, the 'guru' behind many arduino magic, the father of Teensy
+Bill Greyman, another 'maestro', greatly inspired many coders
+Jnmattern & Marek Buriak for drawArc
+Adafruit, not a great example of coding but thanks for sharing
+Last but not less important the contributors and beta tester of this library:
+M.Sandercrock, the experimentalist.
 -------------------------------------------------------------------------------------
 				>>>>>>>>>>>>>>>>>>>>> Wiring <<<<<<<<<<<<<<<<<<<<<<<<<
 -------------------------------------------------------------------------------------
@@ -109,7 +119,12 @@ Rounded rects (outline)  105753
 Rounded rects (filled)   495508
 
 
-
+PIN     UNO		MEGA       CD4050     RA8875
+SCK      13		52           YES       SCK
+MOSI     11		51           YES       MOSI
+MISO     12		50            NO       MISO
+RST      9		 5           YES       RST
+CS       10		53           YES       CS
 
 */
 
@@ -118,10 +133,8 @@ Rounded rects (filled)   495508
 
 #if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
 	#include "Energia.h"
-
 	#undef byte
 	#define byte      uint8_t
-
 	#if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
 		#define NEEDS_SET_MODULE
 		#define _FASTCPU
@@ -142,6 +155,7 @@ Rounded rects (filled)   495508
 #endif
 
 #include "Print.h"
+
 #ifdef __AVR__
   #include <math.h>
 #endif
@@ -150,12 +164,12 @@ Rounded rects (filled)   495508
 
 //pgmspace fixup
 #if defined(__MK20DX128__) || defined(__MK20DX256__)  || defined(__MKL26Z64__)//teensy 3 or 3.1 or LC
-#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
+	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
 	#define _FASTCPU
-#ifdef PROGMEM
-	#undef PROGMEM
-	#define PROGMEM __attribute__((section(".progmem.data")))
-#endif
+	#ifdef PROGMEM
+		#undef PROGMEM
+		#define PROGMEM __attribute__((section(".progmem.data")))
+	#endif
 #elif defined(__32MX320F128H__) || defined(__32MX795F512L__) || (defined(ARDUINO) && defined(__arm__) && !defined(CORE_TEENSY))//chipkit uno, chipkit max, arduino DUE	
 	#define _FASTCPU
 	#ifndef __PGMSPACE_H_
@@ -168,8 +182,7 @@ Rounded rects (filled)   495508
 	#define pgm_read_word(addr) (*(const unsigned short *)(addr))
 	#endif
 #else
-#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
-
+	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
 #endif
 
 
@@ -197,16 +210,12 @@ enum RA8875btelayer{ SOURCE, DEST };
 #include "_utility/RA8875ColorPresets.h"
 #include "_utility/RA8875UserSettings.h"
 
-
-	
-
 //include the support for FT5206
 #if defined (USE_FT5206_TOUCH)
 	#if !defined(USE_EXTERNALTOUCH)
 		#define USE_EXTERNALTOUCH//FT5206 doesn't use RA8875 stuff
 	#endif
 	#include "Wire.h"
-	//#include "FT5206.h"
 #endif
 
 #if !defined(USE_EXTERNALTOUCH)
@@ -214,6 +223,8 @@ enum RA8875btelayer{ SOURCE, DEST };
 #endif
 
 #define CENTER 9998
+#define ARC_ANGLE_MAX 360		
+#define ARC_ANGLE_OFFSET -90	
 
 // Touch screen cal structs
 typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
@@ -275,7 +286,8 @@ class RA8875 : public Print {
 	void    	writeCommand(uint8_t d);
 	void  		writeData16(uint16_t data);
 //--------------area -------------------------------------
-	void		setActiveWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);//The working area where to draw on
+	void		setActiveWindow(int16_t XL,int16_t XR,int16_t YT,int16_t YB);//The working area where to draw on
+	void		setActiveWindow(void);
 	void 		getActiveWindow(int16_t &XL,int16_t &XR ,int16_t &YT ,int16_t &YB);
 	void		clearActiveWindow(bool full=false);//it clears the active window
 	uint16_t 	width(void) const;//the phisical display width
@@ -303,6 +315,8 @@ class RA8875 : public Print {
 	void    	setCursor(int16_t x, int16_t y,bool autocenter=false);//set cursor position to write text(pixels or CENTER)
 	void 		getCursor(int16_t &x, int16_t &y);//from the RA8875 registers
 	void 		getCursorFast(int16_t &x, int16_t &y);//from library (faster)
+	int16_t		getCursorX(void);
+	int16_t		getCursorY(void);
 //--------------Text functions ------------------------------
 	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);//upload user defined char as array at the address 0..255
 	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//show user uploaded char at the adrs 0...255
@@ -338,8 +352,8 @@ class RA8875 : public Print {
 	//void 		getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
-	void    	fillWindow(uint16_t color=RA8875_BLACK);//fill the ActiveWindow with a color(default black)
-	void		clearScreen(uint16_t color=RA8875_BLACK);//fill the entire screen (regardless ActiveWindow) with a color(default black)
+	void    	fillWindow(uint16_t color=_RA8875_DEFAULTBACKLIGHT);//fill the ActiveWindow with a color(default black)
+	void		clearScreen(uint16_t color=_RA8875_DEFAULTBACKLIGHT);//fill the entire screen (regardless ActiveWindow) with a color(default black)
 	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
@@ -353,6 +367,14 @@ class RA8875 : public Print {
 	void    	fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
 	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);//ok
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
+	inline __attribute__((always_inline)) void drawArc(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float start, float end, uint16_t color) {
+		if (start == 0 && end == _arcAngleMax) {
+			drawArcHelper(cx, cy, radius, thickness, 0, _arcAngleMax, color);
+		} else {
+			drawArcHelper(cx, cy, radius, thickness, start + (_arcAngleOffset / (float)360)*_arcAngleMax, end + (_arcAngleOffset / (float)360)*_arcAngleMax, color);
+		}	
+	}
+
 //-------------- LAYERS -----------------------------------------
 	void 		useLayers(boolean on);//mainly used to turn of layers!
 	void		writeTo(enum RA8875writes d);//L1, L2, CGRAM, PATTERN, CURSOR
@@ -423,16 +445,33 @@ virtual size_t write(const uint8_t *buffer, size_t size) {
 
 using Print::write;
  protected:
-	uint8_t 		 		_cs, _rst;
-	uint8_t 				_ctpInt;
+	uint8_t _rst;
+	#if defined (USE_FT5206_TOUCH)
+	uint8_t _ctpInt;
+	#endif
 	#if defined(__MK20DX128__) || defined(__MK20DX256__)
+		uint8_t _cs;
 		uint8_t _miso, _mosi, _sclk;
 	#elif defined(__MKL26Z64__)
 		bool _altSPI;
+	#elif defined(ENERGIA)
+		uint8_t _cs;
+	#else
+		#if defined(ARDUINO_ARCH_SAM)
+			volatile uint32_t *csport;
+			uint32_t _cs, cspinmask;
+		#else
+			volatile uint8_t *csport;
+			uint8_t _cs, cspinmask;
+		#endif
 	#endif
+	
+ private:
+	volatile bool 			_currentMode;
+
 	// Touch Screen vars ---------------------
 	#if defined (USE_FT5206_TOUCH)//internal FT5206 driver
-	const uint8_t			_ctpAdrs = 0x38;
+	//static const uint8_t			_ctpAdrs = 0x38;
 	uint8_t					_maxTouch;
 	static void 		 	isr(void);
 	uint8_t 				_cptRegisters[28];
@@ -442,7 +481,7 @@ using Print::write;
 	bool					_needISRrearm;
 	void 					initFT5206(void);
 	void 					regFT5206(uint8_t reg,uint8_t val);
-	const uint8_t coordRegStart[5] = {{0x03},{0x09},{0x0F},{0x15},{0x1B}};
+	//const uint8_t coordRegStart[5] = {{0x03},{0x09},{0x0F},{0x15},{0x1B}};
 	#endif
 	#if !defined(USE_EXTERNALTOUCH)
 	uint8_t					_touchPin;
@@ -498,7 +537,7 @@ using Print::write;
 	enum RA8875extRomType 	_fontRomType;
 	enum RA8875extRomCoding _fontRomCoding;
 	enum RA8875tsize		_textSize;
-	uint8_t 				_currentMode;
+	//volatile bool 			_currentMode;
 	enum RA8875sizes 		_size;
 	enum RA8875fontSource 	_fontSource;
 	enum RA8875tcursor		_textCursorStyle;
@@ -522,18 +561,17 @@ using Print::write;
 	uint8_t		_SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
 	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
 	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
- private:
 	//		functions --------------------------
 	void 	initialize();
 	void 	setSysClock(uint8_t pll1,uint8_t pll2,uint8_t pixclk);
 	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
 	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
 	void 	updateActiveWindow(bool full);
-	void 	changeMode(uint8_t m);
+	void 	changeMode(bool m);
 	void 	scanDirection(boolean invertH,boolean invertV);
 	// 		helpers-----------------------------
 	void 	setTextPosition(int16_t x, int16_t y,bool update);
-	void 	checkLimitsHelper(int16_t &x,int16_t &y);//RA8875 it's prone to freeze with values out of range
+	//void 	checkLimitsHelper(int16_t &x,int16_t &y);//RA8875 it's prone to freeze with values out of range
 	void 	circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
 	void 	rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
 	void 	triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
@@ -541,12 +579,23 @@ using Print::write;
 	void 	lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	void 	curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	void 	roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);
+	void 	drawArcHelper(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float startAngle, float endAngle, uint16_t color);
+	float 	cosDegrees(float angle);
+	float 	sinDegrees(float angle);
 	#if !defined(USE_EXTERNALTOUCH)
 	void	readTouchADC(uint16_t *x, uint16_t *y);
 	void 	clearTouchInt(void);
 	boolean touched(void);
 	#endif
-
+	inline __attribute__((always_inline)) 
+		void checkLimitsHelper(int16_t &x,int16_t &y){
+			if (x < 0) x = 0;
+			if (y < 0) y = 0;
+			if (x >= WIDTH) x = WIDTH - 1;
+			if (y >= HEIGHT) y = HEIGHT -1;
+			x = x;
+			y = y;
+		}
     // Low level access  commands ----------------------
 	void 		startSend();
 	void 		endSend();
@@ -555,15 +604,57 @@ using Print::write;
 	uint8_t 	readReg(uint8_t reg);
 	void    	writeData(uint8_t data);
 	uint8_t 	readData(bool stat=false);
-	void 		slowDownSPI(bool slow);
+	#if defined(_FASTCPU)
+		void 		slowDownSPI(bool slow);
+	#endif
+	
 	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
 	void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 
 	#if defined(NEEDS_SET_MODULE)//for Energia
 	void 		selectCS(uint8_t module);
 	#endif
+	
 
+#if defined(__AVR__)
+	inline __attribute__((always_inline))
+		void spiwrite16(uint16_t d) {
+			SPDR = highByte(d);
+			while (!(SPSR & _BV(SPIF)));
+			SPDR = lowByte(d);
+			while (!(SPSR & _BV(SPIF)));
+		}
+/*	
+	inline __attribute__((always_inline))
+		uint16_t spiread16(void) {
+			uint16_t r = 0;
+			SPDR = highByte(d);
+			while (!(SPSR & _BV(SPIF)));
+			SPDR = lowByte(d);
+			while (!(SPSR & _BV(SPIF)));
+		}	
+*/
+	inline __attribute__((always_inline))
+		void spiwrite(uint8_t c) {
+			SPDR = c;
+			//asm volatile("nop");
+			while (!(SPSR & _BV(SPIF)));
+		}
+		
+	inline __attribute__((always_inline))
+		uint8_t spiread(void) {
+			uint8_t r = 0;
+			SPDR = 0x00;
+			//asm volatile("nop");
+			while(!(SPSR & _BV(SPIF)));
+			r = SPDR;
+			return r;
+		}
+#endif
 
+	void 	setArcParams(float arcAngleMax, int arcAngleOffset);
+	float 	_arcAngleMax;
+	int 	_arcAngleOffset;
 };
 
 #endif

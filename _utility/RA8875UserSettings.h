@@ -70,13 +70,36 @@ JIS0208,
 LATIN/GREEK/ARABIC */
 #define	_DFT_RA8875_EXTFONTROMCODING	GB2312
 
+/* [Default Screen Rotation] ++++++++++++++++++++++++++++++++++++++++++++
+*/
+#define	_RA8875_DEFAULTSCRROT		0
+/* [Default Backlight Color] ++++++++++++++++++++++++++++++++++++++++++++
+*/
+#define	_RA8875_DEFAULTBACKLIGHT	RA8875_BLACK
+
+/* [Default foreground Text Color] ++++++++++++++++++++++++++++++++++++++++++++
+*/
+#define	_RA8875_DEFAULTTXTFRGRND	RA8875_WHITE
+
+/* [Default background Text Color] ++++++++++++++++++++++++++++++++++++++++++++
+*/
+#define	_RA8875_DEFAULTTXTBKGRND	RA8875_BLACK
+
+/* [ARDUINO DUE SPI MODE] ++++++++++++++++++++++++++++++++++++++++++++
+*/
+//#define SPI_DUE_MODE_EXTENDED
+
 /*----------------------------------------------------------------------------------
 									SPI SPEED
 ----------------------------------------------------------------------------------*/
 /* Accordly RA8875 datasheet the READ cycles and WRITE cycles have different speed:
 System clock/3(only write cycle), System clock/6(with read cycle)
 MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
-Not all MCU are capable to work at those speeds. Following parameters should already be fine.
+Not all MCU are capable to work at those speeds. Following parameters worked with both board I have.
+After som mail exchange with RAiO I solved the dilemma behind SPI speed limit:
+The RA8875 has limitation of 12Mhz SPI but this has been set because not all internal macros
+can run over that speed, the library automatically deal with this  so I was able to go over 20Mhz!
+At that speed you need to short cables as much you can, provide clean supply and good decoupling!
 DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very slow.
 */
 
@@ -86,9 +109,11 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 	#elif defined(__MKL26Z64__)							 //Teensy LC (12 or 24 Mhz max)
 		const static uint32_t MAXSPISPEED	= 12000000;	 //default SPI main speed TeensyLC
 	#elif defined(__SAM3X8E__)							 //DUE
-		const static uint32_t MAXSPISPEED	= 20000000;
+		const static uint32_t MAXSPISPEED	= 21000000;
+		//#define _FASTSSPORT
 	#else												 //rest of the world (UNO, etc)
-		const static uint32_t MAXSPISPEED	= 8000000;
+		const static uint32_t MAXSPISPEED	= 10000000;
+		#define _FASTSSPORT
 	#endif
 #else// legacy SPI library-------------------------------------------------------------
 	#if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
@@ -118,10 +143,12 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4	//84 divided by 4 = 21Mhz
 			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
 			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV6	//10.5Mhz
+			//#define _FASTSSPORT
 		#else//rest of the world included UNO, etc.
 			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV2	//UNO = 4Mhz
 			#define SPI_SPEED_READ 		SPI_CLOCK_DIV4
 			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV2
+			#define _FASTSSPORT
 		#endif
 	#endif
 #endif
