@@ -9,20 +9,20 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
 ##### Current Version: 0.69b50 (beta, re-download all library and read changes!!!)<br>
 
 Current beta **tested only with**:
-* Teensy 3.1, Stellaris
+* Teensy 3.1, Stellaris, Arduino UNO, Arduino MEGA2560, Arduino YUN
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
-* EastRising RA8875 7"Inch (800x480) with resistive Touch or FT chip capacitive<br>
+* EastRising RA8875 7"Inch (800x480) with FT chip capacitive<br>
+Check 'Proof of working' in wiky.<br>
 
 A couple of users tested also with:
-* Arduino UNO, Arduino YUN
-* Arduino MEGA
+* Arduino DUE
 * Adafruit RA8875 board with 7" (800x600) and 5" (480x272) displays
 
 NOT tested at all:
 * Waveshare displays
 * Eastrising 5" (800x480)
 * Any 640x480
-* 
+
 <b>NOTE</b>:If your do not work please ask here.<br>
 
 ##### Current version 0.69b50, it's the first preview of the 0.70! Please read!!!.<br>
