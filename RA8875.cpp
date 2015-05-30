@@ -4439,15 +4439,15 @@ void RA8875::gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,c
 	gPrint(x,y,in,color,scale,strcut1);
 }
 
+
 /**************************************************************************/
 /*! 
-		this will disappear - only for test!!!!!
-		It has many errors so please use only for tests
+		Will change - only for test!!!!!
+		Almost fixed, but still not able to work in rotate
 */
 /**************************************************************************/
 void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1)
 {
-	//if (_currentMode != 0) changeMode(0);//we are in text mode?
 	if (_currentMode) changeMode(false);//we are in text mode?
 	if (scale < 1) scale = 1;
 	unsigned int offset;
@@ -4464,9 +4464,9 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 		h = strcut1->glyph_height;
         NrBytes = ((w - 1) / 8) + 1;
 		idy = 0;
+		//setActiveWindow(x+allwidth,(x+allwidth)+w*scale,h*scale,idy+y+(j/NrBytes));
 		for (j = 0;j < (h * NrBytes); j+=NrBytes){// height
 			idx = 0;
-			
 			for (i = 0;i < w; i++){//  width
 				
 			    if (i%8 == 0) {//read glyph
@@ -4480,7 +4480,7 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 						//Serial.print("*");
 					} else {
 						//background (to do)
-						buffer[idx] = 0x0000;
+						buffer[idx] = _RA8875_DEFAULTTXTBKGRND;
 						//Serial.print(" ");
 					}
 					idx++;
@@ -4491,7 +4491,10 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 			if (scale < 2) idy = 0;
 
 			for (s=0;s<scale;s++){//scaling
-				setXY(x+allwidth,idy+y+(j/NrBytes));
+				int16_t nX = (x+allwidth)+(w*scale);
+				if (nX > _width) return;
+				if (h*scale > _height) return;
+				setXY(x+allwidth,idy+y+(j/NrBytes)-j);
 				writeCommand(RA8875_MRWC);
 				startSend();
 				#if defined(__AVR__) && defined(_FASTSSPORT)
@@ -4522,9 +4525,8 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 				}
 				endSend();
 				idy++;
-				//delay(200);
+				
 			}//scale
-			//delay(300);
 		}// End j
 		allwidth+=w*scale;
 	}// End K
