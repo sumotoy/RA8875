@@ -949,6 +949,16 @@ uint8_t RA8875::getRotation()
 	return _rotation;
 }
 
+/**************************************************************************/
+/*!
+      true if rotation 1 or 3
+*/
+/**************************************************************************/
+boolean RA8875::isPortrait(void)
+{
+	return _portrait;
+}
+
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 +								TEXT STUFF											 +
@@ -1711,7 +1721,12 @@ void RA8875::textWrite(const char* buffer, uint16_t len)//0.69b32 faster println
 				//write a normal char
 				writeData(buffer[i]);
 				waitBusy(0x80);
-				_cursorX += currentFontW;
+				if (!_portrait){
+					_cursorX += currentFontW;
+				} else {
+					_cursorY += currentFontW;
+				}
+				
 		}
 	}
 }
@@ -3070,16 +3085,20 @@ void RA8875::fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16
       h:  the height in pix
 	  r:  the radius of the rounded corner
       color: RGB565 color
+	  roundRectHelper it's not tolerant to improper values
+	  so there's some value check here
 */
 /**************************************************************************/
 void RA8875::drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color)
 {
 	if (r == 0) drawRect(x,y,w,h,color);
 	if (w < 1 || h < 1) return;//it cannot be!
-	//RA8875 it's not out-of-range tolerant so this is a workaround
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
 	} else {			 //render as rect
+		if (w < h && (r*2) >= w) r = w/2-1;
+		if (w > h && (r*2) >= h) r = h/2-1;
+		if (r == w || r == h) drawRect(x,y,w,h,color);
 		#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 			_recoverTextColor = true;
 		#endif
@@ -3102,11 +3121,14 @@ void RA8875::drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 /**************************************************************************/
 void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color)
 {
-	//RA8875 it's not out-of-range tolerant so this is a workaround
 	if (r == 0) fillRect(x,y,w,h,color);
+	if (w < 1 || h < 1) return;//it cannot be!
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
 	} else {			 //render as rect
+		if (w < h && (r*2) >= w) r = w/2-1;
+		if (w > h && (r*2) >= h) r = h/2-1;
+		if (r == w || r == h) drawRect(x,y,w,h,color);
 		#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 			_recoverTextColor = true;
 		#endif
@@ -3127,13 +3149,13 @@ void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 /**************************************************************************/
 void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled)//0.69b32 fixed an undocumented hardware limit
 {
-	//if (_currentMode != 0) changeMode(0);//we are in text mode?
-	if (_currentMode) changeMode(false);//we are in text mode?
 	if (_portrait) swapvals(x0,y0);//0.69b21
 
 	//checkLimitsHelper(x0,y0);
 	if (r < 1) r = 1;
 	if (r > HEIGHT/2) r = (HEIGHT/2) - 1;//this is the (undocumented) hardware limit of RA8875
+	
+	if (_currentMode) changeMode(false);//we are in text mode?
 	
 	writeReg(RA8875_DCHR0,x0 & 0xFF);
 	writeReg(RA8875_DCHR1,x0 >> 8);
@@ -3205,7 +3227,10 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 
 	if (w < 1) return;//why draw invisible rects?
 	if (h < 1) return;//why draw invisible rects?
+	//if (w > _width) return;
+	//if (h > _height) return;
 	checkLimitsHelper(x,y);
+	
 	if (_currentMode) changeMode(false);//we are in text mode?
 
 	lineAddressing(x,y,w,h);
@@ -3226,8 +3251,7 @@ void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t col
 /**************************************************************************/
 void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled)
 {
-	//if (_currentMode != 0) changeMode(0);//we are in text mode?
-	if (_currentMode) changeMode(false);//we are in text mode?
+	
 	if (_portrait) {//0.69b21
 		swapvals(x0,y0);
 		swapvals(x1,y1);
@@ -3236,7 +3260,7 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 	//checkLimitsHelper(x0,y0);
 	//checkLimitsHelper(x1,y1);
 	//checkLimitsHelper(x2,y2);
-	
+	if (_currentMode) changeMode(false);//we are in text mode?
 	lineAddressing(x0,y0,x1,y1);
 	//p2
 
@@ -3260,9 +3284,7 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 /**************************************************************************/
 void RA8875::ellipseCurveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart,uint16_t color, bool filled)
 {
-	//if (_currentMode != 0) changeMode(0);//we are in text mode?
-	if (_currentMode) changeMode(false);//we are in text mode?
-	if (_portrait) {//0.69b21
+	if (_portrait) {
 		swapvals(xCenter,yCenter);
 		swapvals(longAxis,shortAxis);
 		checkLimitsHelper(xCenter,yCenter);
@@ -3273,10 +3295,10 @@ void RA8875::ellipseCurveHelper(int16_t xCenter, int16_t yCenter, int16_t longAx
 		if (longAxis > _width/2) longAxis = (_width/2) - 1;
 		if (shortAxis > _height/2) shortAxis = (_height/2) - 1;
 	}
-	
+	if (_currentMode) changeMode(false);//we are in text mode?
 	curveAddressing(xCenter,yCenter,longAxis,shortAxis);
 	
-	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
+	if (color != _foreColor) setForegroundColor(color);
 
 	writeCommand(RA8875_ELLIPSE);
 	
@@ -3305,49 +3327,15 @@ void RA8875::ellipseCurveHelper(int16_t xCenter, int16_t yCenter, int16_t longAx
 	  [private]
 */
 /**************************************************************************/
-//this one it's a little nightmare, I have actually bypassed all limiting stuff to test out
 void RA8875::roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled)
 {
-	//if (_currentMode != 0) changeMode(0);//we are in text mode?
-	if (_currentMode) changeMode(false);//we are in text mode?
+
 	if (_portrait) {//0.69b21
 		swapvals(x,y);
 		swapvals(w,h);
 	}
-	//checkLimitsHelper(x,y);
-	//checkLimitsHelper(w,h);
-	/*
-	if ((w <= (r*2)) || (h <= (r*2))) {
-		if (w < 2 && h < 2) {//1 pixel, cannot draw a rect, draw Pixel instead
-			if (_portrait) {
-				drawPixel(y,x,color);//since in portait x,y will be swapped, have to swap again
-			} else {
-				drawPixel(x,y,color);
-			}
-		} else {
-			Serial.print(" - g");
-			if (_portrait) {//since in portait x,y,w,h will be swapped, have to swap again
-				rectHelper(y,x,h,w,color,filled);
-			} else {
-				rectHelper(x,y,w,h,color,filled);
-			}
-		}
-	} else {
-		lineAddressing(x,y,w,h);
+		if (_currentMode) changeMode(false);//we are in text mode?
 
-		writeReg(RA8875_ELL_A0,r);
-		writeReg(RA8875_ELL_A1,r >> 8);
-		writeReg(RA8875_ELL_B0,r);
-		writeReg(RA8875_ELL_B1,r >> 8);
-
-		if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
-
-		writeCommand(RA8875_ELLIPSE);
-		filled == true ? writeData(0xE0) : writeData(0xA0);
-		waitPoll(RA8875_ELLIPSE, RA8875_DCR_LINESQUTRI_STATUS);
-	}
-	*/
-		//if (w >= _width || h >= _height) return;
 		lineAddressing(x,y,w,h);
 
 		writeReg(RA8875_ELL_A0,r & 0xFF);

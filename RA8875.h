@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b60
+	Version:0.69b61
 	This is the 0.70 preview!
 	Added support for DUE SPI extended, faster AVR code, drawArc
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -294,6 +294,7 @@ class RA8875 : public Print {
 	uint16_t 	height(void) const;//the phisical display height
 	void		setRotation(uint8_t rotation); //rotate text and graphics
 	uint8_t		getRotation(); //return the current rotation 0-3
+	boolean		isPortrait(void);
 //--------------color -------------------------------------
 	void		setForegroundColor(uint16_t color);//color of objects in 16bit
 	void		setForegroundColor(uint8_t R,uint8_t G,uint8_t B);//color of objects in 8+8+8bit
