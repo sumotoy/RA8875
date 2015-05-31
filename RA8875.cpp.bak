@@ -501,7 +501,7 @@ void RA8875::initialize()
 	//color space setup
 	if (_color_bpp < 16){//256
 		writeReg(RA8875_SYSR,0x00);//256
-		_colorIndex = 3;
+		_colorIndex = 8;
 	} else {
 		writeReg(RA8875_SYSR,0x0C);//65K
 		_colorIndex = 0;
