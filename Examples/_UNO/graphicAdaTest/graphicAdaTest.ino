@@ -63,6 +63,7 @@ void loop(){
   rot++;
 }
 
+
 void mediabuttons() {
   // play
   tft.fillWindow();
@@ -129,12 +130,13 @@ void testroundrects() {
   uint16_t i;
   uint8_t t;
   uint16_t x,y,w,h;
+
   for(t = 0 ; t <= 4; t+=1) {
     x = 0;
     y = 0;
     w = tft.width()-1;
     h = tft.height()-1;
-    for(i = 0 ; i <= tft.width(); i+=1) {
+    for(i = 0 ; i < tft.width(); i+=1) {
       tft.drawRoundRect(x, y, w, h, 5, color);
       x+=2;
       y+=3;
@@ -182,18 +184,24 @@ void testfillcircles(uint8_t radius, uint16_t color) {
 
 void testdrawrects(uint16_t color) {
   uint16_t x;
-  uint8_t inc = 4;
+  uint8_t inc = 2;
   tft.fillWindow();
-  for (x=0; x < tft.width(); x+=inc) {
+  for (x=0; x < tft.height(); x+=inc) {
     tft.drawRect((tft.width()/2) - (x/2), (tft.height()/2) - (x/2) , x, x, color);
   }
 }
 
 void testfillrects(uint16_t color1, uint16_t color2) {
-  uint16_t x;
-  uint8_t inc = 4;
+  uint16_t x = 0;
+  uint16_t inc = 8;
+  uint16_t side;
+  if (tft.isPortrait()) {
+    side = tft.width();
+  } else {
+    side = tft.height();
+  }
   tft.fillWindow();
-  for (x=tft.width()-1; x > inc; x-=inc) {
+  for (x=side-1; x > inc; x-=inc) {
     tft.fillRect((tft.width()/2) - (x/2), (tft.height()/2) - (x/2) , x, x, color1);
     tft.drawRect((tft.width()/2) - (x/2), (tft.height()/2) - (x/2) , x, x, color2);
   }
@@ -257,4 +265,3 @@ void testlines(uint16_t color) {
     tft.drawLine(maxw, maxh, 0, y, color);
   }
 }
-
