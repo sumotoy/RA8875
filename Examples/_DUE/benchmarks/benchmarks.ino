@@ -8,10 +8,10 @@ Open your serial monitor for results
 
 #define DELAY_BETWEEN 500
 
-#if defined(__SAM3X8E__)
+/* #if defined(__SAM3X8E__)
 #undef __FlashStringHelper::F(string_literal)
 #define F(string_literal) string_literal
-#endif
+#endif */
 
 /*
 Teensy3.x and Arduino's

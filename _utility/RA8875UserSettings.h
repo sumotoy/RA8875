@@ -86,12 +86,20 @@ LATIN/GREEK/ARABIC */
 #define	_RA8875_DEFAULTTXTBKGRND	RA8875_BLACK
 
 /* [ARDUINO DUE SPI MODE] ++++++++++++++++++++++++++++++++++++++++++++
+This library support DUE SPI Extended mode, by decommenting the line below
+you have to choose from pin 4,10,52 for CS pin in DUE or you will get an error!
 */
 //#define SPI_DUE_MODE_EXTENDED
 
 /*----------------------------------------------------------------------------------
 									SPI SPEED
 ----------------------------------------------------------------------------------*/
+/*
+
+On Arduino DUE and other 8 bit Arduino MCU you can disable the fast CS port 
+by commenting #define _FASTSSPORT !!!
+
+*/
 /* Accordly RA8875 datasheet the READ cycles and WRITE cycles have different speed:
 System clock/3(only write cycle), System clock/6(with read cycle)
 MAXSPISPEED parameters it's also related to MCU features so it probably need to be tuned.
@@ -109,7 +117,7 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 	#elif defined(__MKL26Z64__)							 //Teensy LC (12 or 24 Mhz max)
 		const static uint32_t MAXSPISPEED	= 12000000;	 //default SPI main speed TeensyLC
 	#elif defined(__SAM3X8E__)							 //DUE
-		const static uint32_t MAXSPISPEED	= 21000000;
+		const static uint32_t MAXSPISPEED	= 22000000;
 		//#define _FASTSSPORT
 	#else												 //rest of the world (UNO, etc)
 		const static uint32_t MAXSPISPEED	= 10000000;
