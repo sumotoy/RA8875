@@ -6,7 +6,7 @@ RA8875 library
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.69b61 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b64 (beta, re-download all library and read changes!!!)<br>
 
 Current beta **tested only with**:
 * Teensy 3.1, Stellaris, Arduino UNO, Arduino MEGA2560, Arduino YUN
@@ -35,6 +35,12 @@ Faster optimized code for AVR (checked), faster code for DUE (not checked), intr
 **0.69b61**<br>
 Fixed out-of-range value-check for drawRect and drawRoundRect, RA8875 it's not tolerant for some register to out-of-range values and generate unpredictable bad results, fixed an issue with text in portrait mode, added isPortrait function, fixed Lady Ada examples, they generate heavy  out-of-range values that are clearly useless.<br><br>
 Now it start difficult to find bugs, there are still many to dig out of course, I need help from you to find out the remaining ones! The next releases between this an 0.70 will be only optimization and fixing plus some other feature like keypad matrix and final text rendering engine for big fonts.
+**0.69b62**<br>
+**0.69b63**<br>
+Not released, internal changes.<br>
+**0.69b64**<br>
+Fixed DUE SPI, now can work in normal SPI, Extended SPI and normal with port manipulated CS (the fast one), Teensy LC can use all the SPI alternative pins and the channel 1 SPI (SPI1). I'm try to figure out why Teensu LC it's slow in native SPI mode, Teensy 3.1 it's the faster but I expect good results from LC but not, I will investigate. ( bit arduino uses port manipulated CS and are pretty fast! This release has also many fixes, due complicated SPI code (for many different CPU!) I have to clean a bit but it's pretty usable and most important I HAVE TESTED with Teensy 3.1, Teensy LC, Arduino UNO, Arduino Yun, Arduino MEGA2560, Arduino Nano, Arduino Micro, Arduino Leonardo, Arduino Duemilanove and works (at list with Eastrising 7" but should work with no problem even with 5" one. I have dropped compatibility with 640x480 and 320x240, sorry but I never see a display with this sizes around!<br>
+Remember that this library needs the SPI Transaction active for all the library of the devices on the same SPI line of RA8875, this because I use SPI speed modulation to get the best performances but also this chip works with SPI mode 3 and most devices uses SPI mode 0. If you got garbage on screen, try to disconnect other devices, if works, check if your other library uses SPI transaction and in case add to it, you will have only advantages!<br>
 
 
 ##### Beta 0.70 it's on the corner!
