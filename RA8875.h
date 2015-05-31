@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b62
+	Version:0.69b64
 	This is the 0.70 preview!
 	Added support for DUE SPI extended, faster AVR code, drawArc
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -103,22 +103,6 @@ Rounded rects (outline)  146391		167477		151142		103027
 Rounded rects (filled)   935691		953280		940016		493179
 
 
-Screen fill              8328
-Test Pixel               56
-Test Pixels              36844
-Text                     3470
-Lines                    56710
-Horiz/Vert Lines         44016
-Rectangles (outline)     138087
-Rectangles (filled)      138066
-Circles (filled)         120492
-Circles (outline)        118727
-Triangles (outline)      14941
-Triangles (filled)       35376
-Rounded rects (outline)  105753
-Rounded rects (filled)   495508
-
-
 PIN     UNO		MEGA       CD4050     RA8875
 SCK      13		52           YES       SCK
 MOSI     11		51           YES       MOSI
@@ -163,7 +147,7 @@ CS       10		53           YES       CS
 #include "_utility/RA8875Font.h"
 
 //pgmspace fixup
-#if defined(__MK20DX128__) || defined(__MK20DX256__)  || defined(__MKL26Z64__)//teensy 3 or 3.1 or LC
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//teensy 3 or 3.1 or LC
 	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
 	#define _FASTCPU
 	#ifdef PROGMEM
@@ -190,7 +174,8 @@ CS       10		53           YES       CS
 	#define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
 #endif
 
-enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480 };
+//enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480 };
+enum RA8875sizes { RA8875_480x272, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_800x480 };
 enum RA8875tcursor { NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
 enum RA8875tsize { X16=0,X24,X32 };//0,1,2
 enum RA8875fontSource { INT=0, EXT };//0,1
@@ -226,6 +211,13 @@ enum RA8875btelayer{ SOURCE, DEST };
 #define ARC_ANGLE_MAX 360		
 #define ARC_ANGLE_OFFSET -90	
 
+#if defined(__MKL26Z64__)
+	static bool _altSPI;
+#endif
+#ifdef SPI_HAS_TRANSACTION
+	static volatile uint32_t _maxspeed;//holder for SPI speed
+#endif
+
 // Touch screen cal structs
 typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
 typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fix for DUE
@@ -237,31 +229,31 @@ class RA8875 : public Print {
 	//void 		debugData(uint16_t data,uint8_t len=8);
 //------------- Instance -------------------------
 	#if defined(__MK20DX128__) || defined(__MK20DX256__)//Teensy 3.0, Teensy 3.1
+		#if defined (USE_FT5206_TOUCH)//with FT5206_TOUCH
+			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t INTp=2,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
+		#else
+			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
+		#endif
+	#elif defined(__MKL26Z64__)//TeensyLC with FT5206_TOUCH
 		#if defined (USE_FT5206_TOUCH)
 			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t INTp=2,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
 		#else
 			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
 		#endif
-	#elif defined(__MKL26Z64__)//TeensyLC
-		#if defined (USE_FT5206_TOUCH)
-			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t INTp=2,bool altSPI=false);
-		#else
-			RA8875(const uint8_t CSp,const uint8_t RSTp=255,bool altSPI=false);
-		#endif
 	#elif defined(__SAM3X8E__)//DUE
-		#if defined (USE_FT5206_TOUCH)
+		#if defined (USE_FT5206_TOUCH)// with FT5206_TOUCH
 			RA8875(const uint8_t CSp, const uint8_t RSTp=255,const uint8_t INTp=2);
 		#else
 			RA8875(const uint8_t CSp, const uint8_t RSTp=255);
 		#endif
 	#elif defined(NEEDS_SET_MODULE)//ENERGIA
-		#if defined (USE_FT5206_TOUCH)
+		#if defined (USE_FT5206_TOUCH)//with FT5206_TOUCH
 			RA8875(const uint8_t module, const uint8_t RSTp=255,const uint8_t INTp=2);
 		#else
 			RA8875::RA8875(const uint8_t module, const uint8_t RSTp=255);
 		#endif
 	#else//8 BIT ARDUINO's
-		#if defined (USE_FT5206_TOUCH)
+		#if defined (USE_FT5206_TOUCH)//with FT5206_TOUCH
 			RA8875(const uint8_t CSp, const uint8_t RSTp=255,const uint8_t INTp=2);
 		#else
 			RA8875(const uint8_t CSp, const uint8_t RSTp=255);
@@ -280,7 +272,8 @@ class RA8875 : public Print {
 	//void		clearMemory(boolean full);//clear the RA8875 internal buffer (fully or current layer)
 	uint8_t		errorCode(void);//0: no error,
 	/*
-	nan,nan,nan,nan,nan,CS-out-of-range,MOSI/MISO/SCLK-out-of-range,display-not-recognized
+	format: 1byte 0b00000000;, bit described below:
+	nan,nan,nan,nan,nan,CS(out-of-range),MOSI/MISO/SCLK(out-of-range),display(not-recognized)
 	*/
 //------------ Low Level functions -----------------------
 	void    	writeCommand(uint8_t d);
@@ -431,7 +424,25 @@ class RA8875 : public Print {
 	uint8_t 	getTScoordinates(uint16_t (*touch_coordinates)[2]);
 #endif
 //------------- Keyscan Matrix ------------------------------------------
-
+/*
+#if defined(USE_RA8875_KEYMATRIX)
+	void 	keypadInit(
+			bool scanEnable = true, 
+			bool longDetect = false, 
+			uint8_t sampleTime = 0, 		//0..3
+			uint8_t scanFrequency = 0, 		//0..7
+			uint8_t longTimeAdjustment = 0,	//0..3
+			bool interruptEnable = false, 
+			bool wakeupEnable = false
+	);
+	boolean keypadTouched(void);
+	uint8_t getKey(void);
+	
+	void enableKeyScan(bool on);
+	uint8_t getKeyValue(void);
+	boolean isKeyPress(void);
+#endif
+*/
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -450,21 +461,29 @@ using Print::write;
 	#if defined (USE_FT5206_TOUCH)
 	uint8_t _ctpInt;
 	#endif
-	#if defined(__MK20DX128__) || defined(__MK20DX256__)
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 		uint8_t _cs;
 		uint8_t _miso, _mosi, _sclk;
-	#elif defined(__MKL26Z64__)
-		uint8_t _cs;
-		bool _altSPI;
+		#if defined(__MKL26Z64__)
+			//bool _altSPI;
+		#endif
 	#elif defined(ENERGIA)
 		uint8_t _cs;
 	#else
-		#if defined(ARDUINO_ARCH_SAM)
-			volatile uint32_t *csport;
-			uint32_t _cs, cspinmask;
+		#if defined(__SAM3X8E__)
+			#if defined(_FASTSSPORT)
+				volatile uint32_t *csport;
+				uint32_t _cs, cspinmask;
+			#else
+				uint8_t _cs;
+			#endif
 		#else
-			volatile uint8_t *csport;
-			uint8_t _cs, cspinmask;
+			#if defined(_FASTSSPORT)
+				volatile uint8_t *csport;
+				uint8_t _cs, cspinmask;
+			#else
+				uint8_t _cs;
+			#endif
 		#endif
 	#endif
 	
@@ -473,16 +492,15 @@ using Print::write;
 
 	// Touch Screen vars ---------------------
 	#if defined (USE_FT5206_TOUCH)//internal FT5206 driver
-	//static const uint8_t			_ctpAdrs = 0x38;
-	uint8_t					_maxTouch;
-	static void 		 	isr(void);
-	uint8_t 				_cptRegisters[28];
-	uint8_t					_gesture;
-	uint8_t					_currentTouches;//0...5
-	uint8_t					_currentTouchState;//0,1,2
-	bool					_needISRrearm;
-	void 					initFT5206(void);
-	void 					regFT5206(uint8_t reg,uint8_t val);
+		uint8_t					_maxTouch;
+		static void 		 	isr(void);
+		uint8_t 				_cptRegisters[28];
+		uint8_t					_gesture;
+		uint8_t					_currentTouches;//0...5
+		uint8_t					_currentTouchState;//0,1,2
+		bool					_needISRrearm;
+		void 					initFT5206(void);
+		void 					regFT5206(uint8_t reg,uint8_t val);
 	//const uint8_t coordRegStart[5] = {{0x03},{0x09},{0x0F},{0x15},{0x1B}};
 	#endif
 	#if !defined(USE_EXTERNALTOUCH)
@@ -491,7 +509,9 @@ using Print::write;
 	uint16_t 				_tsAdcMinX,_tsAdcMinY,_tsAdcMaxX,_tsAdcMaxY;
 	bool					_touchEnabled;
 	#endif
-	
+	#if defined(USE_RA8875_KEYMATRIX)
+	bool					_keyMatrixEnabled;
+	#endif
 	//system vars -------------------------------------------
 	bool					_inited;//true when init has been ended
 	bool					_sleep;
@@ -551,9 +571,12 @@ using Print::write;
 	//color space-----------------------------
 	uint8_t					_color_bpp;//8=256, 16=64K colors
 	uint8_t					_brightness;
+	//various
+	float 					_arcAngleMax;
+	int 					_arcAngleOffset;
 	// Register containers -----------------------------------------
 	// this needed to  prevent readRegister from chip that it's slow.
-	uint8_t		_MWCR0Reg; //keep track of the register 		  [0x40]
+	volatile uint8_t		_MWCR0Reg; //keep track of the register 		  [0x40]
 	uint8_t		_DPCRReg;  ////Display Configuration		  	  [0x20]
 	uint8_t		_FNCR0Reg; //Font Control Register 0 		  	  [0x21]
 	uint8_t		_FNCR1Reg; //Font Control Register1 			  [0x22]
@@ -582,6 +605,7 @@ using Print::write;
 	void 	drawArcHelper(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float startAngle, float endAngle, uint16_t color);
 	float 	cosDegrees(float angle);
 	float 	sinDegrees(float angle);
+	void 	setArcParams(float arcAngleMax, int arcAngleOffset);
 	#if !defined(USE_EXTERNALTOUCH)
 	void	readTouchADC(uint16_t *x, uint16_t *y);
 	void 	clearTouchInt(void);
@@ -597,9 +621,67 @@ using Print::write;
 			y = y;
 		}
     // Low level access  commands ----------------------
-	void 		startSend();
-	void 		endSend();
+	//void 		startSend();
+	//void 		endSend();
+	inline __attribute__((always_inline)) 
+	void startSend(){
+		#if defined(SPI_HAS_TRANSACTION)
+			#if defined(__MKL26Z64__)	
+				_altSPI == true ? SPI1.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3)) : SPI.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
+			#else
+				SPI.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
+			#endif
+		#elif !defined(ENERGIA)
+			cli();//protect from interrupts
+		#endif
+		#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+			digitalWriteFast(_cs, LOW);
+		#else
+			#if !defined(ENERGIA)//UNO,DUE,ETC.
+				#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
+					//nothing
+				#else//DUE (normal),UNO,ETC.
+					#if defined(_FASTSSPORT)
+						*csport &= ~cspinmask;
+					#else
+						digitalWrite(_cs, LOW);
+					#endif
+				#endif
+			#else//ENERGIA
+				digitalWrite(_cs, LOW);
+			#endif
+		#endif
+	}
 	
+	inline __attribute__((always_inline)) 
+	void endSend(){
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+		digitalWriteFast(_cs, HIGH);
+	#else
+		#if !defined(ENERGIA)
+			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
+				//nothing
+			#else//DUE (normal),UNO,ETC.
+				#if defined(_FASTSSPORT)
+					*csport |= cspinmask;
+				#else
+					digitalWrite(_cs, HIGH);
+				#endif
+			#endif
+		#else//ENERGIA
+			digitalWrite(_cs, HIGH);
+		#endif
+	#endif
+	#if defined(SPI_HAS_TRANSACTION)
+		#if defined(__MKL26Z64__)	
+			_altSPI == true ? SPI1.endTransaction() : SPI.endTransaction();
+		#else
+			SPI.endTransaction();
+		#endif
+	#elif !defined(ENERGIA)
+		sei();//enable interrupts
+	#endif
+} 
 	void    	writeReg(uint8_t reg, uint8_t val);
 	uint8_t 	readReg(uint8_t reg);
 	void    	writeData(uint8_t data);
@@ -652,9 +734,7 @@ using Print::write;
 		}
 #endif
 
-	void 	setArcParams(float arcAngleMax, int arcAngleOffset);
-	float 	_arcAngleMax;
-	int 	_arcAngleOffset;
+
 };
 
 #endif

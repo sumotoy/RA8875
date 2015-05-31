@@ -4,14 +4,8 @@
 #if defined (USE_FT5206_TOUCH)
 	#include "Wire.h"
 	static volatile boolean _touched = false;
-	static const uint8_t _ctpAdrs = 0x38;
-	static const uint8_t coordRegStart[5] = {0x03,0x09,0x0F,0x15,0x1B};
-#endif
-
-
-#ifdef SPI_HAS_TRANSACTION
-//static SPISettings settings;
-	static uint32_t	_maxspeed;
+	const uint8_t _ctpAdrs = 0x38;
+	const uint8_t coordRegStart[5] = {0x03,0x09,0x0F,0x15,0x1B};
 #endif
 
 
@@ -20,8 +14,9 @@
 	Contructor
 	CS: SPI SS pin
 	RST: Reset pin
-	If Teensy CS used you can choose the SPI0 or SPI1
+	If Teensy CS used you can choose the SPI0 or SPI1 
 	spiInterface: 0 or 1 - default 0
+	SPI1:[MOSI1(0) MISO1(1) CLK1(20) CS1(6)]
 */
 /**************************************************************************/
 //------------------------------TEENSY 3/3.1 ---------------------------------------
@@ -43,17 +38,24 @@
 //------------------------------Teensy LC-------------------------------------------
 #elif defined(__MKL26Z64__)
 	#if defined (USE_FT5206_TOUCH)
-		RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,const uint8_t INTp,bool altSPI)
+		//RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,const uint8_t INTp,bool altSPI)
+		//{
+		RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,const uint8_t INTp,const uint8_t mosi_pin,const uint8_t sclk_pin,const uint8_t miso_pin)
 		{
 			_ctpInt = INTp;
 	#else
-		RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,bool altSPI)
+		//RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,bool altSPI)
+		//{
+		RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,const uint8_t mosi_pin,const uint8_t sclk_pin,const uint8_t miso_pin)
 		{
 			//uint8_t INTp = 255;
 	#endif
+			_mosi = mosi_pin;
+			_miso = miso_pin;
+			_sclk = sclk_pin;
 			_cs = CSp;
 			_rst = RSTp;
-			_altSPI = altSPI;
+			_altSPI = false;
 //---------------------------------DUE--------------------------------------------
 #elif defined(__SAM3X8E__)//DUE
 	#if defined (USE_FT5206_TOUCH)
@@ -193,22 +195,27 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_arcAngleOffset = ARC_ANGLE_OFFSET;
 	_color_bpp = 16;
 	_colorIndex = 0;
+
 	if (colors != 16) {
 		_color_bpp = 8;
 		_colorIndex = 3;
 	}
+
 	switch (_size){
+		/*
 		case RA8875_320x240:
 			_width = 320;
 			_height = 240;
 			_initIndex = 0;
 		break;
+		*/
 		case RA8875_480x272:
 		case Adafruit_480x272:
 			_width = 480;
 			_height = 272;
-			_initIndex = 1;
+			_initIndex = 0;
 		break;
+		/*
 		case RA8875_640x480:
 		case Adafruit_640x480:
 			_width = 640;
@@ -221,26 +228,20 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			_hasLayerLimits = true;
 			_initIndex = 2;
 		break;
+		*/
 		case RA8875_800x480:
 		case Adafruit_800x480:
 		case RA8875_800x480ALT:
 			_width = 800;
 			_height = 480;
-			if (_color_bpp < 16){
-				_maxLayers = 2;
-			} else {
-				_maxLayers = 1;
-			}
 			_hasLayerLimits = true;
-			if (_size == RA8875_800x480ALT){//needs a special init
-				_initIndex = 4;
-			} else {
-				_initIndex = 3;
-			}
+			_maxLayers = 1;
+			if (_color_bpp < 16) _maxLayers = 2;
+			_initIndex = 1;
+			if (_size == RA8875_800x480ALT) _initIndex = 2;
 		break;
 		default:
-		//bitSet(_errorCode,0);
-		_errorCode |= (1 << 0);
+		_errorCode |= (1 << 0);//set
 		return;
 	}
 	WIDTH = _width;
@@ -270,10 +271,12 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		6,5,4:TP Sample Time Adjusting (000...111)
 		3:Touch Panel Wakeup Enable 0(disable),1(enable)
 		2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
-		//_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
-		_TPCR0Reg = RA8875_TPCR0_WAIT_32768CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV128;
+		_TPCR0Reg = RA8875_TPCR0_WAIT_4096CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV4;
+		//_TPCR0Reg = RA8875_TPCR0_WAIT_32768CLK | RA8875_TPCR0_WAKEDISABLE | RA8875_TPCR0_ADCCLK_DIV128;
 	#endif
-
+	#if defined(USE_RA8875_KEYMATRIX)
+		_keyMatrixEnabled = false;
+	#endif
 /* Display Configuration Register	  [0x20]
 	  7: (Layer Setting Control) 0:one Layer, 1:two Layers
 	  6,5,4: (na)
@@ -353,66 +356,79 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			SPI.setMISO(_miso);
 			SPI.setSCK(_sclk);
 		} else {
-			//bitSet(_errorCode,1);
-			_errorCode |= (1 << 1);
+			_errorCode |= (1 << 1);//set
 			return;
 		}
 		if (!SPI.pinIsChipSelect(_cs)) {
-			//bitSet(_errorCode,2);
-			_errorCode |= (1 << 2);
+			_errorCode |= (1 << 2);//set
 			return;
 		}
 		SPI.begin();
+		
 	#elif defined(__MKL26Z64__)//TeensyLC
 		//always uses SPI ransaction
 		#if TEENSYDUINO > 121//not supported prior 1.22!
-		if (_altSPI){
-			SPI1.begin();
-		} else {
-			SPI.begin();
-		}
+			if ((_mosi == 11 || _mosi == 7 || _mosi == 0 || _mosi == 21) && (_miso == 12 || _miso == 8 || _miso == 1 || _miso == 5) && (_sclk == 13 || _sclk == 14 || _sclk == 20)) {//valid SPI pins?
+				if ((_mosi == 0 || _mosi == 21) && (_miso == 1 || _miso == 5) && (_sclk == 20)) {//identify alternate SPI channel 1 (24Mhz)
+					_altSPI = true;
+					if (_cs != 6){//on SPI1 cs should be only 6!
+						_errorCode |= (1 << 2);//set
+						return;
+					}
+					SPI1.setMOSI(_mosi);
+					SPI1.setMISO(_miso);
+					SPI1.setSCK(_sclk);
+					SPI1.begin();
+				} else {//default SPI channel 0 (12Mhz)
+					_altSPI = false;
+					SPI.setMOSI(_mosi);
+					SPI.setMISO(_miso);
+					SPI.setSCK(_sclk);
+					if (!SPI.pinIsChipSelect(_cs)) {//ERROR
+						_errorCode |= (1 << 2);//set
+						return;
+					}
+					SPI.begin();
+				}
+			} else {
+				_errorCode |= (1 << 1);//set
+				return;
+			}
 		#else
 			_altSPI = false;
 			SPI.begin();
-			//bitSet(_errorCode,3);
-			_errorCode |= (1 << 3);
-		#endif
-	#else//all the rest (DUE,UNO,ENERGIA)
-		#if defined(SPI_HAS_TRANSACTION) || defined(ENERGIA) || defined(__SAM3X8E__)
-		//all the rest (except 8Bt arduino) needs SPI.begin(); here
-			SPI.begin();
+			_errorCode |= (1 << 3);//set
 		#endif
 	#endif
-	
-	#if !defined(ENERGIA)//everyone but energia
+	#if !defined(ENERGIA)//everithing but ENERGIA
 		#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//all Tensy's 32bit
 			pinMode(_cs, OUTPUT);
 			digitalWrite(_cs, HIGH);
 		#elif defined(__SAM3X8E__)// DUE
-			#if defined(SPI_DUE_MODE_EXTENDED)//in mode extended you can use only follow pins
+			#if defined(SPI_DUE_MODE_EXTENDED)//DUE SPI mode extended you can use only follow pins
 				if (_cs == 4 || _cs == 10 || _cs == 52) {
-					#if defined(_FASTSSPORT)
-						csport = portOutputRegister(digitalPinToPort(_cs));
-						cspinmask = digitalPinToBitMask(_cs);
-						*csport |= cspinmask;//hi
-					#else
-						pinMode(_cs, OUTPUT);
-						digitalWrite(_cs, HIGH);
-					#endif
+					SPI.begin(_cs);
 				} else {
-					//bitSet(_errorCode,2);
-					_errorCode |= (1 << 2);
+					_errorCode |= (1 << 2);//error! wrong cs pin
 					return;
 				}
 			#else//DUE in normal SPI mode
-				csport = portOutputRegister(digitalPinToPort(_cs));
-				cspinmask = digitalPinToBitMask(_cs);
-				*csport |= cspinmask;//hi
+				SPI.begin();
+				pinMode(_cs, OUTPUT);
+				#if defined(_FASTSSPORT)
+					csport = portOutputRegister(digitalPinToPort(_cs));
+					cspinmask = digitalPinToBitMask(_cs);
+					*csport |= cspinmask;//hi
+				#else
+					digitalWrite(_cs, HIGH);
+				#endif
 			#endif
-		#else//UNO and other 8 bit arduino's
+		#else//UNO,MEGA,Yun,nano,duemilanove and other 8 bit arduino's
+			SPI.begin();
+			pinMode(_cs, OUTPUT);
 			csport = portOutputRegister(digitalPinToPort(_cs));//pinMode(_cs, OUTPUT);
 			cspinmask = digitalPinToBitMask(_cs);
-			*csport |= cspinmask;//hi //digitalWrite(_cs, HIGH);
+			*csport |= cspinmask;//hi
 		#endif
 	#endif
 	if (_rst != 255){//time for hardware reset RA8875
@@ -440,9 +456,15 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			delay(1);
 			SPI.setDataMode(SPI_MODE3);
 		#else
-			SPI.setClockDivider(SPI_SPEED_SAFE);
-			delay(1);
-			SPI.setDataMode(SPI_MODE3);
+			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+				SPI.setClockDivider(_cs,SPI_SPEED_SAFE);
+				delay(1);
+				SPI.setDataMode(_cs,SPI_MODE3);
+			#else
+				SPI.setClockDivider(SPI_SPEED_SAFE);
+				delay(1);
+				SPI.setDataMode(SPI_MODE3);
+			#endif
 		#endif
 	#endif
 	#if defined(ENERGIA)//dunno why but energia wants this here or not work!
@@ -499,9 +521,10 @@ void RA8875::initialize()
 	//set the sysClock
 	setSysClock(initStrings[_initIndex][0],initStrings[_initIndex][1],initStrings[_initIndex][2]);
 	//color space setup
+
 	if (_color_bpp < 16){//256
 		writeReg(RA8875_SYSR,0x00);//256
-		_colorIndex = 8;
+		_colorIndex = 3;
 	} else {
 		writeReg(RA8875_SYSR,0x0C);//65K
 		_colorIndex = 0;
@@ -532,9 +555,21 @@ void RA8875::initialize()
 		slowDownSPI(false);
 	#else
 		#if defined(SPI_HAS_TRANSACTION)
-			_maxspeed = MAXSPISPEED;
+			#if defined(__MKL26Z64__)
+				if (_altSPI){
+					_maxspeed = 22000000;
+				} else {
+					_maxspeed = MAXSPISPEED;
+				}
+			#else			
+				_maxspeed = MAXSPISPEED;
+			#endif
 		#else
-			SPI.setClockDivider(SPI_SPEED_WRITE);
+			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+				SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
+			#else
+				SPI.setClockDivider(SPI_SPEED_WRITE);
+			#endif
 		#endif
 	#endif
 	delay(1);
@@ -566,6 +601,7 @@ void RA8875::initialize()
 		_FNCR1Reg |= (1 << 6);//set
 	#endif
 	writeReg(RA8875_FNCR1,_FNCR1Reg);
+	
 	setCursor(0,0);
 }
 
@@ -2671,11 +2707,27 @@ void RA8875::drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 	#if defined(__AVR__) && defined(_FASTSSPORT)
 		spiwrite(RA8875_DATAWRITE);
 	#else
-		SPI.transfer(RA8875_DATAWRITE);
+		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+			if (_altSPI){
+				SPI1.transfer(RA8875_DATAWRITE);
+			} else {
+				SPI.transfer(RA8875_DATAWRITE);
+			}
+		#else
+			SPI.transfer(RA8875_DATAWRITE);
+		#endif
 	#endif
 	while (count--) {
 	#if !defined(ENERGIA) && !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
-		SPI.transfer16(*p);
+		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+			if (_altSPI){
+				SPI1.transfer16(*p);
+			} else {
+				SPI.transfer16(*p);
+			}
+		#else
+			SPI.transfer16(*p);
+		#endif
 	#else
 		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
 			SPI.transfer(_cs, *p >> 8, SPI_CONTINUE); 
@@ -2718,11 +2770,29 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
 		spiwrite(RA8875_DATAREAD);
 		spiwrite(0x00);
 	#else
-		SPI.transfer(RA8875_DATAREAD);
-		SPI.transfer(0x00);//first byte it's dummy
+		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+			if (_altSPI){
+				SPI1.transfer(RA8875_DATAREAD);
+				SPI1.transfer(0x00);//first byte it's dummy
+			} else {
+				SPI.transfer(RA8875_DATAREAD);
+				SPI.transfer(0x00);//first byte it's dummy
+			}
+		#else
+			SPI.transfer(RA8875_DATAREAD);
+			SPI.transfer(0x00);//first byte it's dummy
+		#endif
 	#endif
 	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
-		color  = SPI.transfer16(0x0);
+		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+			if (_altSPI){
+				color  = SPI1.transfer16(0x0);
+			} else {
+				color  = SPI.transfer16(0x0);
+			}
+		#else
+			color  = SPI.transfer16(0x0);
+		#endif
 	#else
 		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
 			color  = SPI.transfer(_cs, 0x0, SPI_CONTINUE); 
@@ -3230,9 +3300,17 @@ void RA8875::slowDownSPI(bool slow)
 		}
 	#else
 		if (slow){
-			SPI.setClockDivider(SPI_SPEED_SAFE);
+			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+				SPI.setClockDivider(_cs,SPI_SPEED_SAFE);
+			#else
+				SPI.setClockDivider(SPI_SPEED_SAFE);
+			#endif
 		} else {
-			SPI.setClockDivider(SPI_SPEED_WRITE);
+			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+				SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
+			#else
+				SPI.setClockDivider(SPI_SPEED_WRITE);
+			#endif
 		}
 	#endif
 }
@@ -3705,7 +3783,7 @@ void RA8875::brightness(uint8_t val)
 /**************************************************************************/
 void RA8875::backlight(boolean on) //0.69b31 (fixed an issue with adafruit backlight)
 {
-	if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(on);
+	if (_size == Adafruit_480x272 || _size == Adafruit_800x480/* || _size == Adafruit_640x480*/) GPIOX(on);
 	if (on == true){
 		PWMsetup(1,true, RA8875_PWM_CLK_DIV1024);//setup PWM ch 1 for backlight
 		PWMout(1,_brightness);//turn on PWM1
@@ -3982,7 +4060,7 @@ void RA8875::sleep(boolean sleep)
 		_sleep = sleep;
 		if (_sleep == true){
 			//1)turn off backlight
-			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(false);
+			if (_size == Adafruit_480x272 || _size == Adafruit_800x480/* || _size == Adafruit_640x480*/) GPIOX(false);
 			//2)decelerate SPI clock
 			#if defined(_FASTCPU)
 				slowDownSPI(true);
@@ -3990,7 +4068,11 @@ void RA8875::sleep(boolean sleep)
 				#if defined(SPI_HAS_TRANSACTION)
 					_maxspeed = 4000000;
 				#else
-					SPI.setClockDivider(SPI_SPEED_READ);
+					#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+						SPI.setClockDivider(_cs,SPI_SPEED_READ);
+					#else
+						SPI.setClockDivider(SPI_SPEED_READ);
+					#endif
 				#endif
 			#endif
 			//3)set PLL to default
@@ -4013,15 +4095,27 @@ void RA8875::sleep(boolean sleep)
 				slowDownSPI(false);
 			#else
 				#if defined(SPI_HAS_TRANSACTION)
-					_maxspeed = MAXSPISPEED;
+					#if defined(__MKL26Z64__)
+						if (_altSPI){
+							_maxspeed = 22000000;
+						} else {
+							_maxspeed = MAXSPISPEED;
+						}
+					#else			
+						_maxspeed = MAXSPISPEED;
+					#endif
 				#else
-					SPI.setClockDivider(SPI_SPEED_WRITE);
+					#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+						SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
+					#else
+						SPI.setClockDivider(SPI_SPEED_WRITE);
+					#endif
 				#endif
 			#endif
 			//5)PLL afterburn!
 			setSysClock(sysClockPar[_initIndex][0],sysClockPar[_initIndex][1],initStrings[_initIndex][2]);
 			//5)turn on backlight
-			if (_size == Adafruit_480x272 || _size == Adafruit_800x480 || _size == Adafruit_640x480) GPIOX(true);
+			if (_size == Adafruit_480x272 || _size == Adafruit_800x480/* || _size == Adafruit_640x480*/) GPIOX(true);
 			//writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL);
 		}
 	}
@@ -4080,8 +4174,18 @@ void RA8875::writeData(uint8_t data)
 			spiwrite(RA8875_DATAWRITE);
 			spiwrite(data);
 		#else
-			SPI.transfer(RA8875_DATAWRITE);
-			SPI.transfer(data);
+			#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+				if (_altSPI){
+					SPI1.transfer(RA8875_DATAWRITE);
+					SPI1.transfer(data);
+				} else {
+					SPI.transfer(RA8875_DATAWRITE);
+					SPI.transfer(data);
+				}
+			#else
+				SPI.transfer(RA8875_DATAWRITE);
+				SPI.transfer(data);
+			#endif
 		#endif
 	#endif
 	endSend();
@@ -4100,10 +4204,26 @@ void  RA8875::writeData16(uint16_t data)
 	#if defined(__AVR__) && defined(_FASTSSPORT)
 		spiwrite(RA8875_DATAWRITE);
 	#else
-		SPI.transfer(RA8875_DATAWRITE);
+		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+			if (_altSPI){
+				SPI1.transfer(RA8875_DATAWRITE);
+			} else {
+				SPI.transfer(RA8875_DATAWRITE);
+			}
+		#else
+			SPI.transfer(RA8875_DATAWRITE);
+		#endif
 	#endif
 	#if !defined(ENERGIA) && !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
-		SPI.transfer16(data);
+		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+			if (_altSPI){
+				SPI1.transfer16(data);
+			} else {
+				SPI.transfer16(data);
+			}
+		#else
+			SPI.transfer16(data);
+		#endif
 	#else
 		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
 			SPI.transfer(_cs, highByte(data), SPI_CONTINUE); 
@@ -4128,10 +4248,14 @@ void  RA8875::writeData16(uint16_t data)
 uint8_t RA8875::readData(bool stat) 
 {
 	#if defined(SPI_HAS_TRANSACTION)
-	uint32_t oldSpeed = _maxspeed;
+	//uint32_t oldSpeed = _maxspeed;
 		if (_inited) _maxspeed = _maxspeed/2;
 	#else
-		if (_inited) SPI.setClockDivider(SPI_SPEED_READ);
+		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			if (_inited) SPI.setClockDivider(_cs,SPI_SPEED_READ);
+		#else
+			if (_inited) SPI.setClockDivider(SPI_SPEED_READ);
+		#endif
 	#endif
 	startSend();
 	#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
@@ -4142,15 +4266,31 @@ uint8_t RA8875::readData(bool stat)
 			stat == true ? spiwrite(RA8875_CMDREAD) : spiwrite(RA8875_DATAREAD);
 			uint8_t x = spiread();
 		#else
-			stat == true ? SPI.transfer(RA8875_CMDREAD) : SPI.transfer(RA8875_DATAREAD);
-			uint8_t x = SPI.transfer(0x0);
+			#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+				uint8_t x;
+				if (_altSPI){
+					stat == true ? SPI1.transfer(RA8875_CMDREAD) : SPI1.transfer(RA8875_DATAREAD);
+					x = SPI1.transfer(0x0);
+				} else {
+					stat == true ? SPI.transfer(RA8875_CMDREAD) : SPI.transfer(RA8875_DATAREAD);
+					x = SPI.transfer(0x0);
+				}
+			#else
+				stat == true ? SPI.transfer(RA8875_CMDREAD) : SPI.transfer(RA8875_DATAREAD);
+				uint8_t x = SPI.transfer(0x0);
+			#endif
 		#endif
 	#endif
 	endSend();
 	#if defined(SPI_HAS_TRANSACTION)
-		if (_inited) _maxspeed = oldSpeed;
+		//if (_inited) _maxspeed = oldSpeed;
+		if (_inited) _maxspeed = _maxspeed*2;
 	#else
-		if (_inited) SPI.setClockDivider(SPI_SPEED_WRITE);//4Mhz (6.6Mhz Max)
+		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			if (_inited) SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
+		#else
+			if (_inited) SPI.setClockDivider(SPI_SPEED_WRITE);
+		#endif
 	#endif
 	return x;
 
@@ -4184,8 +4324,18 @@ void RA8875::writeCommand(uint8_t d)
 			spiwrite(RA8875_CMDWRITE);
 			spiwrite(d);
 		#else
-			SPI.transfer(RA8875_CMDWRITE);
-			SPI.transfer(d);
+			#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+				if (_altSPI){
+					SPI1.transfer(RA8875_CMDWRITE);
+					SPI1.transfer(d);
+				} else {
+					SPI.transfer(RA8875_CMDWRITE);
+					SPI.transfer(d);
+				}
+			#else
+				SPI.transfer(RA8875_CMDWRITE);
+				SPI.transfer(d);
+			#endif
 		#endif
 	#endif
 	endSend();
@@ -4197,10 +4347,19 @@ void RA8875::writeCommand(uint8_t d)
 		starts SPI communication
 */
 /**************************************************************************/
+/*
 void RA8875::startSend()
 {
 #if defined(SPI_HAS_TRANSACTION)
-	SPI.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
+	#if defined(__MKL26Z64__)	
+		if (_altSPI){
+			SPI1.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
+		} else {
+			SPI.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
+		}
+	#else
+		SPI.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
+	#endif
 #elif !defined(ENERGIA)
 	cli();//protect from interrupts
 #endif
@@ -4222,12 +4381,14 @@ void RA8875::startSend()
 	#endif
 #endif
 }
+*/
 
 /**************************************************************************/
 /*! PRIVATE
 		ends SPI communication
 */
 /**************************************************************************/
+/*
 void RA8875::endSend()
 {
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
@@ -4248,12 +4409,20 @@ void RA8875::endSend()
 	#endif
 #endif
 #if defined(SPI_HAS_TRANSACTION)
-	SPI.endTransaction();
+	#if defined(__MKL26Z64__)	
+		if (_altSPI){
+			SPI1.endTransaction();
+		} else {
+			SPI.endTransaction();
+		}
+	#else
+		SPI.endTransaction();
+	#endif
 #elif !defined(ENERGIA)
 	sei();//enable interrupts
 #endif
 } 
-
+*/
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 +				CAPACITIVE TOUCH SCREEN CONTROLLER	FT5206						     +
@@ -4455,7 +4624,6 @@ void RA8875::gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,c
 	gPrint(x,y,in,color,scale,strcut1);
 }
 
-
 /**************************************************************************/
 /*! 
 		Will change - only for test!!!!!
@@ -4516,11 +4684,27 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 				#if defined(__AVR__) && defined(_FASTSSPORT)
 					spiwrite(RA8875_DATAWRITE);
 				#else
-					SPI.transfer(RA8875_DATAWRITE);
+					#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+						if (_altSPI){
+							SPI1.transfer(RA8875_DATAWRITE);
+						} else {
+							SPI.transfer(RA8875_DATAWRITE);
+						}
+					#else
+						SPI.transfer(RA8875_DATAWRITE);
+					#endif
 				#endif
 				for (i=0;i<w*scale;i++){
 					#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
-						SPI.transfer16(buffer[i]);//should be fixed already
+						#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+							if (_altSPI){
+								SPI1.transfer16(buffer[i]);//should be fixed already
+							} else {
+								SPI.transfer16(buffer[i]);//should be fixed already
+							}
+						#else
+							SPI.transfer16(buffer[i]);//should be fixed already
+						#endif
 					#else
 						#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
 							SPI.transfer(_cs, buffer[i] >> 8, SPI_CONTINUE); 
@@ -4594,4 +4778,172 @@ void RA8875::gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8
 	}// End K
 } 
 
+/*---------------------------------------------------------------------------------------
+						KEYPAD - still working on
+						UNDER CONTRUCTION - PLEASE DO NOT ACTIVATE (NOT WORKING)
+****************************************************************************************/
 
+/*
+#if defined(USE_RA8875_KEYMATRIX)
+static const uint8_t DefaultKeyMap[(4*5)+2] = {
+    0,
+    1,  2,  3,  4,  5,  6,  7,  8,  9, 10,
+    11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    255
+};
+
+void RA8875::keypadInit(bool scanEnable, bool longDetect, uint8_t sampleTime, uint8_t scanFrequency,
+                             uint8_t longTimeAdjustment, bool interruptEnable, bool wakeupEnable)
+{
+    uint8_t reg = 0;
+	if (sampleTime > 3) sampleTime = 3;
+	if (scanFrequency > 7) scanFrequency = 7;
+	if (longTimeAdjustment > 3) scanFrequency = 3;
+    reg |= (scanEnable) ? 0x80 : 0x00;
+    reg |= (longDetect) ? 0x40 : 0x00;
+    reg |= (sampleTime & 0x03) << 4;
+    reg |= (scanFrequency & 0x07);
+    writeReg(RA8875_KSCR1, reg);   // KSCR1 - Enable Key Scan
+
+    reg = 0;
+    reg |= (wakeupEnable) ? 0x80 : 0x00;
+    reg |= (longTimeAdjustment & 0x03) << 2;
+    writeReg(RA8875_KSCR2, reg);  // KSCR2
+
+    reg = readReg(RA8875_INTC1);  // read INT
+    reg &= ~0x10;
+    reg |= (interruptEnable) ? 0x10 : 0x00;
+    writeReg(RA8875_INTC1, reg);  // write INT
+}
+
+
+boolean RA8875::keypadTouched(void)
+{
+    return (readReg(RA8875_INTC2) & 0x10); 
+}
+
+//#define GETC_DEV
+uint8_t RA8875::getKey(void)
+{
+	uint8_t pKeyMap[(4*5)+2];
+	memcpy (pKeyMap,DefaultKeyMap,(4*5)+2);
+
+#ifdef GETC_DEV
+    uint8_t keyCode1, keyCode2;
+#endif
+    uint8_t keyCode3;
+    static uint8_t count = 0;
+    uint8_t col, row;
+    uint8_t key;
+	/*	
+    while (!keypadTouched()) {
+		delayMicroseconds(10);//10
+    }
+	*/
+	/*
+    // read the key press number
+    uint8_t keyNumReg = readReg(RA8875_KSCR2) & 0x03;
+    count++;
+    switch (keyNumReg) {
+        case 0x01:      // one key
+            keyCode3 = readReg(RA8875_KSDR0);
+#ifdef GETC_DEV
+            keyCode2 = 0;
+            keyCode1 = 0;
+#endif
+            break;
+        case 0x02:      // two keys
+            keyCode3 = readReg(RA8875_KSDR1);
+#ifdef GETC_DEV
+            keyCode2 = readReg(RA8875_KSDR0);
+            keyCode1 = 0;
+#endif
+            break;
+        case 0x03:      // three keys
+            keyCode3 = readReg(RA8875_KSDR2);
+#ifdef GETC_DEV
+            keyCode2 = readReg(RA8875_KSDR1);
+            keyCode1 = readReg(RA8875_KSDR0);
+#endif
+            break;
+        default:         // no keys (key released)
+            keyCode3 = 0xFF;
+#ifdef GETC_DEV
+            keyCode2 = 0;
+            keyCode1 = 0;
+#endif
+            break;
+    }
+    if (keyCode3 == 0xFF) {
+        key = pKeyMap[0];                    // Key value 0
+    } else {
+        row = (keyCode3 >> 4) & 0x03;
+        col = (keyCode3 &  7);
+        key = row * 5 + col + 1;    // Keys value 1 - 20
+        if (key > 21) key = 21;
+        key = pKeyMap[key];
+        key |= (keyCode3 & 0x80);   // combine the key held flag
+    }
+#ifdef GETC_DEV // for Development only
+    setCursor(0,20);
+	setTextColor(0xFFFF,0x0000);
+	print("              ");
+	setCursor(0,20);
+	print("   Reg: ");
+	println(keyNumReg);
+	print("   key1: ");
+	println(keyCode1);
+	print("   key2: ");
+	println(keyCode2);
+	print("   key3: ");
+	println(keyCode3);
+	print("  count: ");
+	println(count);
+	print("    key: ");
+	println(key);
+#endif
+    writeReg(RA8875_INTC2, 0x10);       // Clear KS status
+    return key;
+}
+
+
+void RA8875::enableKeyScan(bool on)
+{
+    if (on) {
+        writeReg(RA8875_KSCR1, (1 << 7) | (0 << 4 ) | 1 );       // enable key scan
+    } else {
+        writeReg(RA8875_KSCR1, (0 << 7));
+    }
+}
+ 
+uint8_t RA8875::getKeyValue(void)
+{
+    uint8_t data = 0xFF;
+    data = readReg(RA8875_KSDR0);
+
+    delay(1);
+	#ifdef GETC_DEV
+	if (data != 255){
+		setTextColor(0xFFFF,0x0000);
+		setCursor(0,20);
+		print("                ");
+		setCursor(0,20);
+		print("Reg: ");
+		println(data);
+	}
+	#endif
+    // Clear key interrupt status
+	uint8_t temp = readReg(RA8875_INTC2);
+    writeReg(RA8875_INTC2,temp | 0x10);
+    return data;
+}
+ 
+boolean RA8875::isKeyPress(void)
+{
+    uint8_t temp = readReg(RA8875_INTC2);
+    if (temp & 0x10) return true;
+    return false;
+}
+
+#endif
+*/
