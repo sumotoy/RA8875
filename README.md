@@ -33,7 +33,7 @@ functions will change a bit it's in the area of rendering text (by using user fo
 **0.69b60**<br>
 Faster optimized code for AVR (checked), faster code for DUE (not checked), introduced **drawArc** (the only missed graphic macro but very flexible and draw in degrees!), hyperfast **getCursor** and library tracking of the current cursor position without any SPI call to RA, **fixed a lot of bugs**, color problems with text, etc, fixed gPrint (for large text and user font) but still not enabled for rotation. New examples, even a **Pong game**.<br>
 **0.69b61**<br>
-Fixed out-of-range value-check for drawRect and drawRoundRect, RA8875 it's not tolerant for some register to out-of-range values and generate unpredictable results, fixed an issue with text in portrait mode, added isPortrait function, fixed Lady Ada examples, they generate too much out-of-range values that result a waste of time.
+Fixed out-of-range value-check for drawRect and drawRoundRect, RA8875 it's not tolerant for some register to out-of-range values and generate unpredictable bad results, fixed an issue with text in portrait mode, added isPortrait function, fixed Lady Ada examples, they generate heavy  out-of-range values that are clearly useless.
 
 
 ##### Beta 0.70 it's on the corner!
