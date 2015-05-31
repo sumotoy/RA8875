@@ -6,7 +6,7 @@ RA8875 library
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.69b60 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.69b61 (beta, re-download all library and read changes!!!)<br>
 
 Current beta **tested only with**:
 * Teensy 3.1, Stellaris, Arduino UNO, Arduino MEGA2560, Arduino YUN
@@ -32,6 +32,8 @@ most of the code has been retouched but more or less this is the definitive sche
 functions will change a bit it's in the area of rendering text (by using user fonts) and keypad. The current beta it's faster than any previous version<br>
 **0.69b60**<br>
 Faster optimized code for AVR (checked), faster code for DUE (not checked), introduced **drawArc** (the only missed graphic macro but very flexible and draw in degrees!), hyperfast **getCursor** and library tracking of the current cursor position without any SPI call to RA, **fixed a lot of bugs**, color problems with text, etc, fixed gPrint (for large text and user font) but still not enabled for rotation. New examples, even a **Pong game**.<br>
+**0.69b61**<br>
+Fixed out-of-range value-check for drawRect and drawRoundRect, RA8875 it's not tolerant for some register to out-of-range values and generate unpredictable results, fixed an issue with text in portrait mode, added isPortrait function, fixed Lady Ada examples, they generate too much out-of-range values that result a waste of time.
 
 
 ##### Beta 0.70 it's on the corner!
