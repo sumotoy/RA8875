@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b61
+	Version:0.69b62
 	This is the 0.70 preview!
 	Added support for DUE SPI extended, faster AVR code, drawArc
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -454,6 +454,7 @@ using Print::write;
 		uint8_t _cs;
 		uint8_t _miso, _mosi, _sclk;
 	#elif defined(__MKL26Z64__)
+		uint8_t _cs;
 		bool _altSPI;
 	#elif defined(ENERGIA)
 		uint8_t _cs;
@@ -490,9 +491,7 @@ using Print::write;
 	uint16_t 				_tsAdcMinX,_tsAdcMinY,_tsAdcMaxX,_tsAdcMaxY;
 	bool					_touchEnabled;
 	#endif
-	#if defined(USE_RA8875_KEYMATRIX)
-	bool					_keyMatrixEnabled;
-	#endif
+	
 	//system vars -------------------------------------------
 	bool					_inited;//true when init has been ended
 	bool					_sleep;

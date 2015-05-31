@@ -38,6 +38,8 @@
 			_mosi = mosi_pin;
 			_miso = miso_pin;
 			_sclk = sclk_pin;
+			_cs = CSp;
+			_rst = RSTp;
 //------------------------------Teensy LC-------------------------------------------
 #elif defined(__MKL26Z64__)
 	#if defined (USE_FT5206_TOUCH)
@@ -49,6 +51,8 @@
 		{
 			//uint8_t INTp = 255;
 	#endif
+			_cs = CSp;
+			_rst = RSTp;
 			_altSPI = altSPI;
 //---------------------------------DUE--------------------------------------------
 #elif defined(__SAM3X8E__)//DUE
@@ -59,7 +63,8 @@
 	#else
 		RA8875::RA8875(const uint8_t CSp, const uint8_t RSTp) 
 		{
-			//uint8_t INTp = 255;
+			_cs = CSp;
+			_rst = RSTp;
 	#endif
 //------------------------------ENERGIA-------------------------------------------
 #elif defined(NEEDS_SET_MODULE)
@@ -73,6 +78,7 @@
 			//uint8_t INTp = 255;
 	#endif
 			selectCS(module);
+			_rst = RSTp;
 			_cs = 255;
 //----------------------------8 BIT ARDUINO's---------------------------------------
 #else
@@ -85,10 +91,9 @@
 		{
 			//uint8_t INTp = 255;
 	#endif
+			_cs = CSp;
+			_rst = RSTp;
 #endif
-
-			if (_cs != 255) _cs = CSp;
-			if (RSTp != 255) _rst = RSTp;
 }
 
 /**************************************************************************/
@@ -234,7 +239,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			}
 		break;
 		default:
-		bitSet(_errorCode,0);
+		//bitSet(_errorCode,0);
+		_errorCode |= (1 << 0);
 		return;
 	}
 	WIDTH = _width;
@@ -347,11 +353,13 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			SPI.setMISO(_miso);
 			SPI.setSCK(_sclk);
 		} else {
-			bitSet(_errorCode,1);
+			//bitSet(_errorCode,1);
+			_errorCode |= (1 << 1);
 			return;
 		}
 		if (!SPI.pinIsChipSelect(_cs)) {
-			bitSet(_errorCode,2);
+			//bitSet(_errorCode,2);
+			_errorCode |= (1 << 2);
 			return;
 		}
 		SPI.begin();
@@ -366,7 +374,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		#else
 			_altSPI = false;
 			SPI.begin();
-			bitSet(_errorCode,3);
+			//bitSet(_errorCode,3);
+			_errorCode |= (1 << 3);
 		#endif
 	#else//all the rest (DUE,UNO,ENERGIA)
 		#if defined(SPI_HAS_TRANSACTION) || defined(ENERGIA) || defined(__SAM3X8E__)
@@ -391,7 +400,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 						digitalWrite(_cs, HIGH);
 					#endif
 				} else {
-					bitSet(_errorCode,2);
+					//bitSet(_errorCode,2);
+					_errorCode |= (1 << 2);
 					return;
 				}
 			#else//DUE in normal SPI mode
@@ -683,7 +693,8 @@ void RA8875::clearMemory(bool stop)
 {
 	uint8_t temp;
 	temp = readReg(RA8875_MCLR);
-	stop == true ? bitClear(temp,7) : bitSet(temp,7);
+	//stop == true ? bitClear(temp,7) : bitSet(temp,7);
+	stop == true ? temp &= ~(1 << 7) : temp |= (1 << 7);
 	writeData(temp); 
 	if (!stop) waitBusy(0x80);
 }
@@ -699,7 +710,8 @@ void RA8875::clearActiveWindow(bool full)
 {
 	uint8_t temp;
 	temp = readReg(RA8875_MCLR);
-	full == true ? bitClear(temp,6) : bitSet(temp,6);
+	//full == true ? bitClear(temp,6) : bitSet(temp,6);
+	full == true ? temp &= ~(1 << 6) : temp |= (1 << 6);
 	writeData(temp);  
 	//waitBusy(0x80);
 }
@@ -1001,7 +1013,8 @@ void RA8875::showUserChar(uint8_t symbolAddrs,uint8_t wide)
 	if (!_currentMode) changeMode(true);//we are in graph mode?
 	uint8_t oldRegState = _FNCR0Reg;
 	uint8_t i;
-	bitSet(oldRegState,7);//set to CGRAM
+	//bitSet(oldRegState,7);//set to CGRAM
+	oldRegState |= (1 << 7);
 	writeReg(RA8875_FNCR0,oldRegState);
 	//layers?
  	if (_useMultiLayers){
@@ -1092,8 +1105,8 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 			temp &= 0x1F; temp |= 0x80;
 		break;
 		default:
-			//_extFontRom = false;//wrong type, better avoid for future
-			bitClear(_commonTextPar,0);//wrong type, better avoid for future
+			//bitClear(_commonTextPar,0);//wrong type, better avoid for future
+			_commonTextPar &= ~(1 << 0);
 			return;//cannot continue, exit
 		}
 		_fontRomType = ert;
@@ -1123,15 +1136,15 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 			temp &= 0xE3; temp |= 0x1C;
 		break;
 		default:
-			//_extFontRom = false;//wrong coding, better avoid for future
-			bitClear(_commonTextPar,0);//wrong coding, better avoid for future
+			//bitClear(_commonTextPar,0);//wrong coding, better avoid for future
+			_commonTextPar &= ~(1 << 0);
 			return;//cannot continue, exit
 		}
 		_fontRomCoding = erc;
 		_SFRSETReg = temp;
 		setExtFontFamily(erf,false);	
-		//_extFontRom = true;
-		bitSet(_commonTextPar,0);
+		//bitSet(_commonTextPar,0);
+		_commonTextPar |= (1 << 0); //bit set 0
 		//writeReg(RA8875_SFRSET,_SFRSETReg);//0x2F
 		//delay(4);
 }
@@ -1278,14 +1291,16 @@ void RA8875::setCursor(int16_t x, int16_t y,bool autocenter)
 			y = _width/2;
 			if (!autocenter) {
 				_centerFlag = true;
-				bitSet(_commonTextPar,6);
+				//bitSet(_commonTextPar,6);
+				_commonTextPar |= (1 << 6);
 			}
 		}
 		if (x == CENTER) {//swapped
 			x = _height/2;
 			if (!autocenter) {
 				_centerFlag = true;
-				bitSet(_commonTextPar,5);
+				//bitSet(_commonTextPar,5);
+				_commonTextPar |= (1 << 5);
 			}
 		}
 	} else {//rotation 0,2
@@ -1293,14 +1308,16 @@ void RA8875::setCursor(int16_t x, int16_t y,bool autocenter)
 			x = _width/2;
 			if (!autocenter) {
 				_centerFlag = true;
-				bitSet(_commonTextPar,5);
+				//bitSet(_commonTextPar,5);
+				_commonTextPar |= (1 << 5);
 			}
 		}
 		if (y == CENTER) {
 			y = _height/2;
 			if (!autocenter) {
 				_centerFlag = true;
-				bitSet(_commonTextPar,6);
+				//bitSet(_commonTextPar,6);
+				_commonTextPar |= (1 << 6);
 			}
 		}
 	}
@@ -1401,7 +1418,8 @@ void RA8875::showCursor(enum RA8875tcursor c,bool blink)
     uint8_t cW = 0;
     uint8_t cH = 0;
 	_textCursorStyle = c;
-	c == NOCURSOR ? bitClear(_MWCR0Reg,6) : bitSet(_MWCR0Reg,6);
+	//c == NOCURSOR ? bitClear(_MWCR0Reg,6) : bitSet(_MWCR0Reg,6);
+	c == NOCURSOR ? _MWCR0Reg &= ~(1 << 6) : _MWCR0Reg |= (1 << 6);
     if (blink) _MWCR0Reg |= 0x20;//blink or not?
     writeReg(RA8875_MWCR0, _MWCR0Reg);//set cursor
     //writeReg(RA8875_MWCR1, MWCR1Reg);//close graphic cursor(needed?)
@@ -1545,7 +1563,8 @@ void RA8875::setFontScale(uint8_t vscale,uint8_t hscale)
 /**************************************************************************/
 void RA8875::cursorIncrement(bool on)
 {
-	on == true ? bitClear(_MWCR0Reg,1) : bitSet(_MWCR0Reg,1);
+	//on == true ? bitClear(_MWCR0Reg,1) : bitSet(_MWCR0Reg,1);
+	on == true ? _MWCR0Reg &= ~(1 << 1) : _MWCR0Reg |= (1 << 1);
 	bitWrite(_commonTextPar,1,on);
 	writeReg(RA8875_MWCR0,_MWCR0Reg);
 }
@@ -1680,20 +1699,24 @@ void RA8875::textWrite(const char* buffer, uint16_t len)//0.69b32 faster println
 		if (!_portrait){
 			if (bitRead(_commonTextPar,5)) {
 				_cursorX = (_width/2) - (((len * currentFontW) * (_textHScale+1))/2)+1;
-				bitClear(_commonTextPar,5);//reset _alignXToCenter flag
+				//bitClear(_commonTextPar,5);//reset _alignXToCenter flag
+				_commonTextPar &= ~(1 << 5);
 			}
 			if (bitRead(_commonTextPar,6)) {
 				_cursorY = (_height/2) - (currentFontH * (_textVScale + 1))/2 - 1 - _textVScale;
-				bitClear(_commonTextPar,6);//reset _alignYToCenter flag
+				//bitClear(_commonTextPar,6);//reset _alignYToCenter flag
+				_commonTextPar &= ~(1 << 6);
 			}
 		} else {
 			if (bitRead(_commonTextPar,5)) {//Y = center
 				_cursorX = (_height/2) - (currentFontH * (_textVScale + 1))/2 - 1 - _textVScale;
-				bitClear(_commonTextPar,5);//reset _alignXToCenter flag
+				//bitClear(_commonTextPar,5);//reset _alignXToCenter flag
+				_commonTextPar &= ~(1 << 5);
 			}
 			if (bitRead(_commonTextPar,6)) {//X = center
 				_cursorY = (_width/2) - (((len * currentFontW) * (_textHScale+1))/2)+1;
-				bitClear(_commonTextPar,6);//reset _alignYToCenter flag
+				//bitClear(_commonTextPar,6);//reset _alignYToCenter flag
+				_commonTextPar &= ~(1 << 6);
 			}
 		}
 		setTextPosition(_cursorX,_cursorY,false);
@@ -2316,7 +2339,8 @@ void RA8875::BTE_ropcode(unsigned char setx)
 void RA8875::BTE_enable(bool on) 
 {	
 	uint8_t temp = readReg(RA8875_BECR0);
-	on == true ? bitSet(temp,7) : bitClear(temp,7);
+	//on == true ? bitSet(temp,7) : bitClear(temp,7);
+	on == true ? temp &= ~(1 << 7) : temp |= (1 << 7);
 	writeData(temp);
 	//writeReg(RA8875_BECR0,temp);  
 	waitBusy(0x40);
@@ -2331,7 +2355,8 @@ void RA8875::BTE_enable(bool on)
 void RA8875::BTE_dataMode(enum RA8875btedatam m) 
 {	
 	uint8_t temp = readReg(RA8875_BECR0);
-	m == CONT ? bitSet(temp,6) : bitClear(temp,6);
+	//m == CONT ? bitSet(temp,6) : bitClear(temp,6);
+	m == CONT ? temp &= ~(1 << 6) : temp |= (1 << 6);
 	writeData(temp);
 	//writeReg(RA8875_BECR0,temp);  
 }
@@ -2353,7 +2378,8 @@ void RA8875::BTE_layer(enum RA8875btelayer sd,uint8_t l)
 	}
 	*/
 	sd == SOURCE ? temp = readReg(RA8875_VSBE1) : temp = readReg(RA8875_VDBE1);
-	l == 1 ? bitClear(temp,7) : bitSet(temp,7);
+	//l == 1 ? bitClear(temp,7) : bitSet(temp,7);
+	l == 1 ? temp &= ~(1 << 7) : temp |= (1 << 7);
 	writeData(temp);
 	//writeReg(RA8875_VSBE1,temp);  
 }
@@ -2492,7 +2518,8 @@ void RA8875::setPattern(uint8_t num, enum RA8875pattern p)
 		maxLoc = 16;//at 8x8 max 16 locations
 	} else {
 		maxLoc = 4;//at 16x16 max 4 locations
-		bitSet(temp,7);
+		//bitSet(temp,7);
+		temp |= (1 << 7);
 	}
 	if (num > (maxLoc - 1)) num = maxLoc - 1;
 	temp = temp | num;
@@ -3257,6 +3284,7 @@ void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int1
 		swapvals(x1,y1);
 		swapvals(x2,y2);
 	}
+	
 	//checkLimitsHelper(x0,y0);
 	//checkLimitsHelper(x1,y1);
 	//checkLimitsHelper(x2,y2);
