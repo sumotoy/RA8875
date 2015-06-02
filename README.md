@@ -9,18 +9,14 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
 ##### Current Version: 0.69b64 (beta, re-download all library and read changes!!!)<br>
 
 Current beta **tested only with**:
-* Teensy 3.1, Stellaris, Arduino UNO, Arduino MEGA2560, Arduino YUN
+* Teensy 3.1, Stellaris, Arduino UNO, Arduino MEGA2560, Arduino YUN, Arduino DUE
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
 * EastRising RA8875 7"Inch (800x480) with FT chip capacitive<br>
+* EastRising RA8875 5"Inch (800x480) with resistice chip<br>
 Check 'Proof of working' in wiky.<br>
 
-A couple of users tested also with:
-* Arduino DUE
-* Adafruit RA8875 board with 7" (800x600) and 5" (480x272) displays
-
 NOT tested at all:
-* Waveshare displays
-* Eastrising 5" (800x480)
+* Waveshare displays (if you are able to force SPI mode...)
 * Any 640x480
 
 <b>NOTE</b>:If your do not work please ask here.<br>
@@ -58,6 +54,7 @@ The long awaited 0.70 it's almost ready it will introduce many changes:
 - Support for enhanced SPI for DUE.
 - Support for alternative enhanched wire library for Teensy 3,3.1 and LC.
 - Support for the second SPI channel for Teensy LC.
+- **Compatible with ESP8266! Yes! It will work with this tiny chip!!!**
 - And more to come....
 
 ##### Beta changes:
