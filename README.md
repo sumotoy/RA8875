@@ -16,7 +16,7 @@ Current beta **tested only with**:
 Check 'Proof of working' in wiky.<br>
 
 NOT tested at all:
-* Waveshare displays (if you are able to force SPI mode...)
+* Waveshare displays (if you are able to force SPI mode...) Since the company refuse to collaborate to give the needed infos I'm actually dropped any test/support of their products.
 * Any 640x480
 
 <b>NOTE</b>:If your do not work please ask here.<br>
