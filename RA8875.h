@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b64
+	Version:0.69b70
 	This is the 0.70 preview!
 	Added support for DUE SPI extended, faster AVR code, drawArc
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -687,7 +687,7 @@ using Print::write;
 	void    	writeData(uint8_t data);
 	uint8_t 	readData(bool stat=false);
 	#if defined(_FASTCPU)
-		void 		slowDownSPI(bool slow);
+		//void 		slowDownSPI(bool slow);
 	#endif
 	
 	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
@@ -696,7 +696,42 @@ using Print::write;
 	#if defined(NEEDS_SET_MODULE)//for Energia
 	void 		selectCS(uint8_t module);
 	#endif
-	
+
+#if defined(_FASTCPU)
+inline __attribute__((always_inline)) 
+void slowDownSPI(bool slow)
+{
+	#if defined(SPI_HAS_TRANSACTION)
+		if (slow){
+			_maxspeed = 10000000;
+		} else {
+			#if defined(__MKL26Z64__)	
+				if (_altSPI){
+					_maxspeed = 22000000;//TeensyLC max SPI speed on alternate SPI
+				} else {
+					_maxspeed = MAXSPISPEED;
+				}
+			#else
+				_maxspeed = MAXSPISPEED;
+			#endif
+		}
+	#else
+		if (slow){
+			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+				SPI.setClockDivider(_cs,SPI_SPEED_SAFE);
+			#else
+				SPI.setClockDivider(SPI_SPEED_SAFE);
+			#endif
+		} else {
+			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+				SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
+			#else
+				SPI.setClockDivider(SPI_SPEED_WRITE);
+			#endif
+		}
+	#endif
+}
+#endif
 
 #if defined(__AVR__)
 	inline __attribute__((always_inline))
