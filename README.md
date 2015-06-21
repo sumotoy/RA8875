@@ -25,34 +25,10 @@ NOT tested at all:
 
 <b>NOTE</b>:If your do not work please ask here.<br>
 
-##### Current version 0.70b1, it's the first preview of the 0.70! Please read!!!.<br>
-**0.69b50**<br>
-The current version introduce massive changes to fit the 0.70 milestone, some function has changed name,
-most of the code has been retouched but more or less this is the definitive scheme of the final library. The only
-functions will change a bit it's in the area of rendering text (by using user fonts) and keypad. The current beta it's faster than any previous version<br>
-**0.69b60**<br>
-Faster optimized code for AVR (checked), faster code for DUE (not checked), introduced **drawArc** (the only missed graphic macro but very flexible and draw in degrees!), hyperfast **getCursor** and library tracking of the current cursor position without any SPI call to RA, **fixed a lot of bugs**, color problems with text, etc, fixed gPrint (for large text and user font) but still not enabled for rotation. New examples, even a **Pong game**.<br>
-**0.69b61**<br>
-Fixed out-of-range value-check for drawRect and drawRoundRect, RA8875 it's not tolerant for some register to out-of-range values and generate unpredictable bad results, fixed an issue with text in portrait mode, added isPortrait function, fixed Lady Ada examples, they generate heavy  out-of-range values that are clearly useless.<br><br>
-Now it start difficult to find bugs, there are still many to dig out of course, I need help from you to find out the remaining ones! The next releases between this an 0.70 will be only optimization and fixing plus some other feature like keypad matrix and final text rendering engine for big fonts.
+##### Current version 0.70b2, it's the first preview of the 0.70! Please read!!!.<br>
+**0.70b2**<br>
+More graphic commands, drawPolygon, drawQuad, fillQuad (last 2 useful for solid3D rendering), lot of cleaning.<br>
 
-
-##### Beta 0.70 it's on the corner!
-The long awaited 0.70 it's almost ready it will introduce many changes:
-- **Everithing it's 2x times faster!** Raised up max SPI speed to 20Mhz.
-- No more name changes in functions and parameters.
-- Optimized code.
-- 0 compiler warnings.
-- Faster AVR SPI! 8 bit MCU has bottleneck on SPI, I will introduce a faster SPI routine.
-- Fixed the Text color bug (hardware bug of RA8875). The RA8875 has global color but new code will solve this.
-- Full keypad support.
-- A new autocenter parameter for setCursor let you precisely center text inside objects.
-- Support for color grandients.
-- Fixed initialization problems with some 800x480 5" screens.
-- Support for enhanced SPI for DUE.
-- Support for alternative enhanched wire library for Teensy 3,3.1 and LC.
-- Support for the second SPI channel for Teensy LC.
-- And more to come....
 
 ##### Beta changes:
 Be careful since until beta 0.70 things will change a lot so you better not use in your project or you will forced to modify your code! This is necessary because this library use a lot of command (RA8875 it's a really complex chip)<br>
