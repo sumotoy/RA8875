@@ -2991,6 +2991,78 @@ void RA8875::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 
 /**************************************************************************/
 /*!
+      Draw a quadrilater by connecting 4 points
+	  Parameters:
+	  x0:
+	  y0:
+	  x1:
+	  y1:
+	  x2:
+	  y2:
+	  x3:
+	  y3:
+      color: RGB565 color
+*/
+/**************************************************************************/
+void RA8875::drawQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2,int16_t x3, int16_t y3, uint16_t color) 
+{
+	drawLine(x0, y0, x1, y1, color);//low 1
+	drawLine(x1, y1, x2, y2, color);//high 1
+	drawLine(x2, y2, x3, y3, color);//high 2
+	drawLine(x3, y3, x0, y0, color);//low 2
+}
+
+/**************************************************************************/
+/*!
+      Draw a filled quadrilater by connecting 4 points
+	  Parameters:
+	  x0:
+	  y0:
+	  x1:
+	  y1:
+	  x2:
+	  y2:
+	  x3:
+	  y3:
+      color: RGB565 color
+*/
+/**************************************************************************/
+void RA8875::fillQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2, int16_t x3, int16_t y3, uint16_t color) 
+{
+    fillTriangle(x0,y0,x1,y1,x2,y2,color);
+    fillTriangle(x0,y0,x2,y2,x3,y3,color);
+}
+
+/**************************************************************************/
+/*!
+      Draw a polygon from a center
+	  Parameters:
+	  cx: x center of the polygon
+	  cy: y center of the polygon
+	  sides: how many sides (min 3)
+	  diameter: diameter of the polygon
+	  rot: angle rotation of the polygon
+      color: RGB565 color
+*/
+/**************************************************************************/
+void RA8875::drawPolygon(int16_t cx, int16_t cy, uint8_t sides, int16_t diameter, float rot, uint16_t color)
+{ 
+	sides = (sides > 2? sides : 3);
+	float dtr = (PI / 180.0) + PI;
+	float rads = 360.0 / sides;//points spacd equally
+	uint8_t i;
+	for (i = 0; i < sides; i++) { 
+		drawLine(
+			cx + (sin((i*rads + rot) * dtr) * diameter),
+			cy + (cos((i*rads + rot) * dtr) * diameter),
+			cx + (sin(((i+1)*rads + rot) * dtr) * diameter),
+			cy + (cos(((i+1)*rads + rot) * dtr) * diameter),
+			color);
+	}
+}
+
+/**************************************************************************/
+/*!
       Draw Triangle
 	  Parameters:
       x0:The 0-based x location of the point 0 of the triangle bottom LEFT
@@ -4575,7 +4647,8 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 	if (scale < 1) scale = 1;
 	unsigned int offset;
 	unsigned char by = 0, mask = 0;
-	uint16_t i,j,h,w,NrBytes,idx,idy,s;
+	uint16_t j,NrBytes,idx,idy,s;
+	int16_t h,w,i;
 	unsigned char cmap;
 	uint16_t allwidth = 0;
 	while ((cmap = *in++)) {
@@ -4616,7 +4689,7 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 			for (s=0;s<scale;s++){//scaling
 				int16_t nX = (x+allwidth)+(w*scale);
 				if (nX > _width) return;
-				if (h*scale > _height) return;
+				if ((h * scale) > _height) return;
 				setXY(x+allwidth,idy+y+(j/NrBytes)-j);
 				writeCommand(RA8875_MRWC);
 				startSend();
@@ -4633,7 +4706,7 @@ void RA8875::gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t 
 						SPI.transfer(RA8875_DATAWRITE);
 					#endif
 				#endif
-				for (i=0;i<w*scale;i++){
+				for (i=0;i<(w * scale);i++){
 					#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 						#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
 							if (_altSPI){
@@ -4717,172 +4790,3 @@ void RA8875::gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8
 	}// End K
 } 
 
-/*---------------------------------------------------------------------------------------
-						KEYPAD - still working on
-						UNDER CONTRUCTION - PLEASE DO NOT ACTIVATE (NOT WORKING)
-****************************************************************************************/
-
-/*
-#if defined(USE_RA8875_KEYMATRIX)
-static const uint8_t DefaultKeyMap[(4*5)+2] = {
-    0,
-    1,  2,  3,  4,  5,  6,  7,  8,  9, 10,
-    11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    255
-};
-
-void RA8875::keypadInit(bool scanEnable, bool longDetect, uint8_t sampleTime, uint8_t scanFrequency,
-                             uint8_t longTimeAdjustment, bool interruptEnable, bool wakeupEnable)
-{
-    uint8_t reg = 0;
-	if (sampleTime > 3) sampleTime = 3;
-	if (scanFrequency > 7) scanFrequency = 7;
-	if (longTimeAdjustment > 3) scanFrequency = 3;
-    reg |= (scanEnable) ? 0x80 : 0x00;
-    reg |= (longDetect) ? 0x40 : 0x00;
-    reg |= (sampleTime & 0x03) << 4;
-    reg |= (scanFrequency & 0x07);
-    writeReg(RA8875_KSCR1, reg);   // KSCR1 - Enable Key Scan
-
-    reg = 0;
-    reg |= (wakeupEnable) ? 0x80 : 0x00;
-    reg |= (longTimeAdjustment & 0x03) << 2;
-    writeReg(RA8875_KSCR2, reg);  // KSCR2
-
-    reg = readReg(RA8875_INTC1);  // read INT
-    reg &= ~0x10;
-    reg |= (interruptEnable) ? 0x10 : 0x00;
-    writeReg(RA8875_INTC1, reg);  // write INT
-}
-
-
-boolean RA8875::keypadTouched(void)
-{
-    return (readReg(RA8875_INTC2) & 0x10); 
-}
-
-//#define GETC_DEV
-uint8_t RA8875::getKey(void)
-{
-	uint8_t pKeyMap[(4*5)+2];
-	memcpy (pKeyMap,DefaultKeyMap,(4*5)+2);
-
-#ifdef GETC_DEV
-    uint8_t keyCode1, keyCode2;
-#endif
-    uint8_t keyCode3;
-    static uint8_t count = 0;
-    uint8_t col, row;
-    uint8_t key;
-	/*	
-    while (!keypadTouched()) {
-		delayMicroseconds(10);//10
-    }
-	*/
-	/*
-    // read the key press number
-    uint8_t keyNumReg = readReg(RA8875_KSCR2) & 0x03;
-    count++;
-    switch (keyNumReg) {
-        case 0x01:      // one key
-            keyCode3 = readReg(RA8875_KSDR0);
-#ifdef GETC_DEV
-            keyCode2 = 0;
-            keyCode1 = 0;
-#endif
-            break;
-        case 0x02:      // two keys
-            keyCode3 = readReg(RA8875_KSDR1);
-#ifdef GETC_DEV
-            keyCode2 = readReg(RA8875_KSDR0);
-            keyCode1 = 0;
-#endif
-            break;
-        case 0x03:      // three keys
-            keyCode3 = readReg(RA8875_KSDR2);
-#ifdef GETC_DEV
-            keyCode2 = readReg(RA8875_KSDR1);
-            keyCode1 = readReg(RA8875_KSDR0);
-#endif
-            break;
-        default:         // no keys (key released)
-            keyCode3 = 0xFF;
-#ifdef GETC_DEV
-            keyCode2 = 0;
-            keyCode1 = 0;
-#endif
-            break;
-    }
-    if (keyCode3 == 0xFF) {
-        key = pKeyMap[0];                    // Key value 0
-    } else {
-        row = (keyCode3 >> 4) & 0x03;
-        col = (keyCode3 &  7);
-        key = row * 5 + col + 1;    // Keys value 1 - 20
-        if (key > 21) key = 21;
-        key = pKeyMap[key];
-        key |= (keyCode3 & 0x80);   // combine the key held flag
-    }
-#ifdef GETC_DEV // for Development only
-    setCursor(0,20);
-	setTextColor(0xFFFF,0x0000);
-	print("              ");
-	setCursor(0,20);
-	print("   Reg: ");
-	println(keyNumReg);
-	print("   key1: ");
-	println(keyCode1);
-	print("   key2: ");
-	println(keyCode2);
-	print("   key3: ");
-	println(keyCode3);
-	print("  count: ");
-	println(count);
-	print("    key: ");
-	println(key);
-#endif
-    writeReg(RA8875_INTC2, 0x10);       // Clear KS status
-    return key;
-}
-
-
-void RA8875::enableKeyScan(bool on)
-{
-    if (on) {
-        writeReg(RA8875_KSCR1, (1 << 7) | (0 << 4 ) | 1 );       // enable key scan
-    } else {
-        writeReg(RA8875_KSCR1, (0 << 7));
-    }
-}
- 
-uint8_t RA8875::getKeyValue(void)
-{
-    uint8_t data = 0xFF;
-    data = readReg(RA8875_KSDR0);
-
-    delay(1);
-	#ifdef GETC_DEV
-	if (data != 255){
-		setTextColor(0xFFFF,0x0000);
-		setCursor(0,20);
-		print("                ");
-		setCursor(0,20);
-		print("Reg: ");
-		println(data);
-	}
-	#endif
-    // Clear key interrupt status
-	uint8_t temp = readReg(RA8875_INTC2);
-    writeReg(RA8875_INTC2,temp | 0x10);
-    return data;
-}
- 
-boolean RA8875::isKeyPress(void)
-{
-    uint8_t temp = readReg(RA8875_INTC2);
-    if (temp & 0x10) return true;
-    return false;
-}
-
-#endif
-*/

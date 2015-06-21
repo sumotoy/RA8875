@@ -59,6 +59,9 @@ fillCurve	KEYWORD2
 drawRoundRect	KEYWORD2
 fillRoundRect	KEYWORD2
 drawArc	KEYWORD2
+drawQuad	KEYWORD2
+fillQuad	KEYWORD2
+drawPolygon	KEYWORD2
 touchBegin	KEYWORD2
 touchEnable	KEYWORD2
 touchDetect	KEYWORD2

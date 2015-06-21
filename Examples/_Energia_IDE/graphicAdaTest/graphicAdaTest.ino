@@ -179,8 +179,14 @@ void testfillcircles(uint8_t radius, uint16_t color) {
 void testdrawrects(uint16_t color) {
   uint16_t x;
   uint8_t inc = 2;
+  uint16_t side;
+  if (tft.isPortrait()) {
+    side = tft.width();
+  } else {
+    side = tft.height();
+  }
   tft.fillWindow();
-  for (x=0; x < tft.height(); x+=inc) {
+  for (x=0; x < side; x+=inc) {
     tft.drawRect((tft.width()/2) - (x/2), (tft.height()/2) - (x/2) , x, x, color);
   }
 }

@@ -2,9 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.69b70
-	This is the 0.70 preview!
-	Added support for DUE SPI extended, faster AVR code, drawArc
+	Version:0.70b2
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -118,7 +116,7 @@ CS       10		53           YES       CS
 #if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
 	#include "Energia.h"
 	#undef byte
-	#define byte      uint8_t
+	#define byte uint8_t
 	#if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
 		#define NEEDS_SET_MODULE
 		#define _FASTCPU
@@ -144,37 +142,35 @@ CS       10		53           YES       CS
   #include <math.h>
 #endif
 
-#include "_utility/RA8875Font.h"
-
 //pgmspace fixup
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//teensy 3 or 3.1 or LC
 	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
 	#define _FASTCPU
 	#ifdef PROGMEM
-		#undef PROGMEM
+		#undef  PROGMEM
 		#define PROGMEM __attribute__((section(".progmem.data")))
 	#endif
 #elif defined(__32MX320F128H__) || defined(__32MX795F512L__) || (defined(ARDUINO) && defined(__arm__) && !defined(CORE_TEENSY))//chipkit uno, chipkit max, arduino DUE	
 	#define _FASTCPU
 	#ifndef __PGMSPACE_H_
-	#define __PGMSPACE_H_ 1
-	#define PROGMEM
-	#define PGM_P  const char *
-	#define PSTR(str) (str)
-	#define pgm_read_byte_near(addr) pgm_read_byte(addr)
-	#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
-	#define pgm_read_word(addr) (*(const unsigned short *)(addr))
+	  #define __PGMSPACE_H_ 1
+	  #define PROGMEM
+	  #define PGM_P  const char *
+	  #define PSTR(str) (str)
+	  #define pgm_read_byte_near(addr) pgm_read_byte(addr)
+	  #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+	  #define pgm_read_word(addr) (*(const unsigned short *)(addr))
 	#endif
 #else
-	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
+	#include <avr/pgmspace.h>
 #endif
 
+#include "_utility/RA8875Font.h"
 
 #if !defined(swapvals)
 	#define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
 #endif
 
-//enum RA8875sizes { RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480 };
 enum RA8875sizes { RA8875_480x272, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_800x480 };
 enum RA8875tcursor { NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
 enum RA8875tsize { X16=0,X24,X32 };//0,1,2
@@ -207,9 +203,9 @@ enum RA8875btelayer{ SOURCE, DEST };
 	#include "_utility/RA8875Calibration.h"
 #endif
 
-#define CENTER 9998
-#define ARC_ANGLE_MAX 360		
-#define ARC_ANGLE_OFFSET -90	
+#define CENTER 				9998
+#define ARC_ANGLE_MAX 		360		
+#define ARC_ANGLE_OFFSET 	-90	
 
 #if defined(__MKL26Z64__)
 	static bool _altSPI;
@@ -361,6 +357,9 @@ class RA8875 : public Print {
 	void    	fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color);
 	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);//ok
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
+	void 		drawQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2,int16_t x3, int16_t y3, uint16_t color);
+	void 		fillQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2, int16_t x3, int16_t y3, uint16_t color);
+	void 		drawPolygon(int16_t cx, int16_t cy, uint8_t sides, int16_t diameter, float rot, uint16_t color);
 	inline __attribute__((always_inline)) void drawArc(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float start, float end, uint16_t color) {
 		if (start == 0 && end == _arcAngleMax) {
 			drawArcHelper(cx, cy, radius, thickness, 0, _arcAngleMax, color);
@@ -423,26 +422,7 @@ class RA8875 : public Print {
 	uint8_t 	getTouchState(void);
 	uint8_t 	getTScoordinates(uint16_t (*touch_coordinates)[2]);
 #endif
-//------------- Keyscan Matrix ------------------------------------------
-/*
-#if defined(USE_RA8875_KEYMATRIX)
-	void 	keypadInit(
-			bool scanEnable = true, 
-			bool longDetect = false, 
-			uint8_t sampleTime = 0, 		//0..3
-			uint8_t scanFrequency = 0, 		//0..7
-			uint8_t longTimeAdjustment = 0,	//0..3
-			bool interruptEnable = false, 
-			bool wakeupEnable = false
-	);
-	boolean keypadTouched(void);
-	uint8_t getKey(void);
-	
-	void enableKeyScan(bool on);
-	uint8_t getKeyValue(void);
-	boolean isKeyPress(void);
-#endif
-*/
+
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
 	textWrite((const char *)&b, 1);
@@ -454,19 +434,16 @@ virtual size_t write(const uint8_t *buffer, size_t size) {
 	return size;
 }
 
-
 using Print::write;
+
  protected:
 	uint8_t _rst;
 	#if defined (USE_FT5206_TOUCH)
-	uint8_t _ctpInt;
+		uint8_t _ctpInt;
 	#endif
 	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 		uint8_t _cs;
 		uint8_t _miso, _mosi, _sclk;
-		#if defined(__MKL26Z64__)
-			//bool _altSPI;
-		#endif
 	#elif defined(ENERGIA)
 		uint8_t _cs;
 	#else
@@ -486,7 +463,6 @@ using Print::write;
 			#endif
 		#endif
 	#endif
-	
  private:
 	volatile bool 			_currentMode;
 
@@ -501,16 +477,15 @@ using Print::write;
 		bool					_needISRrearm;
 		void 					initFT5206(void);
 		void 					regFT5206(uint8_t reg,uint8_t val);
-	//const uint8_t coordRegStart[5] = {{0x03},{0x09},{0x0F},{0x15},{0x1B}};
 	#endif
 	#if !defined(USE_EXTERNALTOUCH)
-	uint8_t					_touchPin;
-	bool					_clearTInt;
-	uint16_t 				_tsAdcMinX,_tsAdcMinY,_tsAdcMaxX,_tsAdcMaxY;
-	bool					_touchEnabled;
+		uint8_t					_touchPin;
+		bool					_clearTInt;
+		uint16_t 				_tsAdcMinX,_tsAdcMinY,_tsAdcMaxX,_tsAdcMaxY;
+		bool					_touchEnabled;
 	#endif
 	#if defined(USE_RA8875_KEYMATRIX)
-	bool					_keyMatrixEnabled;
+		bool					_keyMatrixEnabled;
 	#endif
 	//system vars -------------------------------------------
 	bool					_inited;//true when init has been ended
@@ -531,9 +506,9 @@ using Print::write;
 	bool					_backTransparent;
 	uint8_t					_colorIndex;
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
-	uint16_t				_textForeColor;
-	uint16_t				_textBackColor;
-	bool					_recoverTextColor;
+		uint16_t				_textForeColor;
+		uint16_t				_textBackColor;
+		bool					_recoverTextColor;
 	#endif
 	//text vars-------------------------------------------------
 	int16_t					_cursorX, _cursorY;//try to internally track text cursor...
@@ -557,7 +532,6 @@ using Print::write;
 	enum RA8875extRomType 	_fontRomType;
 	enum RA8875extRomCoding _fontRomCoding;
 	enum RA8875tsize		_textSize;
-	//volatile bool 			_currentMode;
 	enum RA8875sizes 		_size;
 	enum RA8875fontSource 	_fontSource;
 	enum RA8875tcursor		_textCursorStyle;
@@ -576,14 +550,14 @@ using Print::write;
 	int 					_arcAngleOffset;
 	// Register containers -----------------------------------------
 	// this needed to  prevent readRegister from chip that it's slow.
-	volatile uint8_t		_MWCR0Reg; //keep track of the register 		  [0x40]
-	uint8_t		_DPCRReg;  ////Display Configuration		  	  [0x20]
-	uint8_t		_FNCR0Reg; //Font Control Register 0 		  	  [0x21]
-	uint8_t		_FNCR1Reg; //Font Control Register1 			  [0x22]
-	uint8_t		_FWTSETReg; //Font Write Type Setting Register 	  [0x2E]
-	uint8_t		_SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
-	uint8_t		_TPCR0Reg; //Touch Panel Control Register 0	  	  [0x70]
-	uint8_t		_INTC1Reg; //Interrupt Control Register1		  [0xF0]
+	volatile uint8_t _MWCR0Reg; //keep track of the register 		  [0x40]
+	uint8_t			 _DPCRReg;  ////Display Configuration		  	  [0x20]
+	uint8_t			 _FNCR0Reg; //Font Control Register 0 		  	  [0x21]
+	uint8_t			 _FNCR1Reg; //Font Control Register1 			  [0x22]
+	uint8_t			 _FWTSETReg; //Font Write Type Setting Register   [0x2E]
+	uint8_t			 _SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
+	uint8_t			 _TPCR0Reg; //Touch Panel Control Register 0	  [0x70]
+	uint8_t			 _INTC1Reg; //Interrupt Control Register1		  [0xF0]
 	//		functions --------------------------
 	void 	initialize();
 	void 	setSysClock(uint8_t pll1,uint8_t pll2,uint8_t pixclk);
@@ -594,7 +568,6 @@ using Print::write;
 	void 	scanDirection(boolean invertH,boolean invertV);
 	// 		helpers-----------------------------
 	void 	setTextPosition(int16_t x, int16_t y,bool update);
-	//void 	checkLimitsHelper(int16_t &x,int16_t &y);//RA8875 it's prone to freeze with values out of range
 	void 	circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
 	void 	rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
 	void 	triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
@@ -607,9 +580,9 @@ using Print::write;
 	float 	sinDegrees(float angle);
 	void 	setArcParams(float arcAngleMax, int arcAngleOffset);
 	#if !defined(USE_EXTERNALTOUCH)
-	void	readTouchADC(uint16_t *x, uint16_t *y);
-	void 	clearTouchInt(void);
-	boolean touched(void);
+		void	readTouchADC(uint16_t *x, uint16_t *y);
+		void 	clearTouchInt(void);
+		boolean touched(void);
 	#endif
 	inline __attribute__((always_inline)) 
 		void checkLimitsHelper(int16_t &x,int16_t &y){
@@ -621,8 +594,6 @@ using Print::write;
 			y = y;
 		}
     // Low level access  commands ----------------------
-	//void 		startSend();
-	//void 		endSend();
 	inline __attribute__((always_inline)) 
 	void startSend(){
 		#if defined(SPI_HAS_TRANSACTION)
@@ -686,15 +657,11 @@ using Print::write;
 	uint8_t 	readReg(uint8_t reg);
 	void    	writeData(uint8_t data);
 	uint8_t 	readData(bool stat=false);
-	#if defined(_FASTCPU)
-		//void 		slowDownSPI(bool slow);
-	#endif
-	
 	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
 	void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 
 	#if defined(NEEDS_SET_MODULE)//for Energia
-	void 		selectCS(uint8_t module);
+		void 		selectCS(uint8_t module);
 	#endif
 
 #if defined(_FASTCPU)
@@ -741,16 +708,7 @@ void slowDownSPI(bool slow)
 			SPDR = lowByte(d);
 			while (!(SPSR & _BV(SPIF)));
 		}
-/*	
-	inline __attribute__((always_inline))
-		uint16_t spiread16(void) {
-			uint16_t r = 0;
-			SPDR = highByte(d);
-			while (!(SPSR & _BV(SPIF)));
-			SPDR = lowByte(d);
-			while (!(SPSR & _BV(SPIF)));
-		}	
-*/
+
 	inline __attribute__((always_inline))
 		void spiwrite(uint8_t c) {
 			SPDR = c;
@@ -768,8 +726,5 @@ void slowDownSPI(bool slow)
 			return r;
 		}
 #endif
-
-
 };
-
 #endif

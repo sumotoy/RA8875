@@ -29,6 +29,12 @@ CS: 2,20,21 because are not used by audio shield
 MOSI:7
 SCLK:14
 RA8875(2,255,7,14);//will not interfere with Audio Shield
+Teensy LC
+This cpu can use slight different configuration, it can be instanced
+with the CS pin only so it will use SPI0 but you can use this:
+//RA8875(CSp,RSTp,mosi_pin,sclk_pin,miso_pin);
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET,0,20,1);
+This will use the SPI1 (24Mhz)
 --------------------------------------------------------
 To omit Reset pin, set as 255
 For CS you CANNOT use any pin!
