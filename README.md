@@ -104,4 +104,4 @@ https://github.com/sumotoy/RA8875/wiki/Teensy-3.1---Working-with-PJRC-Audio-Boar
 
 
 
-![An FFT snapshot](https://github.com/sumotoy/RA8875/blob/master/documentation/CIMG1886.JPG)
+![An FFT snapshot](https://github.com/sumotoy/RA8875/blob/gh-pages/images/CIMG1886.JPG)
