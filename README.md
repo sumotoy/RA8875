@@ -6,7 +6,7 @@ RA8875 library
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.69b61 (beta, re-download all library and read changes!!!)<br>
+##### Current Version: 0.70b1 (beta, re-download all library and read changes!!!)<br>
 
 Current beta **tested only with**:
 * Teensy 3.1, Stellaris, Arduino UNO, Arduino MEGA2560, Arduino YUN
@@ -25,7 +25,7 @@ NOT tested at all:
 
 <b>NOTE</b>:If your do not work please ask here.<br>
 
-##### Current version 0.69b60, it's the first preview of the 0.70! Please read!!!.<br>
+##### Current version 0.70b1, it's the first preview of the 0.70! Please read!!!.<br>
 **0.69b50**<br>
 The current version introduce massive changes to fit the 0.70 milestone, some function has changed name,
 most of the code has been retouched but more or less this is the definitive scheme of the final library. The only
