@@ -139,11 +139,11 @@ note: HSYNC Start Position(pixels) = (HSTR + 1) * 8 */
 note: HSYNC Pulse Width(pixels) = (HPW + 1) * 8 */
 #define RA8875_HPWR             	  0x18//HSYNC Pulse Width Register
 #define RA8875_VDHR0            	  0x19//LCD Vertical Display Height Register 0
-#define RA8875_VDHR1            	  0x1A//LCD Vertical Display Height Register 1
+//#define RA8875_VDHR1            	  0x1A//LCD Vertical Display Height Register 1
 #define RA8875_VNDR0            	  0x1B//LCD Vertical Non-Display Period Register 0
-#define RA8875_VNDR1            	  0x1C//LCD Vertical Non-Display Period Register 1
+//#define RA8875_VNDR1            	  0x1C//LCD Vertical Non-Display Period Register 1
 #define RA8875_VSTR0            	  0x1D//VSYNC Start Position Register 0
-#define RA8875_VSTR1            	  0x1E//VSYNC Start Position Register 1
+//#define RA8875_VSTR1            	  0x1E//VSYNC Start Position Register 1
 #define RA8875_VPWR             	  0x1F//VSYNC Pulse Width Register
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                           LCD Display Control Registers
@@ -254,22 +254,22 @@ Font to Font Width Setting
 //                    Active Window & Scroll Window Setting Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define RA8875_HSAW0            	  0x30//Horizontal Start Point 0 of Active Window
-#define RA8875_HSAW1            	  0x31//Horizontal Start Point 1 of Active Window
+//#define RA8875_HSAW1            	  0x31//Horizontal Start Point 1 of Active Window
 #define RA8875_VSAW0            	  0x32//Vertical   Start Point 0 of Active Window
-#define RA8875_VSAW1            	  0x33//Vertical   Start Point 1 of Active Window
+//#define RA8875_VSAW1            	  0x33//Vertical   Start Point 1 of Active Window
 #define RA8875_HEAW0            	  0x34//Horizontal End   Point 0 of Active Window
-#define RA8875_HEAW1            	  0x35//Horizontal End   Point 1 of Active Window
+//#define RA8875_HEAW1            	  0x35//Horizontal End   Point 1 of Active Window
 #define RA8875_VEAW0           		  0x36//Vertical   End   Point of Active Window 0
-#define RA8875_VEAW1            	  0x37//Vertical   End   Point of Active Window 1
+//#define RA8875_VEAW1            	  0x37//Vertical   End   Point of Active Window 1
 
 #define RA8875_HSSW0            	  0x38//Horizontal Start Point 0 of Scroll Window
-#define RA8875_HSSW1            	  0x39//Horizontal Start Point 1 of Scroll Window
+//#define RA8875_HSSW1            	  0x39//Horizontal Start Point 1 of Scroll Window
 #define RA8875_VSSW0            	  0x3A//Vertical 	 Start Point 0 of Scroll Window
-#define RA8875_VSSW1            	  0x3B//Vertical 	 Start Point 1 of Scroll Window
+//#define RA8875_VSSW1            	  0x3B//Vertical 	 Start Point 1 of Scroll Window
 #define RA8875_HESW0            	  0x3C//Horizontal End   Point 0 of Scroll Window
-#define RA8875_HESW1            	  0x3D//Horizontal End   Point 1 of Scroll Window
+//#define RA8875_HESW1            	  0x3D//Horizontal End   Point 1 of Scroll Window
 #define RA8875_VESW0            	  0x3E//Vertical 	 End   Point 0 of Scroll Window
-#define RA8875_VESW1            	  0x3F//Vertical 	 End   Point 1 of Scroll Window
+//#define RA8875_VESW1            	  0x3F//Vertical 	 End   Point 1 of Scroll Window
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                    Cursor Setting Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -331,14 +331,14 @@ from 0 to 255
 11: Down -> Top then Left -> Right */
 #define RA8875_MRCD            	  	  0x45//Memory Read Cursor Direction
 #define RA8875_CURH0            	  0x46//Memory Write Cursor Horizontal Position Register 0
-#define RA8875_CURH1            	  0x47//Memory Write Cursor Horizontal Position Register 1
+//#define RA8875_CURH1            	  0x47//Memory Write Cursor Horizontal Position Register 1
 #define RA8875_CURV0            	  0x48//Memory Write Cursor Vertical Position Register 0
-#define RA8875_CURV1            	  0x49//Memory Write Cursor Vertical Position Register 1
+//#define RA8875_CURV1            	  0x49//Memory Write Cursor Vertical Position Register 1
 
-#define RA8875_RCURH0           	  0x4A//Memory Read Cursor Horizontal Position Register 0
-#define RA8875_RCURH1           	  0x4B//Memory Read Cursor Horizontal Position Register 1
-#define RA8875_RCURV0           	  0x4C//Memory Read Cursor Vertical Position Register 0
-#define RA8875_RCURV1           	  0x4D//Memory Read Cursor Vertical Position Register 1
+//#define RA8875_RCURH0           	  0x4A//Memory Read Cursor Horizontal Position Register 0
+//#define RA8875_RCURH1           	  0x4B//Memory Read Cursor Horizontal Position Register 1
+//#define RA8875_RCURV0           	  0x4C//Memory Read Cursor Vertical Position Register 0
+//#define RA8875_RCURV1           	  0x4D//Memory Read Cursor Vertical Position Register 1
 
 
 /* Font Write Cursor and Memory Write Cursor Horizontal Size  [0x4E]
@@ -396,17 +396,17 @@ from 0 to 255
 1000: Display disable */
 #define RA8875_LTPR1            	  0x53//Layer Transparency Register 1
 #define RA8875_HSBE0				  0x54//Horizontal Source Point 0 of BTE
-#define RA8875_HSBE1				  0x55//Horizontal Source Point 1 of BTE
+//#define RA8875_HSBE1				  0x55//Horizontal Source Point 1 of BTE
 #define RA8875_VSBE0				  0x56//Vertical Source Point 0 of BTE
-#define RA8875_VSBE1				  0x57//Vertical Source Point 1 of BTE
+//#define RA8875_VSBE1				  0x57//Vertical Source Point 1 of BTE
 #define RA8875_HDBE0				  0x58//Horizontal Destination Point 0 of BTE
-#define RA8875_HDBE1				  0x59//Horizontal Destination Point 1 of BTE
+//#define RA8875_HDBE1				  0x59//Horizontal Destination Point 1 of BTE
 #define RA8875_VDBE0				  0x5A//Vertical Destination Point 0 of BTE
-#define RA8875_VDBE1				  0x5B//Vertical Destination Point 1 of BTE
+//#define RA8875_VDBE1				  0x5B//Vertical Destination Point 1 of BTE
 #define RA8875_BEWR0				  0x5C//BTE Width Register 0
-#define RA8875_BEWR1				  0x5D//BTE Width Register 1
+//#define RA8875_BEWR1				  0x5D//BTE Width Register 1
 #define RA8875_BEHR0				  0x5E//BTE Height Register 0
-#define RA8875_BEHR1				  0x5F//BTE Height Register 1
+//#define RA8875_BEHR1				  0x5F//BTE Height Register 1
 
 /* Pattern Set No for BTE            [0x66]
 ----- Bit 7 (Pattern Format)
@@ -429,14 +429,14 @@ If pattern Format = 16x16 then Pattern Set [1:0] is valid */
 //                            Color Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define RA8875_BGCR0				  0x60//Background Color Register 0 (R)
-#define RA8875_BGCR1				  0x61//Background Color Register 1 (G)
-#define RA8875_BGCR2				  0x62//Background Color Register 2 (B)
+//#define RA8875_BGCR1				  0x61//Background Color Register 1 (G)
+//#define RA8875_BGCR2				  0x62//Background Color Register 2 (B)
 #define RA8875_FGCR0				  0x63//Foreground Color Register 0 (R)
-#define RA8875_FGCR1				  0x64//Foreground Color Register 1 (G)
-#define RA8875_FGCR2				  0x65//Foreground Color Register 2 (B)
+//#define RA8875_FGCR1				  0x64//Foreground Color Register 1 (G)
+//#define RA8875_FGCR2				  0x65//Foreground Color Register 2 (B)
 #define RA8875_BGTR0				  0x67//Background Color Register for Transparent 0 (R)
-#define RA8875_BGTR1				  0x68//Background Color Register for Transparent 1 (G)
-#define RA8875_BGTR2				  0x69//Background Color Register for Transparent 2 (B)
+//#define RA8875_BGTR1				  0x68//Background Color Register for Transparent 1 (G)
+//#define RA8875_BGTR2				  0x69//Background Color Register for Transparent 2 (B)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            TOUCH SCREEN REGISTERS
@@ -483,17 +483,17 @@ If pattern Format = 16x16 then Pattern Set [1:0] is valid */
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            Graphic Cursor Setting Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#define RA8875_GCHP0            	  0x80//Graphic Cursor Horizontal Position Register 0
-#define RA8875_GCHP1            	  0x81//Graphic Cursor Horizontal Position Register 1
-#define RA8875_GCVP0            	  0x82//Graphic Cursor Vertical Position Register 0
-#define RA8875_GCVP1            	  0x83//Graphic Cursor Vertical Position Register 0
-#define RA8875_GCC0            	      0x84//Graphic Cursor Color 0
-#define RA8875_GCC1            	      0x85//Graphic Cursor Color 1
+//#define RA8875_GCHP0            	  0x80//Graphic Cursor Horizontal Position Register 0
+//#define RA8875_GCHP1            	  0x81//Graphic Cursor Horizontal Position Register 1
+//#define RA8875_GCVP0            	  0x82//Graphic Cursor Vertical Position Register 0
+//#define RA8875_GCVP1            	  0x83//Graphic Cursor Vertical Position Register 0
+//#define RA8875_GCC0            	      0x84//Graphic Cursor Color 0
+//#define RA8875_GCC1            	      0x85//Graphic Cursor Color 1
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            PLL Setting Registers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define RA8875_PLLC1            	  0x88//PLL Control Register 1
-#define RA8875_PLLC2            	  0x89//PLL Control Register 2
+//#define RA8875_PLLC2            	  0x89//PLL Control Register 2
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            PWM Control Registers
@@ -558,45 +558,45 @@ If pattern Format = 16x16 then Pattern Set [1:0] is valid */
 	#define RA8875_DCR_DRAWSQUARE         0x10
 
 #define RA8875_DLHSR0         		  0x91//Draw Line/Square Horizontal Start Address Register0
-#define RA8875_DLHSR1         		  0x92//Draw Line/Square Horizontal Start Address Register1
+//#define RA8875_DLHSR1         		  0x92//Draw Line/Square Horizontal Start Address Register1
 #define RA8875_DLVSR0         		  0x93//Draw Line/Square Vertical Start Address Register0
-#define RA8875_DLVSR1         		  0x94//Draw Line/Square Vertical Start Address Register1
+//#define RA8875_DLVSR1         		  0x94//Draw Line/Square Vertical Start Address Register1
 #define RA8875_DLHER0         		  0x95//Draw Line/Square Horizontal End Address Register0
-#define RA8875_DLHER1         		  0x96//Draw Line/Square Horizontal End Address Register1
+//#define RA8875_DLHER1         		  0x96//Draw Line/Square Horizontal End Address Register1
 #define RA8875_DLVER0         		  0x97//Draw Line/Square Vertical End Address Register0
-#define RA8875_DLVER1         		  0x98//Draw Line/Square Vertical End Address Register0
+//#define RA8875_DLVER1         		  0x98//Draw Line/Square Vertical End Address Register0
 
 #define RA8875_DCHR0         		  0x99//Draw Circle Center Horizontal Address Register0
-#define RA8875_DCHR1         		  0x9A//Draw Circle Center Horizontal Address Register1
+//#define RA8875_DCHR1         		  0x9A//Draw Circle Center Horizontal Address Register1
 #define RA8875_DCVR0         		  0x9B//Draw Circle Center Vertical Address Register0
-#define RA8875_DCVR1         		  0x9C//Draw Circle Center Vertical Address Register1
+//#define RA8875_DCVR1         		  0x9C//Draw Circle Center Vertical Address Register1
 #define RA8875_DCRR         		  0x9D//Draw Circle Radius Register
 
 #define RA8875_ELLIPSE                0xA0//Draw Ellipse/Ellipse Curve/Circle Square Control Register
 	#define RA8875_ELLIPSE_STATUS         0x80
 
 #define RA8875_ELL_A0         		  0xA1//Draw Ellipse/Circle Square Long axis Setting Register0
-#define RA8875_ELL_A1         		  0xA2//Draw Ellipse/Circle Square Long axis Setting Register1
+//#define RA8875_ELL_A1         		  0xA2//Draw Ellipse/Circle Square Long axis Setting Register1
 #define RA8875_ELL_B0         		  0xA3//Draw Ellipse/Circle Square Short axis Setting Register0
-#define RA8875_ELL_B1         		  0xA4//Draw Ellipse/Circle Square Short axis Setting Register1
+//#define RA8875_ELL_B1         		  0xA4//Draw Ellipse/Circle Square Short axis Setting Register1
 
 #define RA8875_DEHR0         		  0xA5//Draw Ellipse/Circle Square Center Horizontal Address Register0
-#define RA8875_DEHR1         		  0xA6//Draw Ellipse/Circle Square Center Horizontal Address Register1
+//#define RA8875_DEHR1         		  0xA6//Draw Ellipse/Circle Square Center Horizontal Address Register1
 #define RA8875_DEVR0         		  0xA7//Draw Ellipse/Circle Square Center Vertical Address Register0
-#define RA8875_DEVR1         		  0xA8//Draw Ellipse/Circle Square Center Vertical Address Register1
+//#define RA8875_DEVR1         		  0xA8//Draw Ellipse/Circle Square Center Vertical Address Register1
 
 #define RA8875_DTPH0         		  0xA9//Draw Triangle Point 2 Horizontal Address Register0
-#define RA8875_DTPH1         		  0xAA//Draw Triangle Point 2 Horizontal Address Register1
+//#define RA8875_DTPH1         		  0xAA//Draw Triangle Point 2 Horizontal Address Register1
 #define RA8875_DTPV0         		  0xAB//Draw Triangle Point 2 Vertical Address Register0
-#define RA8875_DTPV1         		  0xAC//Draw Triangle Point 2 Vertical Address Register1
+//#define RA8875_DTPV1         		  0xAC//Draw Triangle Point 2 Vertical Address Register1
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                            DMA REGISTERS
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #define RA8875_SSAR0				  0xB0//Source Starting Address REG 0
-#define RA8875_SSAR1				  0xB1//Source Starting Address REG 1
-#define RA8875_SSAR2				  0xB2//Source Starting Address REG 2
+//#define RA8875_SSAR1				  0xB1//Source Starting Address REG 1
+//#define RA8875_SSAR2				  0xB2//Source Starting Address REG 2
 //#define RA8875_????					0xB3//???????????
 
 #define RA8875_DTNR0				  0xB4//Block Width REG 0(BWR0) / DMA Transfer Number REG 0
