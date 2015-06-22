@@ -3,7 +3,7 @@
 
 
 //uncomment for wireframe
-//#define _WIREFRAME
+#define _WIREFRAME
 
 /*
 Teensy3.x
@@ -66,7 +66,7 @@ struct pt2d
 
 
 // define a value that corresponds to "1"
-#define U 100
+#define U 300
 
 // eye to screen distance (fixed)
 #define ZS U
@@ -316,6 +316,10 @@ void calc_and_draw(int16_t w, int16_t v)
 
 void setup(void)
 {
+//  Serial.begin(38400);
+//  long unsigned debug_start = millis ();
+//  while (!Serial && ((millis () - debug_start) <= 5000)) ;
+//  Serial.println("RA8875 start");
   tft.begin(RA8875_800x480);
 }
 
@@ -329,6 +333,10 @@ void loop(void)
   v &= 511;
   w++;
   w &= 63;
-  delay(10);
+  delay(30);
+  #if defined(_WIREFRAME)
   tft.fillRect(x_min, y_min, x_max - x_min + 3, y_max - y_min + 3, 0x0000);
+  #else
+  tft.fillRect(x_min, 0, x_max - x_min + 3, tft.height(), 0x0000);
+  #endif
 }
