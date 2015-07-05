@@ -152,7 +152,7 @@ void bmpDraw(const char *filename, uint16_t x, uint16_t y) {
             
             rowBuffer[col] = tft.Color565(sdbuffer[buffidx++], sdbuffer[buffidx++], sdbuffer[buffidx++]);
           } // end pixel
-          
+          tft.setY(y + row);
           tft.drawPixels(rowBuffer, w, x, y + row);
         } // end scanline
         Serial.print("Loaded in ");

@@ -46,6 +46,7 @@ drawFastHLine	KEYWORD2
 fillWindow	KEYWORD2
 clearScreen	KEYWORD2
 drawLine	KEYWORD2
+drawLineAngle	KEYWORD2
 drawRect	KEYWORD2
 fillRect	KEYWORD2
 drawCircle	KEYWORD2
@@ -103,7 +104,11 @@ writeCommand	KEYWORD2
 writeData16	KEYWORD2
 setX	KEYWORD2
 setY	KEYWORD2
-armTouchISR	KEYWORD2
+useINT	KEYWORD2
+useCapINT	KEYWORD2
+enableCapISR	KEYWORD2
+enableISR	KEYWORD2
+enableCapISR	KEYWORD2
 touched	KEYWORD2
 setTouchLimit	KEYWORD2
 getTouchLimit	KEYWORD2
@@ -131,6 +136,8 @@ writePattern	KEYWORD2
 keypadInit	KEYWORD2
 keypadTouched	KEYWORD2
 getKey	KEYWORD2
+setArcParams	KEYWORD2
+setAngleOffset	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################

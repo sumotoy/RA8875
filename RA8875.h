@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.70b2
+	Version:0.70b5
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -107,7 +107,8 @@ MOSI     11		51           YES       MOSI
 MISO     12		50            NO       MISO
 RST      9		 5           YES       RST
 CS       10		53           YES       CS
-
+basic setup:
+21.132 / 4.772
 */
 
 #ifndef _RA8875MC_H_
@@ -142,7 +143,7 @@ CS       10		53           YES       CS
   #include <math.h>
 #endif
 
-//pgmspace fixup
+//PROGMEM fixup
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//teensy 3 or 3.1 or LC
 	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
 	#define _FASTCPU
@@ -165,126 +166,96 @@ CS       10		53           YES       CS
 	#include <avr/pgmspace.h>
 #endif
 
-#include "_utility/RA8875Font.h"
+
 
 #if !defined(swapvals)
 	#define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
 #endif
 
-enum RA8875sizes { RA8875_480x272, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_800x480 };
-enum RA8875tcursor { NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
-enum RA8875tsize { X16=0,X24,X32 };//0,1,2
-enum RA8875fontSource { INT=0, EXT };//0,1
-enum RA8875fontCoding { ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
-enum RA8875extRomType { GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1 };
-enum RA8875extRomCoding { GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
-enum RA8875extRomFamily { STANDARD, ARIAL, ROMAN, BOLD };
-enum RA8875boolean { LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };
-enum RA8875writes { L1=0, L2, CGRAM, PATTERN, CURSOR };
-enum RA8875scrollMode{ SIMULTANEOUS, LAYER1ONLY, LAYER2ONLY, BUFFERED };
-enum RA8875pattern{ P8X8, P16X16 };
-enum RA8875btedatam{ CONT, RECT };
-enum RA8875btelayer{ SOURCE, DEST };
+enum RA8875sizes { 			RA8875_480x272, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_800x480 };
+enum RA8875tcursor { 		NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
+enum RA8875tsize { 			X16=0,X24,X32 };//0,1,2
+enum RA8875fontSource { 	INT=0, EXT };//0,1
+enum RA8875fontCoding { 	ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
+enum RA8875extRomType { 	GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1 };
+enum RA8875extRomCoding { 	GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
+enum RA8875extRomFamily { 	STANDARD, ARIAL, ROMAN, BOLD };
+enum RA8875boolean { 		LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };
+enum RA8875writes { 		L1=0, L2, CGRAM, PATTERN, CURSOR };
+enum RA8875scrollMode{ 		SIMULTANEOUS, LAYER1ONLY, LAYER2ONLY, BUFFERED };
+enum RA8875pattern{ 		P8X8, P16X16 };
+enum RA8875btedatam{ 		CONT, RECT };
+enum RA8875btelayer{ 		SOURCE, DEST };
+enum RA8875intlist{ 		BTE=1,TOUCH=2, DMA=3,KEY=4 };
 
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
-#include "_utility/RA8875Registers.h"
-#include "_utility/RA8875ColorPresets.h"
-#include "_utility/RA8875UserSettings.h"
-
-//include the support for FT5206
-#if defined (USE_FT5206_TOUCH)
-	#if !defined(USE_EXTERNALTOUCH)
-		#define USE_EXTERNALTOUCH//FT5206 doesn't use RA8875 stuff
-	#endif
-	#include "Wire.h"
-#endif
-
-#if !defined(USE_EXTERNALTOUCH)
-	#include "_utility/RA8875Calibration.h"
-#endif
+#include "_settings/font.h"
+#include "_settings/RA8875Registers.h"
+#include "_settings/RA8875ColorPresets.h"
+#include "_settings/RA8875UserSettings.h"
 
 #define CENTER 				9998
 #define ARC_ANGLE_MAX 		360		
 #define ARC_ANGLE_OFFSET 	-90	
+#define ANGLE_OFFSET		-90
 
 #if defined(__MKL26Z64__)
 	static bool _altSPI;
 #endif
 #ifdef SPI_HAS_TRANSACTION
-	static volatile uint32_t _maxspeed;//holder for SPI speed
+	static volatile uint32_t _SPImaxSpeed;//holder for SPI speed
 #endif
 
-// Touch screen cal structs
-typedef struct Point_TS { int32_t x; int32_t y; } tsPoint_t;//fix for DUE
-typedef struct Matrix_TS { int32_t An,Bn,Cn,Dn,En,Fn,Divider ; } tsMatrix_t;//fix for DUE
-//const
+
 static const uint8_t _RA8875colorMask[6] = {11,5,0,13,8,3};//for color masking, first 3 byte for 65K
 
 class RA8875 : public Print {
  public:
 	//void 		debugData(uint16_t data,uint8_t len=8);
-//------------- Instance -------------------------
+	//void 		test(const char *str);
+//------------- INSTANCE -------------------------------------------------------------------
 	#if defined(__MK20DX128__) || defined(__MK20DX256__)//Teensy 3.0, Teensy 3.1
-		#if defined (USE_FT5206_TOUCH)//with FT5206_TOUCH
-			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t INTp=2,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
-		#else
-			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
-		#endif
+		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
 	#elif defined(__MKL26Z64__)//TeensyLC with FT5206_TOUCH
-		#if defined (USE_FT5206_TOUCH)
-			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t INTp=2,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
-		#else
-			RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
-		#endif
+		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
 	#elif defined(__SAM3X8E__)//DUE
-		#if defined (USE_FT5206_TOUCH)// with FT5206_TOUCH
-			RA8875(const uint8_t CSp, const uint8_t RSTp=255,const uint8_t INTp=2);
-		#else
-			RA8875(const uint8_t CSp, const uint8_t RSTp=255);
-		#endif
+		RA8875(const uint8_t CSp, const uint8_t RSTp=255);
 	#elif defined(NEEDS_SET_MODULE)//ENERGIA
-		#if defined (USE_FT5206_TOUCH)//with FT5206_TOUCH
-			RA8875(const uint8_t module, const uint8_t RSTp=255,const uint8_t INTp=2);
-		#else
-			RA8875::RA8875(const uint8_t module, const uint8_t RSTp=255);
-		#endif
+		RA8875::RA8875(const uint8_t module, const uint8_t RSTp=255);
 	#else//8 BIT ARDUINO's
-		#if defined (USE_FT5206_TOUCH)//with FT5206_TOUCH
-			RA8875(const uint8_t CSp, const uint8_t RSTp=255,const uint8_t INTp=2);
-		#else
-			RA8875(const uint8_t CSp, const uint8_t RSTp=255);
-		#endif
+		RA8875(const uint8_t CSp, const uint8_t RSTp=255);
 	#endif
-//------------- Setup -------------------------
+//------------- SETUP -----------------------------------------------------------------------
 	void 		begin(const enum RA8875sizes s,uint8_t colors=16);
-	//(RA8875_320x240, RA8875_480x272, RA8875_640x480, RA8875_800x480, Adafruit_480x272, Adafruit_640x480, Adafruit_800x480) , (8/16 bit)
-//------------- Hardware related -------------------------
+	//(RA8875_480x272, RA8875_800x480, Adafruit_480x272, Adafruit_800x480) , (8/16 bit)
+//------------- HARDWARE ------------------------------------------------------------
 	void 		backlight(boolean on);
 	void    	displayOn(boolean on);//turn diplay on/off
 	void    	sleep(boolean sleep);//put display in sleep or not
 	void 		brightness(uint8_t val);//ok
 	uint8_t 	readStatus(void);//used to verify when an operation has concluded
 	void 		clearMemory(bool stop=false);
+	void 		clearWidthColor(bool bte);
 	//void		clearMemory(boolean full);//clear the RA8875 internal buffer (fully or current layer)
 	uint8_t		errorCode(void);//0: no error,
 	/*
 	format: 1byte 0b00000000;, bit described below:
 	nan,nan,nan,nan,nan,CS(out-of-range),MOSI/MISO/SCLK(out-of-range),display(not-recognized)
 	*/
-//------------ Low Level functions -----------------------
-	void    	writeCommand(uint8_t d);
+//------------ Low Level functions ---------------------------------------------------------
+	void    	writeCommand(const uint8_t d);
 	void  		writeData16(uint16_t data);
-//--------------area -------------------------------------
+//-------------- AREA ----------------------------------------------------------------------
 	void		setActiveWindow(int16_t XL,int16_t XR,int16_t YT,int16_t YB);//The working area where to draw on
 	void		setActiveWindow(void);
 	void 		getActiveWindow(int16_t &XL,int16_t &XR ,int16_t &YT ,int16_t &YB);
 	void		clearActiveWindow(bool full=false);//it clears the active window
-	uint16_t 	width(void) const;//the phisical display width
-	uint16_t 	height(void) const;//the phisical display height
+	uint16_t 	width(bool absolute=false) const;//the phisical display width
+	uint16_t 	height(bool absolute=false) const;//the phisical display height
 	void		setRotation(uint8_t rotation); //rotate text and graphics
 	uint8_t		getRotation(); //return the current rotation 0-3
 	boolean		isPortrait(void);
-//--------------color -------------------------------------
+//-------------- COLOR ----------------------------------------------------------------------
 	void		setForegroundColor(uint16_t color);//color of objects in 16bit
 	void		setForegroundColor(uint8_t R,uint8_t G,uint8_t B);//color of objects in 8+8+8bit
 	void		setBackgroundColor(uint16_t color);//color of objects background in 16bit
@@ -294,11 +265,11 @@ class RA8875 : public Print {
 	void 		setColor(uint16_t fcolor,uint16_t bcolor,bool bcolorTraspFlag=false);
 	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
 	uint8_t 	getColorBpp(void);//get the current display color space (return 8 or 16)
-//--------------color conversion ----------------------------
+//-------------- COLOR CONVERSION -----------------------------------------------------------
 	inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3); }
 	inline uint16_t Color24To565(int32_t color_) { return ((((color_ >> 16) & 0xFF) / 8) << 11) | ((((color_ >> 8) & 0xFF) / 4) << 5) | (((color_) &  0xFF) / 8);}
 	inline uint16_t htmlTo565(int32_t color_) { return (uint16_t)(((color_ & 0xF80000) >> 8) | ((color_ & 0x00FC00) >> 5) | ((color_ & 0x0000F8) >> 3));}
-//--------------Cursor Stuff---------------------------------
+//-------------- CURSOR ----------------------------------------------------------------------
 	void 		cursorIncrement(bool on);
 	void 		setCursorBlinkRate(uint8_t rate);//set blink rate of the cursor 0...255 0:faster
 	void 		showCursor(enum RA8875tcursor c,bool blink);//show cursor(NOCURSOR,IBEAM,UNDER,BLOCK), default blinking
@@ -307,7 +278,9 @@ class RA8875 : public Print {
 	void 		getCursorFast(int16_t &x, int16_t &y);//from library (faster)
 	int16_t		getCursorX(void);
 	int16_t		getCursorY(void);
-//--------------Text functions ------------------------------
+	void 		setGraphicCursor(uint8_t cur);//0...7 Select a custom graphic cursor (you should upload first)
+	void 		showGraphicCursor(boolean cur);//show graphic cursor
+//-------------- TEXT -----------------------------------------------------------------------
 	void 		uploadUserChar(const uint8_t symbol[],uint8_t address);//upload user defined char as array at the address 0..255
 	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//show user uploaded char at the adrs 0...255
 	void    	setTextColor(uint16_t fcolor, uint16_t bcolor);//set text color + text background color
@@ -320,24 +293,20 @@ class RA8875 : public Print {
 	void 		setFontFullAlign(boolean align);//mmmm... doesn't do nothing! Have to investigate
 	uint8_t 	getFontWidth(boolean inColums=false);
 	uint8_t 	getFontHeight(boolean inRows=false);
-	//----------Font Selection and related..............................
+	//----------FONT -------------------------------------------------------------------------
 	void		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
 	void 		setFont(enum RA8875fontSource s);//INT,EXT (if you have a chip installed)
+	//void 		setFont(const struct FONT_DEF *	fnt);
+	void		setFont(const tFont *font);
 	void 		setIntFontCoding(enum RA8875fontCoding f);
 	void		setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg=true);
-//--------------Font Rendering Engine (ALPHA!!!! only a test) -------------------------
-	void 		gPrint(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1);
-	void 		gPrint(uint16_t x,uint16_t y,int num,uint16_t color,uint8_t scale,const struct FONT_DEF *strcut1);
-	void 		gPrintEfx(uint16_t x,uint16_t y,const char *in,uint16_t color,uint8_t pixellation,const struct FONT_DEF *strcut1);
-//--------------Graphic Funcions -------------------------
+//-------------- GRAPHIC POSITION --------------------------------------------------------------
 	void    	setXY(int16_t x, int16_t y);//graphic set location
 	void 		setX(int16_t x);
 	void 		setY(int16_t y) ;
-	void 		setGraphicCursor(uint8_t cur);//0...7 Select a custom graphic cursor (you should upload first)
-	void 		showGraphicCursor(boolean cur);//show graphic cursor
-	//--------------- DRAW -------------------------
+	//--------------- DRAW ---------------------------------------------------------------------
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
-	void 		drawPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y);
+	void 		drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y);
 	uint16_t 	getPixel(int16_t x, int16_t y);
 	//void 		getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y);
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
@@ -345,6 +314,8 @@ class RA8875 : public Print {
 	void    	fillWindow(uint16_t color=_RA8875_DEFAULTBACKLIGHT);//fill the ActiveWindow with a color(default black)
 	void		clearScreen(uint16_t color=_RA8875_DEFAULTBACKLIGHT);//fill the entire screen (regardless ActiveWindow) with a color(default black)
 	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+	void 		drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length, uint16_t color);
+	void 		drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t start, uint16_t length, uint16_t color);
 	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
@@ -360,32 +331,33 @@ class RA8875 : public Print {
 	void 		drawQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2,int16_t x3, int16_t y3, uint16_t color);
 	void 		fillQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2, int16_t x3, int16_t y3, uint16_t color);
 	void 		drawPolygon(int16_t cx, int16_t cy, uint8_t sides, int16_t diameter, float rot, uint16_t color);
+	void 		drawMesh(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t spacing,uint16_t color);
+	void 		setArcParams(float arcAngleMax, int arcAngleOffset);
+	void 		setAngleOffset(int16_t angleOffset);
 	inline __attribute__((always_inline)) void drawArc(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float start, float end, uint16_t color) {
-		if (start == 0 && end == _arcAngleMax) {
-			drawArcHelper(cx, cy, radius, thickness, 0, _arcAngleMax, color);
+		if (start == 0 && end == _arcAngle_max) {
+			_drawArc_helper(cx, cy, radius, thickness, 0, _arcAngle_max, color);
 		} else {
-			drawArcHelper(cx, cy, radius, thickness, start + (_arcAngleOffset / (float)360)*_arcAngleMax, end + (_arcAngleOffset / (float)360)*_arcAngleMax, color);
+			_drawArc_helper(cx, cy, radius, thickness, start + (_arcAngle_offset / (float)360)*_arcAngle_max, end + (_arcAngle_offset / (float)360)*_arcAngle_max, color);
 		}	
 	}
-
-//-------------- LAYERS -----------------------------------------
+//-------------- LAYERS --------------------------------------------------------------------------
 	void 		useLayers(boolean on);//mainly used to turn of layers!
 	void		writeTo(enum RA8875writes d);//L1, L2, CGRAM, PATTERN, CURSOR
 	void 		layerEffect(enum RA8875boolean efx);//LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING
 	void 		layerTransparency(uint8_t layer1,uint8_t layer2);
 	uint8_t		getCurrentLayer(void); //return the current drawing layer. If layers are OFF, return 255
-//--------------- SCROLL ----------------------------------------
+//--------------- SCROLL --------------------------------------------------------------------------
 	void        setScrollMode(enum RA8875scrollMode mode); // The experimentalist
 	void 		setScrollWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB);
 	void 		scroll(int16_t x,int16_t y);
-//-------------- DMA -------------------------------
+//-------------- DMA ------------------------------------------------------------------------------
 	void 		DMA_blockModeSize(int16_t BWR,int16_t BHR,int16_t SPWR);
 	void 		DMA_startAddress(unsigned long adrs);
 	void 		DMA_enable(void);
 	void 		drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum);
-//-------------- BTE --------------------------------------------
+//-------------- BTE -------------------------------------------------------------------------------
 	void 		BTE_size(int16_t w, int16_t h);
-	//void	 	BTE_fromTo(int16_t SX,int16_t DX ,int16_t SY ,int16_t DY);
 	void	 	BTE_moveFrom(int16_t SX,int16_t SY);
 	void	 	BTE_moveTo(int16_t DX,int16_t DY);
 	//void 		BTE_source_destination(uint16_t SX,uint16_t DX ,uint16_t SY ,uint16_t DY);
@@ -394,213 +366,272 @@ class RA8875 : public Print {
 	void 		BTE_dataMode(enum RA8875btedatam m);//CONT,RECT
 	void 		BTE_layer(enum RA8875btelayer sd,uint8_t l);//SOURCE,DEST - 1 or 2
 	void		BTE_move(int16_t SourceX, int16_t SourceY, int16_t Width, int16_t Height, int16_t DestX, int16_t DestY, uint8_t SourceLayer=0, uint8_t DestLayer=0, bool Transparent = false, uint8_t ROP=RA8875_BTEROP_SOURCE, bool Monochrome=false, bool ReverseDir = false);
-	//---------- pattern --------------------------------------------
+	//---------- PATTERN --------------------------------------------------------------------------
 	void 		setPattern(uint8_t num, enum RA8875pattern p=P8X8);
 	void 		writePattern(int16_t x,int16_t y,const uint8_t *data,uint8_t size,bool setAW=true);
 //-------------- GPIO & PWM -------------------------
 	void    	GPIOX(boolean on);
 	void    	PWMout(uint8_t pw,uint8_t p);//1:backlight, 2:free
-//-------------- Touch Screen -------------------------
-#if !defined(USE_EXTERNALTOUCH)
-	void 		touchBegin(uint8_t intPin);//prepare Touch Screen driver
-	void    	touchEnable(boolean enabled);//enable/disable Touch Polling (disable INT)
-	boolean 	touchDetect(boolean autoclear=false);//true=touch detected
-	//Note:		must followed by touchReadxxx or use autoclear=true for standalone
-	void 		touchReadAdc(uint16_t *x, uint16_t *y);//returns 10bit ADC data (0...1024)
-	void 		touchReadPixel(uint16_t *x, uint16_t *y);//return pixels (0...width, 0...height)
-	boolean		touchCalibrated(void);//true if screen calibration it's present
-#endif
-//--------------Capacitive Touch Screen FT5206 -------------------------
-#if defined (USE_FT5206_TOUCH)
-	void 		armTouchISR(bool force = false); 
+//-------------- ISR ------------------------------------------------------------------------------
+	void		useINT(const uint8_t INTpin=2,const uint8_t INTnum=0);
+	void 		enableISR(bool force = false); 
+	void 		setInternalInt(enum RA8875intlist b);//   BTE,TOUCH,DMA,KEY
+	void 		clearInternalInt(enum RA8875intlist b);// BTE,TOUCH,DMA,KEY
+//-------------- TOUCH SCREEN ---------------------------------------------------------------------
+#if !defined(_AVOID_TOUCHSCREEN)
 	bool 		touched(bool safe=false);
-	void 		setTouchLimit(uint8_t limit);
+	void 		setTouchLimit(uint8_t limit);//5 for FT5206, 1 for  RA8875
 	uint8_t 	getTouchLimit(void);
-	void	 	updateTS(void);
-	uint8_t 	getGesture(void);
-	uint8_t 	getTouches(void);
-	uint8_t 	getTouchState(void);
-	uint8_t 	getTScoordinates(uint16_t (*touch_coordinates)[2]);
+#	if defined(USE_RA8875_TOUCH)
+		//void		useINT(const uint8_t INTpin=2,const uint8_t INTnum=0);
+		//void 		enableISR(bool force = false); 
+		void 		touchBegin(void);//prepare Touch Screen driver
+		void    	touchEnable(boolean enabled);//enable/disable Touch Polling (disable INT)
+		void 		touchReadAdc(uint16_t *x, uint16_t *y);//returns 10bit ADC data (0...1024)
+		void 		touchReadPixel(uint16_t *x, uint16_t *y);//return pixels (0...width, 0...height)
+		boolean		touchCalibrated(void);//true if screen calibration it's present
+	#elif defined (USE_FT5206_TOUCH)
+		void		useCapINT(const uint8_t INTpin=2,const uint8_t INTnum=0);
+		void 		enableCapISR(bool force = false); 
+		void	 	updateTS(void);
+		uint8_t 	getGesture(void);
+		uint8_t 	getTouches(void);
+		uint8_t 	getTouchState(void);
+		uint8_t 	getTScoordinates(uint16_t (*touch_coordinates)[2]);
+	#endif
 #endif
 
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
-	textWrite((const char *)&b, 1);
+	_textWrite((const char *)&b, 1);
 	return 1;
 }
 
 virtual size_t write(const uint8_t *buffer, size_t size) {
-	textWrite((const char *)buffer, size);
+	_textWrite((const char *)buffer, size);
 	return size;
 }
 
 using Print::write;
 
  protected:
-	uint8_t _rst;
-	#if defined (USE_FT5206_TOUCH)
-		uint8_t _ctpInt;
+	volatile bool 				  _textMode;
+	volatile uint8_t 			  _MWCR0_Reg; //keep track of the register 		  [0x40]
+	int16_t 		 			   RA8875_WIDTH, 	   RA8875_HEIGHT;//absolute
+	int16_t 		 			  _width, 			  _height;
+	int16_t						  _cursorX, 		  _cursorY;
+	uint8_t 		 			  _FNTscaleX, 		  _FNTscaleY;	
+	uint8_t						  _FNTwidth, 		  _FNTheight;
+	uint8_t						  _FNTbaselineLow, 	  _FNTbaselineTop;
+	volatile uint8_t			  _TXTparameters;
+	/* It contains several parameters in one byte
+	bit			 parameter
+	0	->		_extFontRom 		i's using an ext rom font
+	1	->		_autoAdvance		after a char the pointer move ahead
+	2	->		_textWrap
+	3	->		_fontFullAlig		
+	4	->		_fontRotation       (actually not used)
+	5	->		_alignXToCenter;
+	6	->		_alignYToCenter;
+	7	->		_renderFont active;
+	*/
+	bool						  _FNTcompression;
+	int							  _spaceCharWidth;
+	volatile bool				  _needISRrearm;
+	volatile uint8_t			  _enabledInterrups;
+	static void 		 		  _isr(void);
+	
+	#if !defined(_AVOID_TOUCHSCREEN)
+		volatile bool			  _touchEnabled;
+		volatile bool			  _clearTInt;
 	#endif
+
+	#if defined(USE_FT5206_TOUCH)
+		volatile bool			  _needCTS_ISRrearm;
+		static void 		 	  cts_isr(void);
+	#elif defined(USE_RA8875_TOUCH)
+		//volatile bool			  _touchEnabled;
+		//volatile bool			  _clearTInt;
+	#endif
+
+	
 	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
-		uint8_t _cs;
-		uint8_t _miso, _mosi, _sclk;
+		uint8_t 				  _cs;
+		uint8_t 				  _miso, _mosi, _sclk;
 	#elif defined(ENERGIA)
 		uint8_t _cs;
 	#else
 		#if defined(__SAM3X8E__)
 			#if defined(_FASTSSPORT)
-				volatile uint32_t *csport;
-				uint32_t _cs, cspinmask;
+				uint32_t 		  _cs, cspinmask;
 			#else
-				uint8_t _cs;
+				uint8_t 		  _cs;
 			#endif
 		#else
 			#if defined(_FASTSSPORT)
-				volatile uint8_t *csport;
-				uint8_t _cs, cspinmask;
+				uint8_t 		  _cs, cspinmask;
 			#else
-				uint8_t _cs;
+				uint8_t 		  _cs;
 			#endif
 		#endif
 	#endif
  private:
-	volatile bool 			_currentMode;
-
+	uint8_t							_rst;
+	uint8_t							_intPin;
+	uint8_t						 	_intNum;
+	bool							_useISR;
+	const tFont 			  	 *  _currentFont;
+	bool 						 	_checkInterrupt(uint8_t _bit,bool _clear=true);
 	// Touch Screen vars ---------------------
-	#if defined (USE_FT5206_TOUCH)//internal FT5206 driver
-		uint8_t					_maxTouch;
-		static void 		 	isr(void);
-		uint8_t 				_cptRegisters[28];
-		uint8_t					_gesture;
-		uint8_t					_currentTouches;//0...5
-		uint8_t					_currentTouchState;//0,1,2
-		bool					_needISRrearm;
-		void 					initFT5206(void);
-		void 					regFT5206(uint8_t reg,uint8_t val);
-	#endif
-	#if !defined(USE_EXTERNALTOUCH)
-		uint8_t					_touchPin;
-		bool					_clearTInt;
-		uint16_t 				_tsAdcMinX,_tsAdcMinY,_tsAdcMaxX,_tsAdcMaxY;
-		bool					_touchEnabled;
+	#if !defined(_AVOID_TOUCHSCREEN)
+	uint8_t						    _maxTouch;//5 on FT5206, 1 on resistive
+	void 						    _disableISR(void);
+		#if defined(USE_FT5206_TOUCH)// FT5206 specifics
+			uint8_t					_intCTSNum;
+			uint8_t					_intCTSPin;
+			uint8_t 				_cptRegisters[28];
+			uint8_t					_gesture;
+			uint8_t					_currentTouches;//0...5
+			uint8_t					_currentTouchState;//0,1,2
+			void 					_initializeFT5206(void);
+			void 					_sendRegFT5206(uint8_t reg,const uint8_t val);
+			void 					_disableCapISR(void);
+		#elif defined(USE_RA8875_TOUCH)//RA8875 internal resistive specifics
+			uint16_t 				_tsAdcMinX,_tsAdcMinY,_tsAdcMaxX,_tsAdcMaxY;
+			void					readTouchADC(uint16_t *x, uint16_t *y);
+			bool					_calibrated;
+			boolean					_isCalibrated(void);//true if screen calibration it's present
+		#endif
 	#endif
 	#if defined(USE_RA8875_KEYMATRIX)
-		bool					_keyMatrixEnabled;
+		bool						_keyMatrixEnabled;
 	#endif
 	//system vars -------------------------------------------
-	bool					_inited;//true when init has been ended
-	bool					_sleep;
-	bool					_portrait;
-	uint8_t					_rotation;
-	uint8_t					_initIndex;
-	int16_t 		 		_width, _height;//relative to rotation
-	int16_t 		 		WIDTH, HEIGHT;//absolute
-	int16_t					_activeWindowXL;
-	int16_t					_activeWindowXR;
-	int16_t					_activeWindowYT;
-	int16_t					_activeWindowYB;
-	uint8_t					_errorCode;
+	bool							_inited;//true when init has been ended
+	bool							_sleep;
+	enum RA8875sizes 				_displaySize;//Adafruit_480x272, etc
+	bool							_portrait;
+	uint8_t							_rotation;
+	uint8_t							_initIndex;
+	int16_t							_activeWindowXL,_activeWindowXR,_activeWindowYT,_activeWindowYB;
+	uint8_t							_errorCode;
 	//color vars ----------------------------------------------
-	uint16_t				_foreColor;
-	uint16_t				_backColor;
-	bool					_backTransparent;
-	uint8_t					_colorIndex;
+	uint16_t						_foreColor;
+	uint16_t						_backColor;
+	bool							_backTransparent;
+	uint8_t							_colorIndex;
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
-		uint16_t				_textForeColor;
-		uint16_t				_textBackColor;
-		bool					_recoverTextColor;
+		uint16_t					_TXTForeColor;
+		uint16_t					_TXTBackColor;
+		bool						_TXTrecoverColor;
 	#endif
-	//text vars-------------------------------------------------
-	int16_t					_cursorX, _cursorY;//try to internally track text cursor...
-	uint8_t 		 		_textHScale, _textVScale;	 		
-	uint8_t					_fontSpacing;
-	uint8_t					_fontInterline;
-	/*
-	bit			 parameter
-	0	->		_extFontRom
-	1	->		_autoAdvance
-	2	->		_textWrap
-	3	->		_fontFullAlig
-	4	->		_fontRotation
-	5	->		_alignXToCenter;
-	6	->		_alignYToCenter;
-	*/
-	bool					_centerFlag;
-	bool					_autocenter;
-	uint8_t					_commonTextPar;
-	enum RA8875extRomFamily _fontFamily;
-	enum RA8875extRomType 	_fontRomType;
-	enum RA8875extRomCoding _fontRomCoding;
-	enum RA8875tsize		_textSize;
-	enum RA8875sizes 		_size;
-	enum RA8875fontSource 	_fontSource;
-	enum RA8875tcursor		_textCursorStyle;
+	//text vars-------------------------------------------------		
+	uint8_t							_FNTspacing;
+	uint8_t							_FNTinterline;
+	enum RA8875extRomFamily 		_EXTFNTfamily;
+	enum RA8875extRomType 			_EXTFNTrom;
+	enum RA8875extRomCoding 		_EXTFNTcoding;
+	enum RA8875tsize				_EXTFNTsize;//X16,X24,X32
+	enum RA8875fontSource 			_FNTsource;
+	enum RA8875tcursor				_FNTcursorType;
+	//centering -------------------------------
+	bool							_relativeCenter;
+	bool							_absoluteCenter;
 	//layer vars -----------------------------
-	uint8_t					_maxLayers;
-	bool					_useMultiLayers;
-	uint8_t					_currentLayer;
-	bool 					_hasLayerLimits;//helper
+	uint8_t							_maxLayers;
+	bool							_useMultiLayers;
+	uint8_t							_currentLayer;
+	bool 							_hasLayerLimits;//helper
 	//scroll vars ----------------------------
-	int16_t					_scrollXL,_scrollXR,_scrollYT,_scrollYB;
+	int16_t							_scrollXL,_scrollXR,_scrollYT,_scrollYB;
 	//color space-----------------------------
-	uint8_t					_color_bpp;//8=256, 16=64K colors
-	uint8_t					_brightness;
+	uint8_t							_color_bpp;//8=256, 16=64K colors
+	uint8_t							_brightness;
 	//various
-	float 					_arcAngleMax;
-	int 					_arcAngleOffset;
+	float 							_arcAngle_max;
+	int 							_arcAngle_offset;
+	int								_angle_offset;
 	// Register containers -----------------------------------------
 	// this needed to  prevent readRegister from chip that it's slow.
-	volatile uint8_t _MWCR0Reg; //keep track of the register 		  [0x40]
-	uint8_t			 _DPCRReg;  ////Display Configuration		  	  [0x20]
-	uint8_t			 _FNCR0Reg; //Font Control Register 0 		  	  [0x21]
-	uint8_t			 _FNCR1Reg; //Font Control Register1 			  [0x22]
-	uint8_t			 _FWTSETReg; //Font Write Type Setting Register   [0x2E]
-	uint8_t			 _SFRSETReg; //Serial Font ROM Setting 		  	  [0x2F]
-	uint8_t			 _TPCR0Reg; //Touch Panel Control Register 0	  [0x70]
-	uint8_t			 _INTC1Reg; //Interrupt Control Register1		  [0xF0]
-	//		functions --------------------------
-	void 	initialize();
-	void 	setSysClock(uint8_t pll1,uint8_t pll2,uint8_t pixclk);
-	void    textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
-	void 	PWMsetup(uint8_t pw,boolean on, uint8_t clock);
-	void 	updateActiveWindow(bool full);
-	void 	changeMode(bool m);
-	void 	scanDirection(boolean invertH,boolean invertV);
+	
+	uint8_t			 _DPCR_Reg;  ////Display Configuration		  	  [0x20]
+	uint8_t			 _FNCR0_Reg; //Font Control Register 0 		  	  [0x21]
+	uint8_t			 _FNCR1_Reg; //Font Control Register1 			  [0x22]
+	uint8_t			 _FWTSET_Reg; //Font Write Type Setting Register   [0x2E]
+	uint8_t			 _SFRSET_Reg; //Serial Font ROM Setting 		  	  [0x2F]
+	uint8_t			 _INTC1_Reg; //Interrupt Control Register1		  [0xF0]
+	//		functions --------------------------------------------------
+	void 		_initialize();
+	void 		_setSysClock(uint8_t pll1,uint8_t pll2,uint8_t pixclk);
+	//      TEXT writing stuff-------------------------------------------
+	void    	_textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
+	void 		_charWrite(const char c,uint8_t offset);
+	void 		_charWriteR(const char c,uint8_t xScale,uint8_t yScale,uint8_t offset,uint16_t fcolor,uint16_t bcolor);
+	int 		_getCharCode(uint8_t ch);
+	void 		_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uint16_t fcolor,uint16_t bcolor);
+	void 		_drawChar_com(int16_t x,int16_t y,int16_t w,const uint8_t *data);
+	void 		_textPosition(int16_t x, int16_t y,bool update);
+	void 		_setFNTdimensions(uint8_t index);
+	int16_t 	_STRlen_helper(const char* buffer,uint16_t len=0);
+	void 		fontRomSpeed(uint8_t sp);
+	//--------------------------------------------------------------------
+	void 		PWMsetup(uint8_t pw,boolean on, uint8_t clock);
+	void 		_updateActiveWindow(bool full);
+	void 		_setTextMode(bool m);
+	void 		_scanDirection(boolean invertH,boolean invertV);
 	// 		helpers-----------------------------
-	void 	setTextPosition(int16_t x, int16_t y,bool update);
-	void 	circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
-	void 	rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
-	void 	triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
-	void 	ellipseCurveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis,uint8_t curvePart, uint16_t color, bool filled);
-	void 	lineAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
-	void 	curveAddressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
-	void 	roundRectHelper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);
-	void 	drawArcHelper(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float startAngle, float endAngle, uint16_t color);
-	float 	cosDegrees(float angle);
-	float 	sinDegrees(float angle);
-	void 	setArcParams(float arcAngleMax, int arcAngleOffset);
-	#if !defined(USE_EXTERNALTOUCH)
-		void	readTouchADC(uint16_t *x, uint16_t *y);
-		void 	clearTouchInt(void);
-		boolean touched(void);
-	#endif
+	
+	void 		_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
+	void 		_rect_helper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
+	void 		_roundRect_helper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);
+	void 		_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
+	void 		_ellipseCurve_helper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis,uint8_t curvePart, uint16_t color, bool filled);
+	void 		_drawArc_helper(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float startAngle, float endAngle, uint16_t color);
+	void 		_line_addressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
+	void 		_curve_addressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
+	float 		_cosDeg_helper(float angle);
+	float 		_sinDeg_helper(float angle);
+
+
+
 	inline __attribute__((always_inline)) 
-		void checkLimitsHelper(int16_t &x,int16_t &y){
+		void _checkLimits_helper(int16_t &x,int16_t &y){
 			if (x < 0) x = 0;
 			if (y < 0) y = 0;
-			if (x >= WIDTH) x = WIDTH - 1;
-			if (y >= HEIGHT) y = HEIGHT -1;
+			if (x >= RA8875_WIDTH) x = RA8875_WIDTH - 1;
+			if (y >= RA8875_HEIGHT) y = RA8875_HEIGHT -1;
 			x = x;
 			y = y;
 		}
+		
+	inline __attribute__((always_inline)) 	
+		void _center_helper(int16_t &x, int16_t &y){
+			//if (x == CENTER) x = RA8875_WIDTH/2;
+			//if (y == CENTER) y = RA8875_HEIGHT/2;
+			if (x == CENTER) x = _width/2;
+			if (y == CENTER) y = _height/2;
+		}
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+	#elif defined(ENERGIA)
+	#else
+		#if defined(__SAM3X8E__)
+			#if defined(_FASTSSPORT)
+				volatile uint32_t *csport;
+			#endif
+		#else
+			#if defined(_FASTSSPORT)
+				volatile uint8_t *csport;
+			#endif
+		#endif
+	#endif
     // Low level access  commands ----------------------
 	inline __attribute__((always_inline)) 
-	void startSend(){
+	void _startSend(){
 		#if defined(SPI_HAS_TRANSACTION)
 			#if defined(__MKL26Z64__)	
-				_altSPI == true ? SPI1.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3)) : SPI.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
+				_altSPI == true ? SPI1.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3)) : SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
 			#else
-				SPI.beginTransaction(SPISettings(_maxspeed, MSBFIRST, SPI_MODE3));
+				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
 			#endif
 		#elif !defined(ENERGIA)
 			cli();//protect from interrupts
@@ -625,7 +656,7 @@ using Print::write;
 	}
 	
 	inline __attribute__((always_inline)) 
-	void endSend(){
+	void _endSend(){
 	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 		digitalWriteFast(_cs, HIGH);
 	#else
@@ -653,12 +684,12 @@ using Print::write;
 		sei();//enable interrupts
 	#endif
 } 
-	void    	writeReg(uint8_t reg, uint8_t val);
-	uint8_t 	readReg(uint8_t reg);
-	void    	writeData(uint8_t data);
-	uint8_t 	readData(bool stat=false);
-	boolean 	waitPoll(uint8_t r, uint8_t f);//from adafruit
-	void 		waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
+	void    	_writeRegister(const uint8_t reg, uint8_t val);
+	uint8_t 	_readRegister(const uint8_t reg);
+	void    	_writeData(uint8_t data);
+	uint8_t 	_readData(bool stat=false);
+	boolean 	_waitPoll(uint8_t r, uint8_t f);//from adafruit
+	void 		_waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 
 	#if defined(NEEDS_SET_MODULE)//for Energia
 		void 		selectCS(uint8_t module);
@@ -666,20 +697,20 @@ using Print::write;
 
 #if defined(_FASTCPU)
 inline __attribute__((always_inline)) 
-void slowDownSPI(bool slow)
+void _slowDownSPI(bool slow,uint32_t slowSpeed=10000000)
 {
 	#if defined(SPI_HAS_TRANSACTION)
 		if (slow){
-			_maxspeed = 10000000;
+			_SPImaxSpeed = slowSpeed;
 		} else {
 			#if defined(__MKL26Z64__)	
 				if (_altSPI){
-					_maxspeed = 22000000;//TeensyLC max SPI speed on alternate SPI
+					_SPImaxSpeed = MAXSPISPEED2;//TeensyLC max SPI speed on alternate SPI
 				} else {
-					_maxspeed = MAXSPISPEED;
+					_SPImaxSpeed = MAXSPISPEED;
 				}
 			#else
-				_maxspeed = MAXSPISPEED;
+				_SPImaxSpeed = MAXSPISPEED;
 			#endif
 		}
 	#else
@@ -702,7 +733,7 @@ void slowDownSPI(bool slow)
 
 #if defined(__AVR__)
 	inline __attribute__((always_inline))
-		void spiwrite16(uint16_t d) {
+		void _spiwrite16(uint16_t d) {
 			SPDR = highByte(d);
 			while (!(SPSR & _BV(SPIF)));
 			SPDR = lowByte(d);
@@ -710,14 +741,14 @@ void slowDownSPI(bool slow)
 		}
 
 	inline __attribute__((always_inline))
-		void spiwrite(uint8_t c) {
+		void _spiwrite(uint8_t c) {
 			SPDR = c;
 			//asm volatile("nop");
 			while (!(SPSR & _BV(SPIF)));
 		}
 		
 	inline __attribute__((always_inline))
-		uint8_t spiread(void) {
+		uint8_t _spiread(void) {
 			uint8_t r = 0;
 			SPDR = 0x00;
 			//asm volatile("nop");

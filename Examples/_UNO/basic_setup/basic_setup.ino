@@ -13,11 +13,8 @@ You are using 4 wire SPI here, so:
  the rest of pin below:
  */
 
-#define RA8875_CS 10 //see below...
-/*
-Arduino's 8 bit: any
-*/
-#define RA8875_RESET 9//any pin or 255 to disable it!
+#define RA8875_CS 10 //Uno can use any pin
+#define RA8875_RESET 9//any pin, 255 disable it or just avoid
 
 
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's
@@ -30,18 +27,8 @@ void setup()
   //long unsigned debug_start = millis ();
   //while (!Serial && ((millis () - debug_start) <= 5000)) ;
   Serial.println("RA8875 start");
-/*
-If you have an Adafruit RA8875 board + display choose:
-Adafruit_480x272
-Adafruit_640x480
-Adafruit_800x480
-If you have any other display you have to choose:
-RA8875_320x240
-RA8875_480x272
-RA8875_800x480
-RA8875_640x480
-*/
   tft.begin(RA8875_800x480);
+  /* Adafruit_480x272 Adafruit_800x480 RA8875_480x272 RA8875_800x480 */
 /*
 By default the library init display at 16bit color depth but
 you can optionally force the display to work at 8 bit:

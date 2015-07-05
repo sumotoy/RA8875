@@ -17,13 +17,8 @@ and you have max 5 concurrent touches plus gesture and more...
 
 #define MAXTOUCHLIMIT     5//1...5
 
-
-
-#if defined(USE_FT5206_TOUCH)
-RA8875 tft = RA8875(RA8875_CS, RA8875_RESET, RA8875_INT);
-#else
 RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
-#endif
+
 
 void setup(){
   /*
@@ -32,17 +27,18 @@ void setup(){
   while (!Serial && ((millis () - debug_start) <= 5000)) ;
   */
   tft.begin(RA8875_800x480);
-  tft.setTextColor(RA8875_WHITE,RA8875_BLACK);
   #if defined(USE_FT5206_TOUCH)
+  tft.useCapINT(RA8875_INT);//we use the capacitive chip Interrupt out!
   //the following set the max touches (max 5)
   //it can be placed inside loop but BEFORE touched()
   //to limit dinamically the touches (for example to 1)
   tft.setTouchLimit(MAXTOUCHLIMIT);
   //tft.setRotation(0);//this works in any rotation mode!
-  tft.armTouchISR(true);//touch screen interrupt it's armed
+  tft.enableCapISR(true);//touch screen interrupt it's armed
   #else
   tft.print("you should open RA8875UserSettings.h file and uncomment USE_FT5206_TOUCH!");
   #endif
+  tft.setTextColor(RA8875_WHITE,RA8875_BLACK);
 }
 
 void loop(){
@@ -73,7 +69,7 @@ void loop(){
       if (i == 5)tempCol = RA8875_YELLOW;
       tft.fillCircle(coordinates[i-1][0],coordinates[i-1][1],10,tempCol);
     }
-    tft.armTouchISR();//rearm ISR if needed (touched(true))
+    tft.enableCapISR();//rearm ISR if needed (touched(true))
     //otherwise it doesn't do nothing...
   }
   #endif

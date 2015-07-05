@@ -1,4 +1,4 @@
-/*
+ /*
 	Grab bmp image from an sd card.
  	It reads column by column and send each to RA8875
 	It uses the SDfat library of Bill Greyman
@@ -10,6 +10,7 @@
 
  */
 #include <SPI.h>
+#include <Wire.h>
 #include <RA8875.h>
 #include <SdFat.h>
 
@@ -23,15 +24,12 @@ You are using 4 wire SPI here, so:
  the rest of pin below:
  */
 
-#define SDCSPIN      6//for SD
-#define RA8875_CS 10 //see below...
+#define SDCSPIN      10//for SD
+#define RA8875_CS 	 20 //see below...
 /*
 Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 */
-#define RA8875_RESET 9//any pin or nothing!
-
-#define BUFFPIXEL 30
-
+#define RA8875_RESET 255//any pin or nothing!
 
 RA8875 tft = RA8875(RA8875_CS, RA8875_RESET); //Teensy3/arduino's
 SdFat SD;
@@ -51,7 +49,7 @@ void setup()
     return;
   }
   Serial.println("OK!");
-  bmpDraw("keya.bmp", 0, 480-274);//copy the enclosed image in a SD card (check the folder!!!)
+  bmpDraw("keya.bmp", 0, 0);//copy the enclosed image in a SD card (check the folder!!!)
 }
 
 void loop()
@@ -64,17 +62,14 @@ void loop()
 void bmpDraw(const char *filename, uint16_t x, uint16_t y) {
 
   
-  uint16_t      bmpWidth, bmpHeight;   // W+H in pixels
+  uint16_t bmpWidth, bmpHeight;   // W+H in pixels
   uint8_t  bmpDepth;              // Bit depth (currently must be 24)
   uint32_t bmpImageoffset;        // Start of image data in file
   uint32_t rowSize;               // Not always = bmpWidth; may have padding
-  uint8_t  sdbuffer[3 * BUFFPIXEL]; // pixel buffer (R+G+B per pixel)
-  uint16_t  buffidx = 0; 
   boolean  goodBmp = false;       // Set to true on valid header parse
   boolean  flip    = true;        // BMP is stored bottom-to-top
   int16_t      w, h, row, col;
   uint32_t pos = 0, startTime = millis();
-  buffidx = sizeof(sdbuffer);// Current position in sdbuffer
   if ((x >= tft.width()) || (y >= tft.height())) return;
 
   Serial.println();
@@ -102,23 +97,16 @@ void bmpDraw(const char *filename, uint16_t x, uint16_t y) {
       bmpDepth = read16(bmpFile); // bits per pixel
       Serial.print("Bit Depth: "); Serial.println(bmpDepth);
       if ((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
-
         goodBmp = true; // Supported BMP format -- proceed!
         Serial.print("Image size: ");
         Serial.print(bmpWidth);
         Serial.print('x');
         Serial.println(bmpHeight);
-
         // BMP rows are padded (if needed) to 4-byte boundary
         rowSize = (bmpWidth * 3 + 3) & ~3;
-
         // If bmpHeight is negative, image is in top-down order.
         // This is not canon but has been observed in the wild.
-        if (bmpHeight < 0) {
-          bmpHeight = -bmpHeight;
-          flip      = false;
-        }
-
+        if (bmpHeight < 0) {bmpHeight = -bmpHeight; flip = false;}
         // Crop area to be loaded
         w = bmpWidth;
         h = bmpHeight;
@@ -138,21 +126,13 @@ void bmpDraw(const char *filename, uint16_t x, uint16_t y) {
             pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
           else     // Bitmap is stored top-to-bottom
             pos = bmpImageoffset + row * rowSize;
-          if (bmpFile.position() != pos) { // Need seek?
-            bmpFile.seek(pos);
-            buffidx = sizeof(sdbuffer); // Force buffer reload
-          }
-
+          if (bmpFile.position() != pos) bmpFile.seek(pos);
           for (col = 0; col < w; col++) { // For each pixel...
-            // Time to read more pixel data?
-            if (buffidx >= sizeof(sdbuffer)) { // Indeed
-              bmpFile.read(sdbuffer, sizeof(sdbuffer));
-              buffidx = 0; // Set index to beginning
-            }
-            
-            rowBuffer[col] = tft.Color565(sdbuffer[buffidx++], sdbuffer[buffidx++], sdbuffer[buffidx++]);
+            uint8_t temp[3];
+            bmpFile.read(temp,3);
+            rowBuffer[col] = tft.Color565(temp[0], temp[1], temp[2]);
           } // end pixel
-          
+          tft.setY(y + row);
           tft.drawPixels(rowBuffer, w, x, y + row);
         } // end scanline
         Serial.print("Loaded in ");
@@ -174,11 +154,6 @@ void bmpDraw(const char *filename, uint16_t x, uint16_t y) {
 // BMP data is stored little-endian, Arduino is little-endian too.
 // May need to reverse subscript order if porting elsewhere.
 
-void writePixb(int16_t x, uint16_t color) {
-  tft.setX(x);
-  tft.writeCommand(RA8875_MRWC);
-  tft.writeData16(color);
-}
 
 uint16_t read16(File &f) {
   uint16_t result = 0;
@@ -195,4 +170,3 @@ uint32_t read32(File &f) {
   ((uint8_t *)&result)[3] = f.read(); // MSB
   return result;
 }
-
