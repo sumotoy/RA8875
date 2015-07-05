@@ -1,12 +1,10 @@
-RA8875 library
-==============
+RA8875 library [gold version]
+==============================
 
-[![video test](http://i.ytimg.com/vi/WbFOsxjFCL8/mqdefault.jpg)](http://www.youtube.com/embed/WbFOsxjFCL8)
-<br>Here's a video test that proof the 0.45 version, Teensy3.1 and chinese board for tft.<br>
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.70b2 (no more changes in commands, only bug fix and features)<br>
+##### Current Version: 0.70b5(preview 1) <br>
 
 Current beta **tested only with**:
 * Teensy 3.1, Stellaris, Arduino UNO, Arduino MEGA2560, Arduino YUN
@@ -18,20 +16,12 @@ A couple of users tested also with:
 * Arduino DUE
 * Adafruit RA8875 board with 7" (800x600) and 5" (480x272) displays
 
-NOT tested at all:
-* Waveshare displays
-* Eastrising 5" (800x480)
-* Any 640x480
-
 <b>NOTE</b>:If your do not work please ask here.<br>
 
-##### Current version 0.70b2, it's the first preview of the 0.70! Please read!!!.<br>
-**0.70b2**<br>
-More graphic commands, drawPolygon, drawQuad, fillQuad (last 2 useful for solid3D rendering), lot of cleaning.<br>
+##### Current version 0.70b5p1, it's the first preview of the 0.70b5! Please read!!!.<br>
+**0.70b5**<br>
+massive changes, lot of fixing,rendering fonts,some command changed!<br>
 
-
-##### Beta changes:
-Be careful since until beta 0.70 things will change a lot so you better not use in your project or you will forced to modify your code! This is necessary because this library use a lot of command (RA8875 it's a really complex chip)<br>
 
 ##### Teensy notes:
 I love Teensy 3 MCU's, so every library has special features for this micro. You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
