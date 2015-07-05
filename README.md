@@ -6,17 +6,17 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
 ##### Current Version: 0.70b5(preview 1) <br>
 
-Current beta **tested only with**:
-* Teensy 3.1, Stellaris, Arduino UNO, Arduino MEGA2560, Arduino YUN
+Current beta 0.70 **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
 * EastRising RA8875 7"Inch (800x480) with FT chip capacitive<br>
+* EastRising RA8875 5"Inch (800x480) with resistive Touch<br>
 Check 'Proof of working' in wiky.<br>
 
 A couple of users tested also with:
 * Arduino DUE
 * Adafruit RA8875 board with 7" (800x600) and 5" (480x272) displays
 
-<b>NOTE</b>:If your do not work please ask here.<br>
+<b>NOTE</b>:If your do not work please ask here but remember that this is a preview to test new capabilities!<br>
 
 ##### Current version 0.70b5p1, it's the first preview of the 0.70b5! Please read!!!.<br>
 **0.70b5**<br>
