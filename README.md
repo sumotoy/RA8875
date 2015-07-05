@@ -36,20 +36,22 @@ This library will work also with the Adafruit board but was mainly coded for the
 
 ####  The goals...
   - All features supported
-  - 8 bit and 16 bit color depth support
-  - Layer support (now support large screen but only at 256 colors)
-  - Scalable complexity, start with basics but you can go trough...
-  - Support for the many external ROM Font chip
-  - Support for the external SPI FLASH
+  - 8 bit and 16 bit color depth support (done)
+  - Layer support (now support large screen but only at 256 colors) (done)
+  - Scalable complexity, start with basics but you can go trough... (done)
+  - Support for the many external ROM Font chip (done)
+  - Support for the external SPI FLASH (on develop)
   - Working with Teensy 3.x, Teensy LC, Arduino's, Energia IDE supported MCU's (stellaris, etc.)
-  - Correct use of Print, Write and Println
-  - Correct use of setCursor to mimic LiquidCrystal library
-  - Compatibility with alternative SPI pinouts on Teensy 3.x,Teensy LC, this will let you use it with Audio board!
-  - Can use capacitive and resistive touch screen, the capacitive with gesture and max 5 concurrent touches.
-  - Full rotation support.
-  - External copyright free fonts support plus large font rendering.
-  - Support for Keypad Matrix.
-  - A lot of examples.
+  - Correct use of Print, Write and Println (done)
+  - Correct use of setCursor to mimic LiquidCrystal library (done)
+  - Compatibility with alternative SPI pinouts on Teensy 3.x,Teensy LC, this will let you use it with Audio board! (done)
+  - Can use capacitive and resistive touch screen, the capacitive with gesture and max 5 concurrent touches. (done)
+  - Full rotation support. (done)
+  - External copyright free fonts support plus large font rendering. (done)
+  - Support for Keypad Matrix. (still working on)
+  - Internal support for IRQ's (done for Touch, still develop for other stuff)
+  - Use of BTE (almost done)
+  - A lot of examples. (done)
 
 
 #### Wiring with your MCU
