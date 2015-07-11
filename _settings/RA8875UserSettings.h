@@ -26,7 +26,7 @@ The Capacitive Touch Screen use a I2C chip called FT5206 (hardwired to address 0
 Please choose at list one (NOT both), if you comment both it's the same as _AVOID_TOUCHSCREEN*/
 
 //#define USE_RA8875_TOUCH
-#define USE_FT5206_TOUCH
+//#define USE_FT5206_TOUCH
 
 /* [Default Interrupt Number for Touchscreen] [RA8875 & FT5206] ++++++++++++++++++++++++++++++++++
 Some microcontroller like Teensy 3,3.1 and LC automatically assign ISR number (since they

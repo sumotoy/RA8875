@@ -1114,12 +1114,14 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 	if (!_textMode) _setTextMode(true);
 	_SFRSET_Reg = _readRegister(RA8875_FNCR0);;//just to preserve the reg in case something wrong
 	uint8_t temp = _SFRSET_Reg;//just to preserve the reg in case something wrong
+	temp &= ~(0xE0); // clear bits from 5 to 7
 	switch(ert){ //type of rom
 		case GT21L16T1W:
 		case GT21H16T1W:
 			temp &= 0x1F;
 		break;
 		case GT23L16U2W:
+		case GT30L16U2W:
 			temp &= 0x1F; temp |= 0x20;
 		break;
 		case GT23L24T3Y:
@@ -1142,6 +1144,7 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		}
 		_EXTFNTrom = ert;
 	switch(erc){	//check rom font coding
+		temp &= ~(0x1C); // clear bits from 2 to 4
 		case GB2312:
 			temp &= 0xE3;
 		break;
@@ -1199,6 +1202,7 @@ void RA8875::setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg)
 {
 	if (_FNTsource == EXT) {
 		_EXTFNTfamily = erf;
+		_SFRSET_Reg &= ~(0x03); // clear bits from 0 to 1
 		switch(erf){	//check rom font family
 			case STANDARD:
 				_SFRSET_Reg &= 0xFC;

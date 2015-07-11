@@ -177,7 +177,7 @@ enum RA8875tcursor { 		NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
 enum RA8875tsize { 			X16=0,X24,X32 };//0,1,2
 enum RA8875fontSource { 	INT=0, EXT };//0,1
 enum RA8875fontCoding { 	ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
-enum RA8875extRomType { 	GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1 };
+enum RA8875extRomType { 	GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1 };
 enum RA8875extRomCoding { 	GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { 	STANDARD, ARIAL, ROMAN, BOLD };
 enum RA8875boolean { 		LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };
@@ -482,10 +482,10 @@ using Print::write;
 	bool							_useISR;
 	const tFont 			  	 *  _currentFont;
 	bool 						 	_checkInterrupt(uint8_t _bit,bool _clear=true);
+	void 						    _disableISR(void);
 	// Touch Screen vars ---------------------
 	#if !defined(_AVOID_TOUCHSCREEN)
 	uint8_t						    _maxTouch;//5 on FT5206, 1 on resistive
-	void 						    _disableISR(void);
 		#if defined(USE_FT5206_TOUCH)// FT5206 specifics
 			uint8_t					_intCTSNum;
 			uint8_t					_intCTSPin;
