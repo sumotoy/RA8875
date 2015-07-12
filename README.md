@@ -11,7 +11,28 @@ Current beta 0.70 **tested only with**:
 * EastRising RA8875 7"Inch (800x480) with FT chip capacitive<br>
 * EastRising RA8875 5"Inch (800x480) with resistive Touch<br>
  All tested with Teensy 3.0, Teensy 3.1, Teensy LC, Arduino DUE, Arduino UNO, Arduino MEGA<br>
-Check 'Proof of working' in wiky.<br>
+Check 'Proof of working' in wiki.<br>
+
+##### Not Working? <br>
+I have tested 0.70b6 with several CPU:<br>
+ - Teensy 3.1
+ - Teensy 3.0
+ - Teensy LC
+ - Arduino UNO
+ - Arduino DUE
+ - Arduino MEGA
+ - Arduino YUN
+ Display tested:
+ - EastRising RA8875 5" (480x272)
+ - EastRising RA8875 5" (800x480)
+ - EastRising RA8875 7" (800x480)
+ If your display not works, please check your connections, supply values, etc.<br>
+ Remember it's an SPI connection so there's hardware limitations on some CPU, for example DUE can use as CS pin 4,10   or 52, Teensy can use more but not all, 8Bit arduino can use almost any, etc..<br>
+ Still not working? Check my wiki, check carefully!<br>
+ When testing, do not connect other devices on the same SPI line! This chip uses SPI mode 3 that it's not compatible
+ with most stuff (check my wiki).<br>
+ Are you sure you connect everithing fine, settings are ok, you are using the correct CS pin, you don't have any other  SPI devices on the same line, the display has correct jumper set and you are sure that display it's correct supply    (and the supply it's stable, check also this!) but you still have nothing on screen?<br>
+  Ok, in that case you may ask help but you need to double check that you do not make mistakes! Please understand that   I cannot spend time to fix something that it's not a library fault!!!
 
 A couple of users tested also with:
 * Adafruit RA8875 board with 7" (800x600) and 5" (480x272) displays
