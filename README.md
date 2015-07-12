@@ -14,7 +14,7 @@ Current beta 0.70 **tested only with**:
 Check 'Proof of working' in wiki.<br>
 
 ##### Not Working? <br>
-I have tested 0.70b6 with several CPU:<br>
+I have tested 0.70b6 with several CPU and <b>worked</b>:<br>
  - Teensy 3.1
  - Teensy 3.0
  - Teensy LC
@@ -31,7 +31,7 @@ I have tested 0.70b6 with several CPU:<br>
  Still not working? Check my wiki, check carefully!<br>
  When testing, do not connect other devices on the same SPI line! This chip uses SPI mode 3 that it's not compatible
  with most stuff (check my wiki).<br>
- Are you sure you connect everithing fine, settings are ok, you are using the correct CS pin, you don't have any other  SPI devices on the same line, the display has correct jumper set and you are sure that display it's correct supply    (and the supply it's stable, check also this!) but you still have nothing on screen?<br>
+ Are you sure you connect everything fine, settings are ok, you are using the correct CS pin, you don't have any other  SPI devices sharing the same line, the display has correct jumper set and you are sure that display it's correct supplied (and the supply it's stable, check also this!) but you still have nothing on screen?<br>
   Ok, in that case you may ask help but you need to double check that you do not make mistakes! Please understand that   I cannot spend time to fix something that it's not a library fault!!!
 
 A couple of users tested also with:
