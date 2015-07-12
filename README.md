@@ -25,7 +25,7 @@ I have tested 0.70b6 with several CPU:<br>
  Display tested:
  - EastRising RA8875 5" (480x272)
  - EastRising RA8875 5" (800x480)
- - EastRising RA8875 7" (800x480)
+ - EastRising RA8875 7" (800x480)<br>
  If your display not works, please check your connections, supply values, etc.<br>
  Remember it's an SPI connection so there's hardware limitations on some CPU, for example DUE can use as CS pin 4,10   or 52, Teensy can use more but not all, 8Bit arduino can use almost any, etc..<br>
  Still not working? Check my wiki, check carefully!<br>
