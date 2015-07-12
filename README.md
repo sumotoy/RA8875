@@ -10,10 +10,10 @@ Current beta 0.70 **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
 * EastRising RA8875 7"Inch (800x480) with FT chip capacitive<br>
 * EastRising RA8875 5"Inch (800x480) with resistive Touch<br>
+ All tested with Teensy 3.0, Teensy 3.1, Teensy LC, Arduino DUE, Arduino UNO, Arduino MEGA.
 Check 'Proof of working' in wiky.<br>
 
 A couple of users tested also with:
-* Arduino DUE
 * Adafruit RA8875 board with 7" (800x600) and 5" (480x272) displays
 
 <b>NOTE</b>:If your do not work please ask here but remember that this is a preview to test new capabilities!<br>
