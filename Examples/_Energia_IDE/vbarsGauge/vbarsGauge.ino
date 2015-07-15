@@ -92,7 +92,7 @@ boolean createBar(uint16_t origX, uint16_t origY) {
     gc = map(i, 0, _segments - 1, 100, 255); //calculate green
     rc = map(i, _segments - 1, 0, 200, 255); //calculate red
     if (i > 0 && i < (_segments-1)) {
-      tft.fillRect(origX, newOriginY + ((_segHeight * i) + (i * 2)), _barWidth, _segHeight, tft.Color565(bc, gc, rc)); //MIDDLE
+      tft.fillRect(origX, newOriginY + ((_segHeight * i) + (i * 2)), _barWidth, _segHeight, tft.Color565(rc, gc, bc)); //MIDDLE
     } else if (i == 0){
       tft.fillRect(origX, newOriginY + ((_segHeight * i) + (i * 2)), _barWidth, _segHeight, RA8875_YELLOW);//TOP
     } else {

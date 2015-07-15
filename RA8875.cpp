@@ -374,14 +374,16 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			pinMode(_cs, OUTPUT);
 			digitalWrite(_cs, HIGH);
 		#elif defined(__SAM3X8E__)// DUE
-			#if defined(SPI_DUE_MODE_EXTENDED)//DUE SPI mode extended you can use only follow pins
+			#if defined(SPI_DUE_MODE_EXTENDED)
+				//DUE SPI mode extended you can use only follow pins
 				if (_cs == 4 || _cs == 10 || _cs == 52) {
 					SPI.begin(_cs);
 				} else {
 					_errorCode |= (1 << 2);//error! wrong cs pin
 					return;
 				}
-			#else//DUE in normal SPI mode
+			#else
+				//DUE in normal SPI mode
 				SPI.begin();
 				pinMode(_cs, OUTPUT);
 				#if defined(_FASTSSPORT)
@@ -392,7 +394,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 					digitalWrite(_cs, HIGH);
 				#endif
 			#endif
-		#else//UNO,MEGA,Yun,nano,duemilanove and other 8 bit arduino's
+		#else
+			//UNO,MEGA,Yun,nano,duemilanove and other 8 bit arduino's
 			SPI.begin();
 			pinMode(_cs, OUTPUT);
 			csport = portOutputRegister(digitalPinToPort(_cs));//pinMode(_cs, OUTPUT);
@@ -400,7 +403,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			*csport |= cspinmask;//hi
 		#endif
 	#endif
-	if (_rst != 255){//time for hardware reset RA8875
+	if (_rst < 255){//time for hardware reset RA8875
 		pinMode(_rst, OUTPUT);
 		digitalWrite(_rst, HIGH);
 		delay(10);
@@ -489,8 +492,8 @@ void RA8875::_initialize()
 	}
 	//set the sysClock
 	_setSysClock(initStrings[_initIndex][0],initStrings[_initIndex][1],initStrings[_initIndex][2]);
+	
 	//color space setup
-
 	if (_color_bpp < 16){//256
 		_writeRegister(RA8875_SYSR,0x00);//256
 		_colorIndex = 3;
@@ -499,11 +502,11 @@ void RA8875::_initialize()
 		_colorIndex = 0;
 	}
 	
-	_writeRegister(RA8875_HDWR,initStrings[_initIndex][3]);	//LCD Horizontal Display Width Register
+	_writeRegister(RA8875_HDWR,initStrings[_initIndex][3]);		//LCD Horizontal Display Width Register
 	_writeRegister(RA8875_HNDFTR,initStrings[_initIndex][4]);	//Horizontal Non-Display Period Fine Tuning Option Register
-	_writeRegister(RA8875_HNDR,initStrings[_initIndex][5]);	//LCD Horizontal Non-Display Period Register
-	_writeRegister(RA8875_HSTR,initStrings[_initIndex][6]);	//HSYNC Start Position Register
-	_writeRegister(RA8875_HPWR,initStrings[_initIndex][7]);	//HSYNC Pulse Width Register
+	_writeRegister(RA8875_HNDR,initStrings[_initIndex][5]);		//LCD Horizontal Non-Display Period Register
+	_writeRegister(RA8875_HSTR,initStrings[_initIndex][6]);		//HSYNC Start Position Register
+	_writeRegister(RA8875_HPWR,initStrings[_initIndex][7]);		//HSYNC Pulse Width Register
 	_writeRegister(RA8875_VDHR0,initStrings[_initIndex][8]);	//LCD Vertical Display Height Register0
 	_writeRegister(RA8875_VDHR0+1,initStrings[_initIndex][9]);	//LCD Vertical Display Height Register1
 	_writeRegister(RA8875_VNDR0,initStrings[_initIndex][10]);	//LCD Vertical Non-Display Period Register 0
@@ -511,7 +514,7 @@ void RA8875::_initialize()
 	_writeRegister(RA8875_VSTR0,initStrings[_initIndex][12]);	//VSYNC Start Position Register 0
 	_writeRegister(RA8875_VSTR0+1,initStrings[_initIndex][13]);	//VSYNC Start Position Register 1
 	_writeRegister(RA8875_VPWR,initStrings[_initIndex][14]);	//VSYNC Pulse Width Register
-	_updateActiveWindow(true);//set the whole screen as active
+	_updateActiveWindow(true);									//set the whole screen as active
 	//clearActiveWindow();
 	delay(10); //100
 	setCursorBlinkRate(DEFAULTCURSORBLINKRATE);//set default blink rate
@@ -599,10 +602,10 @@ void RA8875::_setSysClock(uint8_t pll1,uint8_t pll2,uint8_t pixclk)
 /*!
       This return a byte with the error code/s:
 	  bit--------------------------------------------------------------------
-	  0:The display it's not supported!
-	  1:The MOSI or MISO or SCLK choosed for Teensy it's out permitted range!
-	  2:The CS pin you selected it's out permitted range!
-	  3:You have to upgrade to Teensyduino 1.22 or better to use this feature!
+	  0:	The display it's not supported!
+	  1:	The MOSI or MISO or SCLK choosed for Teensy it's out permitted range!
+	  2:	The CS pin you selected it's out permitted range!
+	  3:	You have to upgrade to Teensyduino 1.22 or better to use this feature!
 	  4:
 	  5:
 	  6:
@@ -758,10 +761,7 @@ void RA8875::displayOn(boolean on)
 /**************************************************************************/
 void RA8875::setActiveWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB)
 {
-	if (_portrait){//0.69b24
-		swapvals(XL,YT);
-		swapvals(XR,YB);
-	}
+	if (_portrait){ swapvals(XL,YT); swapvals(XR,YB);}
 	
 	if (XR >= RA8875_WIDTH) XR = RA8875_WIDTH;
 	if (YB >= RA8875_HEIGHT) YB = RA8875_HEIGHT;
@@ -784,10 +784,7 @@ void RA8875::setActiveWindow(void)
 	_activeWindowXR = RA8875_WIDTH;
 	_activeWindowYT = 0;
 	_activeWindowYB = RA8875_HEIGHT;
-	if (_portrait){
-		swapvals(_activeWindowXL,_activeWindowYT);
-		swapvals(_activeWindowXR,_activeWindowYB);
-	}
+	if (_portrait){swapvals(_activeWindowXL,_activeWindowYT); swapvals(_activeWindowXR,_activeWindowYB);}
 	_updateActiveWindow(true);
 }
 
@@ -1073,31 +1070,6 @@ void RA8875::setIntFontCoding(enum RA8875fontCoding f)
 	_writeRegister(RA8875_FNCR0,_FNCR0_Reg);
 }
 
-// void RA8875::test(const char *str)
-// {   
-	
-	//ASCII_Mode_disable
-	// uint8_t temp = _readRegister(RA8875_FNCR0);//FNCR0
-	// bitClear(temp,4);
-	// _writeData(temp);
-	//External_CGROM
-	// temp = _readRegister(RA8875_FNCR0);//FNCR0
-	// bitSet(temp,5);
-	// _writeData(temp);
-	//External_CGROM_GB
-	// temp = _readRegister(RA8875_FNCR0);//FNCR0
-	// bitClear(temp,3);//External_CGROM_BIG5
-	// bitSet(temp,2);//External_CGROM_BIG5
-	// _writeData(temp);
-	//print
-	// if (!_textMode) _setTextMode(true);//we are in graph mode?
-	// writeCommand(RA8875_MRWC);
-	// while(*str != '\0'){
-		// _writeData(*str);
-		// ++str;	 	
-		// _waitBusy(0x80);
-	// }
-// }
 /**************************************************************************/
 /*!  
 		External Font Rom setup
@@ -1216,7 +1188,7 @@ void RA8875::setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg)
 			break;
 			default:
 				_EXTFNTfamily = STANDARD; _SFRSET_Reg &= 0xFC;
-				return;
+			return;
 		}
 		if (setReg) _writeRegister(RA8875_SFRSET,_SFRSET_Reg);
 	}
@@ -1449,10 +1421,7 @@ void RA8875::_textPosition(int16_t x, int16_t y,bool update)
 	}
 	#endif
 
-	if (update){
-		_cursorX = x;
-		_cursorY = y;
-	}
+	if (update){ _cursorX = x; _cursorY = y;}
 }
 
 /**************************************************************************/
@@ -1734,9 +1703,7 @@ uint8_t RA8875::getFontWidth(boolean inColums)
 	uint8_t temp;
 	if (bitRead(_TXTparameters,7) == 1){
 		temp = _FNTwidth;
-		if (temp < 1){//variable with
-			return 0;
-		}
+		if (temp < 1) return 0; //variable with
 	} else {
 		temp = (((_FNCR0_Reg >> 2) & 0x3) + 1) * _FNTwidth;
 	}
@@ -2522,10 +2489,7 @@ void RA8875::DMA_enable(void)
 /**************************************************************************/
 void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum)
 {  
-	if (_portrait){//0.69b21 -have to check this, not verified
-		swapvals(x,y);
-		swapvals(w,h);
-	}
+	if (_portrait){swapvals(x,y); swapvals(w,h);}//0.69b21 -have to check this, not verified
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	_writeRegister(RA8875_SFCLR,0x00);
 	_writeRegister(RA8875_SROC,0x87);
@@ -3152,9 +3116,7 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 {
 	if (x0 == x1 && y0 == y1) return;
 	if ((x1 - x0 == 1) && (y1 - y0 == 1)) drawPixel(x0,y0,color);
-	if (_portrait) {
-		swapvals(x0,y0); swapvals(x1,y1);
-	}
+	if (_portrait) { swapvals(x0,y0); swapvals(x1,y1);}
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
@@ -3424,26 +3386,25 @@ void RA8875::drawQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, 
 	  x3:
 	  y3:
       color: RGB565 color
-	  *NOTE: Still fixing this
+	  *NOTE: Still fixing this, there's a bug in the triangle macro for 
+	  out of range or wrong parameters
 */
 /**************************************************************************/
 void RA8875::fillQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2, int16_t x3, int16_t y3, uint16_t color) 
 {
-
-if (y0 < y3){
-	_triangle_helper(x0,y0,x3,y3,x1,y1,color,true);
-	_triangle_helper(x1,y1,x2,y2,x3,y3,color,true);
-} else if (x0 > x1 && x2 < x3){//x2 partenza
-	_triangle_helper(x2,y2,x1,y1,x0,y0,color,true);
-	_triangle_helper(x2,y2,x0,y0,x3,y3,color,true);
-} else if (y2 > y3 && x2 < x3){
-	_triangle_helper(x3,y3,x0,y0,x1,y1,color,true);
-	_triangle_helper(x3,y3,x1,y1,x2,y2,color,true);
-} else {
-	_triangle_helper(x0,y0,x1,y1,x2,y2,color,true);
-	_triangle_helper(x0,y0,x2,y2,x3,y3,color,true);
-}
-
+	if (y0 < y3){
+		_triangle_helper(x0,y0,x3,y3,x1,y1,color,true);
+		_triangle_helper(x1,y1,x2,y2,x3,y3,color,true);
+	} else if (x0 > x1 && x2 < x3){//x2 partenza
+		_triangle_helper(x2,y2,x1,y1,x0,y0,color,true);
+		_triangle_helper(x2,y2,x0,y0,x3,y3,color,true);
+	} else if (y2 > y3 && x2 < x3){
+		_triangle_helper(x3,y3,x0,y0,x1,y1,color,true);
+		_triangle_helper(x3,y3,x1,y1,x2,y2,color,true);
+	} else {
+		_triangle_helper(x0,y0,x1,y1,x2,y2,color,true);
+		_triangle_helper(x0,y0,x2,y2,x3,y3,color,true);
+	}
 }
 
 /**************************************************************************/
@@ -3701,9 +3662,7 @@ void RA8875::_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, b
 /**************************************************************************/
 void RA8875::_rect_helper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled)
 {
-	if (_portrait) {
-		swapvals(x,y); swapvals(w,h);
-	}
+	if (_portrait) {swapvals(x,y); swapvals(w,h);}
 
 	if (w < 1 || h < 1) return;//why draw invisible rects?
 
@@ -3732,9 +3691,7 @@ void RA8875::_rect_helper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c
 void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled)
 {
 	
-	if (_portrait) {
-		swapvals(x0,y0); swapvals(x1,y1); swapvals(x2,y2);
-	}
+	if (_portrait) {swapvals(x0,y0); swapvals(x1,y1); swapvals(x2,y2);}
 	
 	if (x0 == x1 && y0 == y1){
 		drawLine(x0, y0, x2, y2,color);
@@ -3744,17 +3701,11 @@ void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, in
 		return;
 	}
 	
-	if (y0 > y1) {
-        swapvals(y0, y1); swapvals(x0, x1);
-    }
+	if (y0 > y1) {swapvals(y0, y1); swapvals(x0, x1);}
 	
-    if (y1 > y2) {
-        swapvals(y2, y1); swapvals(x2, x1);
-    }
+    if (y1 > y2) {swapvals(y2, y1); swapvals(x2, x1);}
 	
-    if (y0 > y1) {
-        swapvals(y0, y1); swapvals(x0, x1);
-    }
+    if (y0 > y1) {swapvals(y0, y1); swapvals(x0, x1);}
 	
 	if (y0 == y2) { // Handle awkward all-on-same-line case as its own thing
 		int16_t a, b;
@@ -3853,9 +3804,7 @@ void RA8875::_ellipseCurve_helper(int16_t xCenter, int16_t yCenter, int16_t long
 /**************************************************************************/
 void RA8875::_roundRect_helper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled)
 {
-	if (_portrait) {
-		swapvals(x,y); swapvals(w,h);
-	}
+	if (_portrait) {swapvals(x,y); swapvals(w,h);}
 	
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	
