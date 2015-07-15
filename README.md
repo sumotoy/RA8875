@@ -51,7 +51,8 @@ fixed Color565 (color ordering, thanks gmartau).<br>
 This library support user fonts but the utility I'm using to convert fonts it's not released since it's a modified copy from another author. The reason it's simple, it's the only software I've found that it's able to precisely define fonts parameters and format the font in clever way (intead of the classic monster array with another index array).
 The utility it's also able to compress fonts, write 16 or 32 bit lenght strings (useful for large fonts),I cannot find any program that let me do that so I have decided to use this.<br>
 However, since it's not my code, I will release the app only when author give me the rights to do that (or incorporate my changes in the next release).<br>
-If someone of you have some font proposal to convert (in the meantime) please let me know, I will convert and incorporate in the library but be sure it's copyrights permit this!<br><br>
+<b>If someone of you have some font proposal to convert please let me know, I will convert and incorporate in the library but be sure it's copyrights permit this!</b><br>
+I have received several pressures to release the Font Conversion Utility before I got author permission, please, do not ask this, I cannot make any exception!!!<br><br>
 
 ##### Teensy notes:
 I love Teensy 3 MCU's, so every library has special features for this micro. You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
