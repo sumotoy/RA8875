@@ -4,7 +4,7 @@ RA8875 library [gold version]
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.70b7(preview 2) <br>
+##### Current Version: 0.70b8(preview 2) <br>
 
 Current beta 0.70 **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
@@ -46,6 +46,8 @@ massive changes, lot of fixing,rendering fonts,some command changed!<br>
 changes in the FONT ROM code, added GT30L16U2W support, fixed an IRQ error.<br>
 **0.70b7**<br>
 fixed Color565 (color ordering, thanks gmartau).<br>
+**0.70b8**<br>
+better functions for round gauges, added 2 examples.<br>
 
 ##### Rendering Font Note
 This library support user fonts but the utility I'm using to convert fonts it's not released since it's a modified copy from another author. The reason it's simple, it's the only software I've found that it's able to precisely define fonts parameters and format the font in clever way (intead of the classic monster array with another index array).
