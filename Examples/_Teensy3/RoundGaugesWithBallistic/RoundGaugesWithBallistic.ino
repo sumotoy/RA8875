@@ -26,7 +26,7 @@ You are using 4 wire SPI here, so:
  the rest of pin below:
  */
 #define RA8875_CS 10 //see below...
-#define RA8875_RESET 9//any pin or nothing!
+#define RA8875_RESET 21//any pin or nothing!
 /*
 Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 */
@@ -64,23 +64,12 @@ void loop(void) {
 
 void drawGauge(uint16_t x,uint16_t y,uint16_t r) {
   tft.drawCircle(x, y, r,RA8875_WHITE);//draw instrument container
-  faceHelper(x,y,r,150,390,1.3);//draw major ticks
-  if (r > 15) faceHelper(x,y,r,165,375,1.1);//draw minor ticks
+  tft.roundGaugeTicker(x,y,r,150,390,1.3,RA8875_WHITE);//draw major ticks
+  if (r > 15) tft.roundGaugeTicker(x,y,r,165,375,1.1,RA8875_WHITE);//draw minor ticks
 
 }
 
-void faceHelper(uint16_t x,uint16_t y,uint16_t r,int from,int to,float dev){
-  float dsec,fromSecX,fromSecY,toSecX,toSecY;
-  int i;
-  for (i = from;i <= to;i += 30) {
-    dsec = i * (PI / 180);
-    fromSecX = cos(dsec) * (r / dev);
-    fromSecY = sin(dsec) * (r / dev);
-    toSecX = cos(dsec) * r;
-    toSecY = sin(dsec) * r;
-    tft.drawLine(1 + x + fromSecX,1 + y + fromSecY,1 + x + toSecX,1 + y + toSecY,RA8875_WHITE);
-  }
-}
+
 
 void drawNeedle(int16_t val,int16_t oval,uint16_t x,uint16_t y,uint16_t r,uint16_t color,uint16_t bcolor){
   uint16_t i;
@@ -92,7 +81,7 @@ void drawNeedle(int16_t val,int16_t oval,uint16_t x,uint16_t y,uint16_t r,uint16
     }
   } 
   else {
-    for (i = oval; i >= val; i--){
+    for (i = oval; i > val; i--){
       drawPointerHelper(i+1,x,y,r,bcolor);
       drawPointerHelper(i,x,y,r,color);
       //ballistic
@@ -119,4 +108,3 @@ void drawPointerHelper(int16_t val,uint16_t x,uint16_t y,uint16_t r,uint16_t col
   tft.drawLine(x, y, 1 + x + (int16_t)toSecX, 1 + y + (int16_t)toSecY, color);
   tft.fillCircle(x,y,2,color);
 }
-

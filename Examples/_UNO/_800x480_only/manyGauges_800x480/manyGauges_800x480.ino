@@ -26,16 +26,9 @@ const uint8_t degreesVal[6][2] = {
   {150, 240},
 };
 
-/*
-Teensy3.x
-You are using 4 wire SPI here, so:
- MOSI:  11//Teensy3.x
- MISO:  12//Teensy3.x
- SCK:   13//Teensy3.x
- the rest of pin below:
- */
-#define RA8875_CS 20 //see below...
-#define RA8875_RESET 21//any pin or nothing!
+
+#define RA8875_CS 10 //any pin
+#define RA8875_RESET 8//any pin or nothing!
 /*
 Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 */

@@ -9,18 +9,6 @@ If you modify or get better result please let me know
 #include <RA8875.h>
 
 
-
-// Color definitions
-#define	BLACK   0x0000
-#define	BLUE    0x001F
-#define	RED     0xF800
-#define	GREEN   0x07E0
-#define CYAN    0x07FF
-#define MAGENTA 0xF81F
-#define YELLOW  0xFFE0  
-#define WHITE   0xFFFF
-
-
 volatile int16_t curVal1 = 0;
 volatile int16_t oldVal1 = 0;
 volatile int16_t curVal2 = 0;
@@ -60,43 +48,31 @@ void loop(void) {
   curVal3 = map(analogRead(A2),0,1023,1,254);
   
   if (oldVal1 != curVal1){
-    drawNeedle(curVal1,oldVal1,63,63,63,GREEN,BLACK);
+    drawNeedle(curVal1,oldVal1,63,63,63,RA8875_GREEN,RA8875_BLACK);
     oldVal1 = curVal1;
   }
   if (oldVal2 != curVal2){
-    drawNeedle(curVal2,oldVal2,63*3+4,63,63,CYAN,BLACK);
+    drawNeedle(curVal2,oldVal2,63*3+4,63,63,RA8875_CYAN,RA8875_BLACK);
     oldVal2 = curVal2;
   }
   if (oldVal3 != curVal3){
-    drawNeedle(curVal3,oldVal3,63*5+8,63,63,MAGENTA,BLACK);
+    drawNeedle(curVal3,oldVal3,63*5+8,63,63,RA8875_MAGENTA,RA8875_BLACK);
     oldVal3 = curVal3;
   }
 }
 
 void drawGauge(uint16_t x,uint16_t y,uint16_t r) {
-  tft.drawCircle(x, y, r,WHITE);//draw instrument container
-  faceHelper(x,y,r,150,390,1.3);//draw major ticks
-  if (r > 15) faceHelper(x,y,r,165,375,1.1);//draw minor ticks
+  tft.drawCircle(x, y, r,RA8875_WHITE);//draw instrument container
+  tft.roundGaugeTicker(x,y,r,150,390,1.3,RA8875_WHITE);//draw major ticks
+  if (r > 15) tft.roundGaugeTicker(x,y,r,165,375,1.1,RA8875_WHITE);//draw minor ticks
 
 }
 
-void faceHelper(uint16_t x,uint16_t y,uint16_t r,int from,int to,float dev){
-  float dsec,fromSecX,fromSecY,toSecX,toSecY;
-  int i;
-  for (i = from;i <= to;i += 30) {
-    dsec = i * (PI / 180);
-    fromSecX = cos(dsec) * (r / dev);
-    fromSecY = sin(dsec) * (r / dev);
-    toSecX = cos(dsec) * r;
-    toSecY = sin(dsec) * r;
-    tft.drawLine(1 + x + fromSecX,1 + y + fromSecY,1 + x + toSecX,1 + y + toSecY,WHITE);
-  }
-}
 
 void drawNeedle(int16_t val,int16_t oval,uint16_t x,uint16_t y,uint16_t r,uint16_t color,uint16_t bcolor){
   uint16_t i;
   if (val > oval){
-    for (i = oval; i <= val; i++){
+    for (i = oval; i < val; i++){
       drawPointerHelper(i-1,x,y,r,bcolor);
       drawPointerHelper(i,x,y,r,color);
       if ((val - oval) < (128)) delay(1);//ballistic
@@ -110,7 +86,7 @@ void drawNeedle(int16_t val,int16_t oval,uint16_t x,uint16_t y,uint16_t r,uint16
       if ((oval - val) >= 128){
         delay(1);
       } else {
-        delay(3);
+        delay(2);
       }
     }
   }
