@@ -3140,13 +3140,13 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 	  color: RGB565 color
 */
 /**************************************************************************/
-void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length, uint16_t color)
+void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length, uint16_t color,int offset)
 {
 	drawLine(
 		x,
 		y,
-		x + (length * _cosDeg_helper(angle + _angle_offset)),
-		y + (length * _sinDeg_helper(angle + _angle_offset)), 
+		x + (length * _cosDeg_helper(angle + offset)),//_angle_offset
+		y + (length * _sinDeg_helper(angle + offset)), 
 		color);
 }
 
@@ -3162,14 +3162,29 @@ void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length,
 	  color: RGB565 color
 */
 /**************************************************************************/
-void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t start, uint16_t length, uint16_t color)
+void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t start, uint16_t length, uint16_t color,int offset)
 {
 	drawLine(
-		x + start * _cosDeg_helper(angle + _angle_offset),
-		y + start * _sinDeg_helper(angle + _angle_offset),
-		x + (start + length) * _cosDeg_helper(angle + _angle_offset),
-		y + (start + length) * _sinDeg_helper(angle + _angle_offset), 
+		x + start * _cosDeg_helper(angle + offset),//_angle_offset
+		y + start * _sinDeg_helper(angle + offset),
+		x + (start + length) * _cosDeg_helper(angle + offset),
+		y + (start + length) * _sinDeg_helper(angle + offset), 
 		color);
+}
+
+void RA8875::roundGaugeTicker(uint16_t x, uint16_t y, uint16_t r, int from, int to, float dev,uint16_t color) 
+{
+  float dsec;
+  int i;
+  for (i = from; i <= to; i += 30) {
+    dsec = i * (PI / 180);
+    drawLine(
+		x + (cos(dsec) * (r / dev)) + 1,
+		y + (sin(dsec) * (r / dev)) + 1,
+		x + (cos(dsec) * r) + 1,
+		y + (sin(dsec) * r) + 1, 
+		color);
+  }
 }
 
 /**************************************************************************/

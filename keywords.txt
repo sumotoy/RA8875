@@ -43,6 +43,7 @@ getPixel	KEYWORD2
 getPixels	KEYWORD2
 drawFastVLine	KEYWORD2
 drawFastHLine	KEYWORD2
+roundGaugeTicker	KEYWORD2
 fillWindow	KEYWORD2
 clearScreen	KEYWORD2
 drawLine	KEYWORD2
