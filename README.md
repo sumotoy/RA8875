@@ -4,7 +4,7 @@ RA8875 library [gold release]
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.70b8(preview 2) <br>
+##### Current Version: 0.70b10(preview 2) <br>
 
 Current beta 0.70 **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
@@ -48,6 +48,8 @@ changes in the FONT ROM code, added GT30L16U2W support, fixed an IRQ error.<br>
 fixed Color565 (color ordering, thanks gmartau).<br>
 **0.70b8**<br>
 better functions for round gauges, added 2 examples, fixed RoundGaugeBallistic examples<br>
+**0.70b10**<br>
+fixed PROGMEM missed template for 8bit arduino, added colorInterpolation(neat!), introduced gauges (with examples), fixed some value boudary fix to compensate RA8875 hardware limitations, added Color565ToRGB,setTextGrandient(works with all text, see examples),colorInterpolation,ringMeter(with great example),roundGaugeTicker(with example), updated basicTextFunctions example.<br>
 
 ##### Rendering Font Note
 This library support user fonts but the utility I'm using to convert fonts it's not released since it's a modified copy from another author. The reason it's simple, it's the only software I've found that it's able to precisely define fonts parameters and format the font in clever way (intead of the classic monster array with another index array).
