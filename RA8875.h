@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.70b8
+	Version:0.70b10
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -167,7 +167,7 @@ basic setup:
 #endif
 
 
-
+  
 #if !defined(swapvals)
 	#define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
 #endif
@@ -188,11 +188,31 @@ enum RA8875btedatam{ 		CONT, RECT };
 enum RA8875btelayer{ 		SOURCE, DEST };
 enum RA8875intlist{ 		BTE=1,TOUCH=2, DMA=3,KEY=4 };
 
+/*
+-------------- UNICODE decode (2 byte char) ---------------------
+Latin:      \u0000 -> \u007F	/u00
+Greek:		\u0370 -> \u03FF	/u03
+Cyrillic:   \u0400 -> \u04FF	/u04
+Hebrew:     \u0590 -> \u05FF	/u05
+Arabic: 	\u0600 -> \u06FF	/u06
+Hiragana:	\u3040 -> \u309F	/u30
+Katakana:   \u30A0 -> \u30FF	/u30
+CJK-Uni:	\u4E00 -> \u9FD5	/u4E ... /u9F
+*/
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
 #include "_settings/font.h"
 #include "_settings/RA8875Registers.h"
 #include "_settings/RA8875ColorPresets.h"
 #include "_settings/RA8875UserSettings.h"
+
+#if defined(_FORCE_PROGMEM__)
+template <typename T> T PROGMEM_read (const T * sce)
+  {
+  static T temp;
+  memcpy_P (&temp, sce, sizeof (T));
+  return temp;
+  }
+#endif
 
 #define CENTER 				9998
 #define ARC_ANGLE_MAX 		360		
@@ -265,10 +285,14 @@ class RA8875 : public Print {
 	void 		setColor(uint16_t fcolor,uint16_t bcolor,bool bcolorTraspFlag=false);
 	void 		setColorBpp(uint8_t colors);//set the display color space 8 or 16!
 	uint8_t 	getColorBpp(void);//get the current display color space (return 8 or 16)
+	uint16_t	grandient(uint8_t val);
+	uint16_t 	colorInterpolation(uint16_t color1,uint16_t color2,uint16_t pos,uint16_t div=100);
+	uint16_t 	colorInterpolation(uint8_t r1,uint8_t g1,uint8_t b1,uint8_t r2,uint8_t g2,uint8_t b2,uint16_t pos,uint16_t div=100);
 //-------------- COLOR CONVERSION -----------------------------------------------------------
 	inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3); }
 	inline uint16_t Color24To565(int32_t color_) { return ((((color_ >> 16) & 0xFF) / 8) << 11) | ((((color_ >> 8) & 0xFF) / 4) << 5) | (((color_) &  0xFF) / 8);}
 	inline uint16_t htmlTo565(int32_t color_) { return (uint16_t)(((color_ & 0xF80000) >> 8) | ((color_ & 0x00FC00) >> 5) | ((color_ & 0x0000F8) >> 3));}
+	inline void Color565ToRGB(uint16_t color, uint8_t &r, uint8_t &g, uint8_t &b){r = (((color & 0xF800) >> 11) * 527 + 23) >> 6; g = (((color & 0x07E0) >> 5) * 259 + 33) >> 6; b = ((color & 0x001F) * 527 + 23) >> 6;}
 //-------------- CURSOR ----------------------------------------------------------------------
 	void 		cursorIncrement(bool on);
 	void 		setCursorBlinkRate(uint8_t rate);//set blink rate of the cursor 0...255 0:faster
@@ -285,6 +309,7 @@ class RA8875 : public Print {
 	void		showUserChar(uint8_t symbolAddrs,uint8_t wide=0);//show user uploaded char at the adrs 0...255
 	void    	setTextColor(uint16_t fcolor, uint16_t bcolor);//set text color + text background color
 	void 		setTextColor(uint16_t fcolor);//set text color (backgroud will be transparent)
+	void 		setTextGrandient(uint16_t fcolor1,uint16_t fcolor2);
 	void    	setFontScale(uint8_t scale);//global font scale (w+h)
 	void    	setFontScale(uint8_t vscale,uint8_t hscale);//font scale separated by w and h
 	void    	setFontSize(enum RA8875tsize ts);//X16,X24,X32
@@ -316,7 +341,6 @@ class RA8875 : public Print {
 	void    	drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 	void 		drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length, uint16_t color,int offset = -90);
 	void 		drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t start, uint16_t length, uint16_t color,int offset = -90);
-	void		roundGaugeTicker(uint16_t x, uint16_t y, uint16_t r, int from, int to, float dev,uint16_t color);
 	void    	drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 	void    	drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
@@ -330,7 +354,7 @@ class RA8875 : public Print {
 	void 		drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);//ok
 	void 		fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color);
 	void 		drawQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2,int16_t x3, int16_t y3, uint16_t color);
-	void 		fillQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2, int16_t x3, int16_t y3, uint16_t color);
+	void 		fillQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2, int16_t x3, int16_t y3, uint16_t color, bool triangled=true);
 	void 		drawPolygon(int16_t cx, int16_t cy, uint8_t sides, int16_t diameter, float rot, uint16_t color);
 	void 		drawMesh(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t spacing,uint16_t color);
 	void 		setArcParams(float arcAngleMax, int arcAngleOffset);
@@ -342,6 +366,9 @@ class RA8875 : public Print {
 			_drawArc_helper(cx, cy, radius, thickness, start + (_arcAngle_offset / (float)360)*_arcAngle_max, end + (_arcAngle_offset / (float)360)*_arcAngle_max, color);
 		}	
 	}
+//-------------- GAUGES ---------------------------------------------------------------------------
+	void 		ringMeter(int val, int minV, int maxV, int16_t x, int16_t y, uint16_t r, const char* units="none", uint16_t colorScheme=4,uint16_t backSegColor=RA8875_BLACK,int16_t angle=150,uint8_t inc=10);
+	void		roundGaugeTicker(uint16_t x, uint16_t y, uint16_t r, int from, int to, float dev,uint16_t color);
 //-------------- LAYERS --------------------------------------------------------------------------
 	void 		useLayers(boolean on);//mainly used to turn of layers!
 	void		writeTo(enum RA8875writes d);//L1, L2, CGRAM, PATTERN, CURSOR
@@ -404,6 +431,7 @@ class RA8875 : public Print {
 
 //--------------Text Write -------------------------
 virtual size_t write(uint8_t b) {
+	if (_FNTgrandient) _FNTgrandient = false;//cannot use this with write
 	_textWrite((const char *)&b, 1);
 	return 1;
 }
@@ -436,6 +464,9 @@ using Print::write;
 	6	->		_alignYToCenter;
 	7	->		_renderFont active;
 	*/
+	bool						  _FNTgrandient;
+	uint16_t					  _FNTgrandientColor1;
+	uint16_t					  _FNTgrandientColor2;
 	bool						  _FNTcompression;
 	int							  _spaceCharWidth;
 	volatile bool				  _needISRrearm;

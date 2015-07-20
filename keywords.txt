@@ -30,6 +30,7 @@ setForegroundColor	KEYWORD2
 setBackgroundColor	KEYWORD2
 setTransparentColor	KEYWORD2
 setTextColor	KEYWORD2
+setTextGrandient	KEYWORD2
 setColor	KEYWORD2
 showCursor	KEYWORD2
 setCursorBlinkRate	KEYWORD2
@@ -81,6 +82,8 @@ setExtFontFamily	KEYWORD2
 setFontFullAlign	KEYWORD2
 setFontRotate	KEYWORD2
 setFontInterline	KEYWORD2
+getFontHeight	KEYWORD2
+getFontWidth	KEYWORD2
 cursorIncrement	KEYWORD2
 uploadUserChar	KEYWORD2
 showUserChar	KEYWORD2
@@ -121,6 +124,8 @@ getTScoordinates	KEYWORD2
 Color565	KEYWORD2
 Color24To565	KEYWORD2
 htmlTo565	KEYWORD2
+Color565ToRGB	KEYWORD2
+colorInterpolation	KEYWORD2
 gPrint	KEYWORD2
 BTE_source	KEYWORD2
 BTE_ropcode	KEYWORD2
@@ -139,6 +144,7 @@ keypadTouched	KEYWORD2
 getKey	KEYWORD2
 setArcParams	KEYWORD2
 setAngleOffset	KEYWORD2
+ringMeter	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
@@ -215,3 +221,4 @@ RA8875_LIGHT_ORANGE	LITERAL1
 RA8875_DARK_ORANGE	LITERAL1
 RA8875_PINK	LITERAL1
 RA8875_PURPLE	LITERAL1
+RA8875_GRAYSCALE	LITERAL1

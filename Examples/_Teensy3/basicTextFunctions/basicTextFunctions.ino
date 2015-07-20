@@ -63,6 +63,7 @@ void setup()
   //here's a useful feature of setCursor
   tft.setCursor(CENTER, CENTER); //this set text exact in the screen regardless his lenght and scale
   tft.setFontScale(1);//font x2
+  tft.setTextGrandient(RA8875_YELLOW,RA8875_MAGENTA);
   tft.print("I'm in the center");
   //now use the autocenter feature
   tft.setFontScale(0);//x0

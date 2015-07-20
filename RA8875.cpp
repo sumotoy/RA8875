@@ -191,6 +191,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_FNTinterline = 0;
 	_EXTFNTfamily = STANDARD;
 	_FNTcursorType = NOCURSOR;
+	_FNTgrandient = false;
 	_arcAngle_max = ARC_ANGLE_MAX;
 	_arcAngle_offset = ARC_ANGLE_OFFSET;
 	_angle_offset = ANGLE_OFFSET;
@@ -1591,6 +1592,12 @@ void RA8875::setTextColor(uint16_t fcolor)
 	}
 }
 
+void RA8875::setTextGrandient(uint16_t fcolor1,uint16_t fcolor2)
+{
+	_FNTgrandient = true;
+	_FNTgrandientColor1 = fcolor1;
+	_FNTgrandientColor2 = fcolor2;
+}
 /**************************************************************************/
 /*!		
 		Set the Text size by it's multiple. normal should=0, max is 3 (x4) for internal fonts
@@ -1796,7 +1803,6 @@ void RA8875::_textWrite(const char* buffer, uint16_t len)
 	//_absoluteCenter or _relativeCenter cases...................
 	if (_absoluteCenter || _relativeCenter){
 		
-		//uint16_t strngLen = (len * _FNTwidth) * xScale;
 		uint16_t strngLen = _STRlen_helper(buffer,len) * xScale;
 		uint16_t strngHeight = (_FNTheight * yScale) - (loVOffset + hiVOffset);//the REAL heigh
 		
@@ -1835,6 +1841,10 @@ void RA8875::_textWrite(const char* buffer, uint16_t len)
 	//Loop trouch chars and write them
 	if (!_textMode && !renderOn) _setTextMode(true);//  go to text
 	if (_textMode && renderOn) _setTextMode(false);//  go to graphic
+	//colored text vars
+	uint16_t grandientLen = 0;
+	uint16_t grandientIndex = 0;
+	uint16_t recoverColor = fcolor;
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		if (_textMode && _TXTrecoverColor){
 			if (_foreColor != _TXTForeColor) {_TXTrecoverColor = false;setForegroundColor(_TXTForeColor);}
@@ -1844,11 +1854,39 @@ void RA8875::_textWrite(const char* buffer, uint16_t len)
 			bcolor = _TXTBackColor;
 		}
 	#endif
+	if (_FNTgrandient){//coloring text
+		recoverColor = _TXTForeColor;
+		for (i=0;i<len;i++){//avoid non char in color index
+			if (buffer[i] != 13 && buffer[i] != 10 && buffer[i] != 32) grandientLen++;//lenght of the interpolation
+		}
+	}
 	for (i=0;i<len;i++){
+		if (_FNTgrandient){
+			if (buffer[i] != 13 && buffer[i] != 10 && buffer[i] != 32){
+				if (!renderOn){
+					setTextColor(colorInterpolation(_FNTgrandientColor1,_FNTgrandientColor2,grandientIndex++,grandientLen));
+				} else {
+					fcolor = colorInterpolation(_FNTgrandientColor1,_FNTgrandientColor2,grandientIndex++,grandientLen);
+				}
+			}
+		}
 		if (!renderOn){
 			_charWrite(buffer[i],interlineOffset);
 		} else {
 			_charWriteR(buffer[i],xScale,yScale,interlineOffset,fcolor,bcolor);
+		}
+	}
+	if (_FNTgrandient){//recover text color after colored text
+		_FNTgrandient = false;
+		 //recover original text color
+		if (!renderOn){
+			#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
+				setTextColor(recoverColor,_backColor);
+			#else
+				setTextColor(recoverColor,_backColor);
+			#endif
+		} else {
+			fcolor = recoverColor;
 		}
 	}
 }
@@ -3264,7 +3302,83 @@ void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color
 		_rect_helper(x,y,(x+w)-1,(y+h)-1,color,true);//thanks the experimentalist
 	}
 }
+/**************************************************************************/
+/*!
+	  calculate a grandient color
+	  return a spectrum starting at blue to red (0...127)
+*/
+/**************************************************************************/
+uint16_t RA8875::grandient(uint8_t val)
+{
+	uint8_t r = 0;
+	uint8_t g = 0;
+	uint8_t b = 0;
+	uint8_t q = val / 32;
+	switch(q){
+		case 0:
+			r = 0; g = 2 * (val % 32); b = 31;
+		break;
+		case 1:
+			r = 0; g = 63; b = 31 - (val % 32);
+		break;
+		case 2:
+			r = val % 32; g = 63; b = 0;
+		break;
+		case 3:
+			r = 31; g = 63 - 2 * (val % 32); b = 0;
+		break;
+	}
+	return (r << 11) + (g << 5) + b;
+}
 
+/**************************************************************************/
+/*!
+	  interpolate 2 16bit colors
+	  return a 16bit mixed color between the two
+	  Parameters:
+	  color1:
+	  color2:
+	  pos:0...div (mix percentage) (0:color1, div:color2)
+	  div:divisions between color1 and color 2
+*/
+/**************************************************************************/
+uint16_t RA8875::colorInterpolation(uint16_t color1,uint16_t color2,uint16_t pos,uint16_t div)
+{
+    if (pos == 0) return color1;
+    if (pos >= div) return color2;
+	uint8_t r1,g1,b1;
+	Color565ToRGB(color1,r1,g1,b1);//split in r,g,b
+	uint8_t r2,g2,b2;
+	Color565ToRGB(color2,r2,g2,b2);//split in r,g,b
+	return colorInterpolation(r1,g1,b1,r2,g2,b2,pos,div);
+}
+
+/**************************************************************************/
+/*!
+	  interpolate 2 r,g,b colors
+	  return a 16bit mixed color between the two
+	  Parameters:
+	  r1.
+	  g1:
+	  b1:
+	  r2:
+	  g2:
+	  b2:
+	  pos:0...div (mix percentage) (0:color1, div:color2)
+	  div:divisions between color1 and color 2
+*/
+/**************************************************************************/
+uint16_t RA8875::colorInterpolation(uint8_t r1,uint8_t g1,uint8_t b1,uint8_t r2,uint8_t g2,uint8_t b2,uint16_t pos,uint16_t div)
+{
+    if (pos == 0) return Color565(r1,g1,b1);
+    if (pos >= div) return Color565(r2,g2,b2);
+	float pos2 = (float)pos/div;
+	return Color565(
+				(uint8_t)(((1.0 - pos2) * r1) + (pos2 * r2)),
+				(uint8_t)((1.0 - pos2) * g1 + (pos2 * g2)),
+				(uint8_t)(((1.0 - pos2) * b1) + (pos2 * b2))
+	);
+}
 /**************************************************************************/
 /*!
 	  draws a dots filled area
@@ -3401,25 +3515,15 @@ void RA8875::drawQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, 
 	  x3:
 	  y3:
       color: RGB565 color
-	  *NOTE: Still fixing this, there's a bug in the triangle macro for 
-	  out of range or wrong parameters
+	  triangled: if true a full quad will be generated, false generate a low res quad (faster)
+	  *NOTE: a bug in _triangle_helper create some problem, still fixing....
 */
 /**************************************************************************/
-void RA8875::fillQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2, int16_t x3, int16_t y3, uint16_t color) 
+void RA8875::fillQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, int16_t y2, int16_t x3, int16_t y3, uint16_t color, bool triangled) 
 {
-	if (y0 < y3){
-		_triangle_helper(x0,y0,x3,y3,x1,y1,color,true);
-		_triangle_helper(x1,y1,x2,y2,x3,y3,color,true);
-	} else if (x0 > x1 && x2 < x3){//x2 partenza
-		_triangle_helper(x2,y2,x1,y1,x0,y0,color,true);
-		_triangle_helper(x2,y2,x0,y0,x3,y3,color,true);
-	} else if (y2 > y3 && x2 < x3){
-		_triangle_helper(x3,y3,x0,y0,x1,y1,color,true);
-		_triangle_helper(x3,y3,x1,y1,x2,y2,color,true);
-	} else {
-		_triangle_helper(x0,y0,x1,y1,x2,y2,color,true);
-		_triangle_helper(x0,y0,x2,y2,x3,y3,color,true);
-	}
+	  _triangle_helper(x0, y0, x1, y1, x2, y2, color,true);
+	  if (triangled) _triangle_helper(x2, y2, x3, y3, x0, y0, color,true);
+      _triangle_helper(x1, y1, x2, y2, x3, y3, color,true);
 }
 
 /**************************************************************************/
@@ -3449,6 +3553,148 @@ void RA8875::drawPolygon(int16_t cx, int16_t cy, uint8_t sides, int16_t diameter
 			cy + (cos(((i+1)*rads + rot) * dtr) * diameter),
 			color);
 	}
+}
+
+
+/**************************************************************************/
+/*!
+      ringMeter 
+	  (adapted from Alan Senior (thanks man!))
+	  it create a ring meter with a lot of personalizations,
+	  it return the width of the gauge so you can use this value
+	  for positioning other gauges near the one just created easily
+	  Parameters:
+	  val:  your value
+	  minV: the minimum value possible
+	  maxV: the max value possible
+	  x:    the position on x axis
+	  y:    the position on y axis
+	  r:    the radius of the gauge (minimum 50)
+	  units: a text that shows the units, if "none" all text will be avoided
+	  scheme:0...7 or 16 bit color (not BLACK or WHITE)
+	  0:red
+	  1:green
+	  2:blue
+	  3:blue->red
+	  4:green->red
+	  5:red->green
+	  6:red->green->blue
+	  7:cyan->green->red
+	  8:black->white linear interpolation
+	  9:violet->yellow linear interpolation
+	  or
+      RGB565 color (not BLACK or WHITE)
+	  backSegColor: the color of the segments not active (default BLACK)
+	  angle:		90 -> 180 (the shape of the meter, 90:halfway, 180:full round, 150:default)
+	  inc: 			5...20 (5:solid, 20:sparse divisions, default:10)
+*/
+/**************************************************************************/
+void RA8875::ringMeter(int val, int minV, int maxV, int16_t x, int16_t y, uint16_t r, const char* units, uint16_t colorScheme,uint16_t backSegColor,int16_t angle,uint8_t inc)
+{
+	if (inc < 5) inc = 5;
+	if (inc > 20) inc = 20;
+	if (r < 50) r = 50;
+	if (angle < 90) angle = 90;
+	if (angle > 180) angle = 180;
+	int curAngle = map(val, minV, maxV, -angle, angle);
+	uint16_t colour;
+	x += r;
+	y += r;   // Calculate coords of centre of ring
+	uint16_t w = r / 4;    // Width of outer ring is 1/4 of radius
+	const uint8_t seg = 5; // Segments are 5 degrees wide = 60 segments for 300 degrees
+	// Draw colour blocks every inc degrees
+	for (int16_t i = -angle; i < angle; i += inc) {
+		colour = RA8875_BLACK;
+		switch (colorScheme) {
+			case 0:
+				colour = RA8875_RED;
+				break; // Fixed colour
+			case 1:
+				colour = RA8875_GREEN;
+				break; // Fixed colour
+			case 2:
+				colour = RA8875_BLUE;
+				break; // Fixed colour
+			case 3:
+				colour = grandient(map(i, -angle, angle, 0, 127));
+				break; // Full spectrum blue to red
+			case 4:
+				colour = grandient(map(i, -angle, angle, 63, 127));
+				break; // Green to red (high temperature etc)
+			case 5:
+				colour = grandient(map(i, -angle, angle, 127, 63));
+				break; // Red to green (low battery etc)
+			case 6:
+				colour = grandient(map(i, -angle, angle, 127, 0));
+				break; // Red to blue (air cond reverse)
+			case 7:
+				colour = grandient(map(i, -angle, angle, 35, 127));
+				break; // cyan to red 
+			case 8:
+				colour = colorInterpolation(0,0,0,255,255,255,map(i,-angle,angle,0,w),w);
+				break; // black to white
+			case 9:
+				colour = colorInterpolation(0x80,0,0xC0,0xFF,0xFF,0,map(i,-angle,angle,0,w),w);
+				break; // violet to yellow
+			default:
+				if (colorScheme > 9){
+					colour = colorScheme;
+				} else {
+					colour = RA8875_BLUE;
+				}
+				break; // Fixed colour
+		}
+		// Calculate pair of coordinates for segment start
+		float xStart = cos((i - 90) * 0.0174532925);
+		float yStart = sin((i - 90) * 0.0174532925);
+		uint16_t x0 = xStart * (r - w) + x;
+		uint16_t y0 = yStart * (r - w) + y;
+		uint16_t x1 = xStart * r + x;
+		uint16_t y1 = yStart * r + y;
+
+		// Calculate pair of coordinates for segment end
+		float xEnd = cos((i + seg - 90) * 0.0174532925);
+		float yEnd = sin((i + seg - 90) * 0.0174532925);
+		int16_t x2 = xEnd * (r - w) + x;
+		int16_t y2 = yEnd * (r - w) + y;
+		int16_t x3 = xEnd * r + x;
+		int16_t y3 = yEnd * r + y;
+
+		if (i < curAngle) { // Fill in coloured segments with 2 triangles
+			fillQuad(x0, y0, x1, y1, x2, y2, x3, y3, colour, false);
+		} else {// Fill in blank segments
+			fillQuad(x0, y0, x1, y1, x2, y2, x3, y3, backSegColor, false);
+		}
+	}
+
+	// text
+	if (strcmp(units, "none") != 0){
+		//erase internal background
+		if (angle > 90) {
+			fillCircle(x, y, r - w, _backColor); 
+		} else {
+			fillCurve(x, y + getFontHeight() / 2, r - w, r - w, 1, _backColor);
+			fillCurve(x, y + getFontHeight() / 2, r - w, r - w, 2, _backColor);
+		}
+		//prepare for write text
+		if (r > 84) {
+			setFontScale(1);
+		} else {
+			setFontScale(0);
+		}
+		if (_portrait){
+			setCursor(y, x - 15, true);
+		} else {
+			setCursor(x - 15, y, true);
+		}
+		print(val);
+		print(" ");
+		print(units);
+	}
+
+	// Calculate and return right hand side x coordinate
+	//return x + r;
+	
 }
 
 /**************************************************************************/
@@ -3677,12 +3923,14 @@ void RA8875::_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, b
 /**************************************************************************/
 void RA8875::_rect_helper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled)
 {
+	if (w < 1 || h < 1) return;//why draw invisible rects?
+	if (w >= _width) return;
+	if (h >= _height) return;
+	
 	if (_portrait) {swapvals(x,y); swapvals(w,h);}
 
-	if (w < 1 || h < 1) return;//why draw invisible rects?
-
 	_checkLimits_helper(x,y);
-	
+
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
@@ -3705,6 +3953,8 @@ void RA8875::_rect_helper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c
 /**************************************************************************/
 void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled)
 {
+	if (x0 >= _width || x1 >= _width || x2 >= _width) return;
+	if (y0 >= _height || y1 >= _height || y2 >= _height) return;
 	
 	if (_portrait) {swapvals(x0,y0); swapvals(x1,y1); swapvals(x2,y2);}
 	
@@ -3745,6 +3995,9 @@ void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, in
 		_TXTrecoverColor = true;
 	#endif
 	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
+	
+	//_checkLimits_helper(x0,y0);
+	//_checkLimits_helper(x1,y1);
 	
 	_line_addressing(x0,y0,x1,y1);
 	//p2
@@ -3828,6 +4081,7 @@ void RA8875::_roundRect_helper(int16_t x, int16_t y, int16_t w, int16_t h, int16
 	#endif
 	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 
+	
 	_line_addressing(x,y,w,h);
 
 	_writeRegister(RA8875_ELL_A0,r & 0xFF);
