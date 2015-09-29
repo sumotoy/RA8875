@@ -19,6 +19,7 @@ I have tested 0.70b6 with several CPU and <b>worked</b>:<br>
  - Teensy 3.0
  - Teensy LC
  - Arduino UNO
+ - Arduino NANO
  - Arduino DUE
  - Arduino MEGA
  - Arduino YUN
