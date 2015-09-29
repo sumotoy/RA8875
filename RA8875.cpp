@@ -1025,9 +1025,13 @@ void RA8875::showUserChar(uint8_t symbolAddrs,uint8_t wide)
 		} else {
 			writeTo(L2);
 		}
-	} else {
+	} 
+	//fix a post b10 preview 2 error
+	/*
+	else {
 		writeTo(L1);
 	}
+	*/
 	writeCommand(RA8875_MRWC);
 	_writeData(symbolAddrs);
 	if (wide > 0){
@@ -3773,7 +3777,7 @@ void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
       yCenter:   y location of the ellipse center
       longAxis:  Size in pixels of the long axis
       shortAxis: Size in pixels of the short axis
-      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
+      curvePart: Curve to draw in clock-wise dir: 0[180-270Â°],1[270-0Â°],2[0-90Â°],3[90-180Â°]
       color: RGB565 color
 */
 /**************************************************************************/
@@ -3798,7 +3802,7 @@ void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16
       yCenter:   y location of the ellipse center
       longAxis:  Size in pixels of the long axis
       shortAxis: Size in pixels of the short axis
-      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
+      curvePart: Curve to draw in clock-wise dir: 0[180-270Â°],1[270-0Â°],2[0-90Â°],3[90-180Â°]
       color: RGB565 color
 */
 /**************************************************************************/
@@ -4959,7 +4963,7 @@ void RA8875::touchBegin(void)
 /**************************************************************************/
 void RA8875::touchEnable(boolean enabled) {
 	if (_intPin < 255){
-		/* another F?%&$%£!*§ bug of the RA8875!
+		/* another F?%&$%Â£!*Â§ bug of the RA8875!
 		if we are in text mode the RA chip cannot get back the
 		INT mode!
 		*/
