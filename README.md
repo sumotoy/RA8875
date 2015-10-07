@@ -52,12 +52,9 @@ better functions for round gauges, added 2 examples, fixed RoundGaugeBallistic e
 **0.70b10**<br>
 fixed PROGMEM missed template for 8bit arduino, added colorInterpolation(neat!), introduced gauges (with examples), fixed some value boudary fix to compensate RA8875 hardware limitations, added Color565ToRGB,setTextGrandient(works with all text, see examples),colorInterpolation,ringMeter(with great example),roundGaugeTicker(with example), updated basicTextFunctions example.<br>
 
-##### Rendering Font Note
-This library support user fonts but the utility I'm using to convert fonts it's not released since it's a modified copy from another author. The reason it's simple, it's the only software I've found that it's able to precisely define fonts parameters and format the font in clever way (intead of the classic monster array with another index array).
-The utility it's also able to compress fonts, write 16 or 32 bit lenght strings (useful for large fonts),I cannot find any program that let me do that so I have decided to use this.<br>
-However, since it's not my code, I will release the app only when author give me the rights to do that (or incorporate my changes in the next release).<br>
-<b>If someone of you have some font proposal to convert please let me know, I will convert and incorporate in the library but be sure it's copyrights permit this!</b><br>
-I have received several pressures to release the Font Conversion Utility before I got author permission, please, do not ask this, I cannot make any exception!!!<br><br>
+##### Rendering Font Note [new b11!!!]
+The current font rendering code it's obsolete, b11 has a brand new support that is much faster and has the font conversion application, I solved by creating a template for the application and avoided a custom version. The new font scheme it's simple than current one, use just a font file and correctly handle PROGMEM for tiny memory CPU's (like UNO) that cannot handle big font sizes. The upcoming font rendering it's completely rebuilded from scratch and never released in any library, uses several algorithm to analyze chunks of font data for grouping and uses the accellerated graphic primitives of the RA, the result it's much faster than current one and maintain all the current features<br>
+
 
 ##### Teensy notes:
 I love Teensy 3 MCU's, so every library has special features for this micro. You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
