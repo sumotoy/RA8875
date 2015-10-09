@@ -1,10 +1,10 @@
-RA8875 library [gold release]
+RA8875 library b11p1 [gold release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.70b10(preview 2) <br>
+##### Current Version: 0.70b11 (preview 1) <br>
 
 Current beta 0.70 **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
@@ -40,21 +40,12 @@ A couple of users tested also with:
 
 <b>NOTE</b>:If your do not work please ask here but remember that this is a preview to test new capabilities!<br>
 
-##### Current version 0.70b5p1, it's the first preview of the 0.70b5! Please read!!!.<br>
-**0.70b5**<br>
-massive changes, lot of fixing,rendering fonts,some command changed!<br>
-**0.70b6**<br>
-changes in the FONT ROM code, added GT30L16U2W support, fixed an IRQ error.<br>
-**0.70b7**<br>
-fixed Color565 (color ordering, thanks gmartau).<br>
-**0.70b8**<br>
-better functions for round gauges, added 2 examples, fixed RoundGaugeBallistic examples<br>
-**0.70b10**<br>
-fixed PROGMEM missed template for 8bit arduino, added colorInterpolation(neat!), introduced gauges (with examples), fixed some value boudary fix to compensate RA8875 hardware limitations, added Color565ToRGB,setTextGrandient(works with all text, see examples),colorInterpolation,ringMeter(with great example),roundGaugeTicker(with example), updated basicTextFunctions example.<br>
-
-##### Rendering Font Note [new b11!!!]
-The current font rendering code it's obsolete, b11 has a brand new support that is much faster and has the font conversion application, I solved by creating a template for the application and avoided a custom version. The new font scheme it's simple than current one, use use just a font file and correctly handle PROGMEM for tiny memory CPU's (like UNO) that cannot handle big font sizes. The upcoming font rendering it's completely rebuilded from scratch and never released in any library, uses several algorithm to analyze chunks of font data for grouping and uses the accellerated graphic primitives of the RA, the result it's much faster than current one and maintain all the current features, even more the new font rendering engine it's ready for RLE compressed font (btw not in the b11, you have to wait for that) so in the near future it's possible use really large fonts.<br>
-I will provide a wiki that explain how to convert your fonts step by step when b11 it's out.<br>
+##### Current version 0.70b11, it's the first preview of the 0.70b11! Please read!!!.<br>
+**0.70b11**<br>
+Finally the new font rendering engine it's ready! More than 10 times faster<br>
+New font scheme, it uses only one file and can be loaded in tiny CPU like uno<br>
+User Font Conversion utility support (read wiki), now user can create custom fonts!<br>
+Initial support for many other CPU's like ESP<br>
 
 
 ##### Teensy notes:
