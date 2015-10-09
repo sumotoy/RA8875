@@ -46,6 +46,7 @@ Finally the new font rendering engine it's ready! More than 10 times faster<br>
 New font scheme, it uses only one file and can be loaded in tiny CPU like uno<br>
 User Font Conversion utility support (read wiki), now user can create custom fonts!<br>
 Initial support for many other CPU's like ESP<br>
+Changed licence from CC to GNU v3<br>
 
 
 ##### Teensy notes:
