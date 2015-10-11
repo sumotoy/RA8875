@@ -11,6 +11,7 @@ Rendered strings now follow wrap command or the extra char will not rendered (wr
 New font scheme, it uses only one file and can be loaded in tiny CPU (UNO, etc.)<br>
 User Font Conversion utility support (read wiki), now user can easily create custom fonts! (only win, sorry)<br>
 Initial support for many other CPU's like ESP<br>
+Various optimizations<br>
 Changed licence from CC to GNU v3<br>
 
 Current beta **tested only with**:
