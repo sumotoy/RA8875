@@ -2,7 +2,9 @@ RA8875 library [gold release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
-Moved a lot of 'bla bla' in the wiki, readme cleaned.
+Moved a lot of 'bla bla' in the wiki, readme cleaned.<br>
+
+Want try 0.70b11 version? Click here https://github.com/sumotoy/RA8875/tree/0.70b11<br><br>
 
 ##### Current Version: 0.70b10(preview 2) <br>
 
