@@ -4,7 +4,14 @@ RA8875 library b11p1 [gold release]
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current Version: 0.70b11 (preview 1) <br>
+##### Current version 0.70b11, it's the first preview of the 0.70b11! Please read!!!.<br>
+**0.70b11**<br>
+Finally the new optimized font rendering engine it's ready! More than 20 times faster!!!<br>
+Rendered strings now follow wrap command or the extra char will not rendered (wrap off)<br>
+New font scheme, it uses only one file and can be loaded in tiny CPU (UNO, etc.)<br>
+User Font Conversion utility support (read wiki), now user can easily create custom fonts! (only win, sorry)<br>
+Initial support for many other CPU's like ESP<br>
+Changed licence from CC to GNU v3<br>
 
 Current beta **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
@@ -36,14 +43,6 @@ I have tested 0.70b11 with several CPU and <b>worked</b>:<br>
  with most stuff (check my wiki).<br>
  Are you sure you connect everything fine, settings are ok, you are using the correct CS pin, you don't have any other  SPI devices sharing the same line, the display has correct jumper set and you are sure that display it's correct supplied (and the supply it's stable, check also this!) but you still have nothing on screen?<br>
   Ok, in that case you may ask help but you need to double check that you do not make mistakes!<br>Please understand that   I cannot spend time to fix something that it's not a library fault!!!
-
-##### Current version 0.70b11, it's the first preview of the 0.70b11! Please read!!!.<br>
-**0.70b11**<br>
-Finally the new font rendering engine it's ready! More than 10 times faster<br>
-New font scheme, it uses only one file and can be loaded in tiny CPU like uno<br>
-User Font Conversion utility support (read wiki), now user can create custom fonts!<br>
-Initial support for many other CPU's like ESP<br>
-Changed licence from CC to GNU v3<br>
 
 
 ##### Teensy notes:
