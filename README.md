@@ -52,6 +52,9 @@ I have tested 0.70b11 with several CPU and <b>worked</b>:<br>
 ##### Teensy notes:
 I love Teensy 3 MCU's, so every library has special features for this micro. You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
 
+##### Convert a font
+Follow wiki https://github.com/sumotoy/RA8875/wiki/How-to-convert-a-font
+
 ##### Description
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teensy LC and Arduino's (and I hope for other MCU's).<br>
 This is the first attemp to create a library that use all the features of this chip _from scratch_ and have nothing to share with the Adafruit_RA8875 library.<br>
