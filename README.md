@@ -11,9 +11,9 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Changed font file scheme, now just one file and support PROGMEM for low memory cpu's.
  - Added initial support for many other CPU's (ESP, Chipkit, STM32).
  - Text Rendered now correctly follows wrap rules.
- - Fixed setFontScale(x,y), x and y scale was inverted
+ - Fixed setFontScale(x,y), x and y scale was inverted (this can affect code that uses b10)
  - Fixed a bug when scaling it's on with showUserChar
- - Fixed a bug on println for render fonts.
+ - Fixed a bug on println for render fonts.(this can affect code that uses b10)
  - Updated many outdated examples.
  - Changed licence from CC to GNU v3
 <br>
