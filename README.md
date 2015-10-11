@@ -13,6 +13,7 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Text Rendered now correctly follows wrap rules.
  - Fixed setFontScale(x,y), x and y scale was inverted
  - Fixed a bug when scaling it's on with showUserChar
+ - Fixed a bug on println for render fonts.
  - Changed licence from CC to GNU v3
 <br>
 
@@ -91,3 +92,23 @@ From version 0.6, Energia IDE will be supported so many MCU's can be used but sh
 Current beta has a optional Teensy instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 see wiky:<br>
 https://github.com/sumotoy/RA8875/wiki/Teensy-3.1---Working-with-PJRC-Audio-Board-with-SD-card-and-RA8875
+
+#### Licensing
+
+License:GNU General Public License v3.0
+
+    RA8875 fast SPI library for RAiO SPI RA8875 drived TFT
+    Copyright (C) 2014  egidio massimo costa sumotoy (a t) gmail.com
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
