@@ -14,6 +14,7 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Fixed setFontScale(x,y), x and y scale was inverted
  - Fixed a bug when scaling it's on with showUserChar
  - Fixed a bug on println for render fonts.
+ - Updated many outdated examples.
  - Changed licence from CC to GNU v3
 <br>
 
