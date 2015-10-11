@@ -5,15 +5,16 @@ RA8875 library b11p1 [gold release]
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
 ##### Current version 0.70b11, it's the first preview of the 0.70b11! Please read!!!.<br>
-**0.70b11**<br>
-Finally the new optimized font rendering engine it's ready! More than 20 times faster!!!<br>
-Rendered strings now follow wrap command or the extra char will not rendered (wrap off)<br>
-New font scheme, it uses only one file and can be loaded in tiny CPU (UNO, etc.)<br>
-User Font Conversion utility support (read wiki), now user can easily create custom fonts! (only win, sorry)<br>
-Initial support for many other CPU's like ESP<br>
+**0.70b11** changes...<br>
+ - New optimized User Font Rendering engine, over 20 times faster.
+ - Added template & stepByStep wiki for converting fonts with lcd-image-converter.
+ - Changed font file scheme, now just one file and support PROGMEM for low memory cpu's.
+ - Added initial support for many other CPU's (ESP, Chipkit, STM32).
+ - Text Rendered now correctly follows wrap rules.
  - Fixed setFontScale(x,y), x and y scale was inverted
  - Fixed a bug when scaling it's on with showUserChar
-Changed licence from CC to GNU v3<br>
+ - Changed licence from CC to GNU v3
+<br>
 
 Current beta **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
