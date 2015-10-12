@@ -2966,9 +2966,11 @@ void RA8875::useLayers(boolean on)
 		_useMultiLayers = false;
 		_DPCR_Reg &= ~(1 << 7);
 		clearActiveWindow(false);
+		
 	}
 	
 	_writeRegister(RA8875_DPCR,_DPCR_Reg);
+	if (!_useMultiLayers && _color_bpp < 16) setColorBpp(16);//bring color back to 16
 	/*
 	if (clearBuffer) { 
 		clearWindow(true);
