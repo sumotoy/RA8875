@@ -5,7 +5,7 @@ RA8875 library b11p1 [gold release]
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
 ##### Current version 0.70b11, it's the first preview of the 0.70b11! Please read!!!.<br>
-**0.70b11** changes...<br>
+**0.70b11p1** changes...<br>
  - New optimized User Font Rendering engine, over 20 times faster.
  - Added template & stepByStep wiki for converting fonts with lcd-image-converter.
  - Changed font file scheme, now just one file and support PROGMEM for low memory cpu's.
@@ -16,6 +16,8 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Fixed a bug on println for render fonts.(this can affect code that uses b10)
  - Updated many outdated examples.
  - Changed licence from CC to GNU v3
+**0.70b11p2** changes...<br>
+ - Try to fix drawPixel and drawPixels color bug in 8bit mode (RA8875 hardware error).
 <br>
 
 Current beta **tested only with**:
