@@ -3197,7 +3197,7 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 	if (_color_bpp > 8){
 		writeData16(color); 
 	} else {//TOTEST:layer bug workaround for 8bit color!
-		_writeData(color & 0xFF);
+		_writeData(color >> 8);
 		//_writeData(color >> 8);
 	}
 }
@@ -3245,9 +3245,9 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 				}
 			} else {//TOTEST:layer bug workaround for 8bit color!
 				if (_altSPI){
-					SPI1.transfer(p[i] & 0xFF);
+					SPI1.transfer(p[i] >> 8);
 				} else {
-					SPI.transfer(p[i] & 0xFF);
+					SPI.transfer(p[i] >> 8);
 				}
 			}
 		#else
@@ -3260,14 +3260,14 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 				SPI.transfer(_cs, p[i] & 0xFF, SPI_LAST);
 			} else {//TOTEST:layer bug workaround for 8bit color!
 				//SPI.transfer(_cs, p[i] >> 8, SPI_CONTINUE); 
-				SPI.transfer(_cs, p[i] & 0xFF, SPI_LAST);
+				SPI.transfer(_cs, p[i] >> 8, SPI_LAST);
 			}
 		#else
 			#if defined(__AVR__) && defined(_FASTSSPORT)
 				if (_color_bpp > 8){
 					_spiwrite16(p[i]);
 				} else {//TOTEST:layer bug workaround for 8bit color!
-					_spiwrite(p[i] & 0xFF);
+					_spiwrite(p[i] >> 8);
 				}
 			#else
 				if (_color_bpp > 8){
@@ -3275,7 +3275,7 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 					SPI.transfer(p[i] & 0xFF);
 				} else {//TOTEST:layer bug workaround for 8bit color!
 					//SPI.transfer(p[i] >> 8);
-					SPI.transfer(p[i] & 0xFF);
+					SPI.transfer(p[i] >> 8);
 				}
 			#endif
 		#endif
