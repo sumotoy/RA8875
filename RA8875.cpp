@@ -3192,7 +3192,12 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
-	writeData16(color); 
+	if (_color_bpp > 8){
+		writeData16(color); 
+	} else {//TOTEST:layer bug workaround for 8bit color!
+		_writeData(color & 0xFF);
+		//_writeData(color >> 8);
+	}
 }
 
 /**************************************************************************/
@@ -3207,8 +3212,9 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 /**************************************************************************/
 void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 {
-    setXY(x,y);
+    //setXY(x,y);
 	if (_textMode) _setTextMode(false);//we are in text mode?
+	setXY(x,y);
     writeCommand(RA8875_MRWC);
     _startSend();
 	//set data
@@ -3229,24 +3235,46 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 	for (uint16_t i=0;i<count;i++){
 	#if !defined(ENERGIA) && !defined(___DUESTUFF) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
-			if (_altSPI){
-				SPI1.transfer16(p[i]);
-			} else {
-				SPI.transfer16(p[i]);
+			if (_color_bpp > 8){
+				if (_altSPI){
+					SPI1.transfer16(p[i]);
+				} else {
+					SPI.transfer16(p[i]);
+				}
+			} else {//TOTEST:layer bug workaround for 8bit color!
+				if (_altSPI){
+					SPI1.transfer(p[i] & 0xFF);
+				} else {
+					SPI.transfer(p[i] & 0xFF);
+				}
 			}
 		#else
 			SPI.transfer16(p[i]);
 		#endif
 	#else
 		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
-			SPI.transfer(_cs, p[i] >> 8, SPI_CONTINUE); 
-			SPI.transfer(_cs, p[i] & 0xFF, SPI_LAST);
+			if (_color_bpp > 8){
+				SPI.transfer(_cs, p[i] >> 8, SPI_CONTINUE); 
+				SPI.transfer(_cs, p[i] & 0xFF, SPI_LAST);
+			} else {//TOTEST:layer bug workaround for 8bit color!
+				//SPI.transfer(_cs, p[i] >> 8, SPI_CONTINUE); 
+				SPI.transfer(_cs, p[i] & 0xFF, SPI_LAST);
+			}
 		#else
 			#if defined(__AVR__) && defined(_FASTSSPORT)
-				_spiwrite16(p[i]);
+				if (_color_bpp > 8){
+					_spiwrite16(p[i]);
+				} else {//TOTEST:layer bug workaround for 8bit color!
+					_spiwrite(p[i] & 0xFF);
+				}
 			#else
-				SPI.transfer(p[i] >> 8);
-				SPI.transfer(p[i] & 0xFF);
+				if (_color_bpp > 8){
+					SPI.transfer(p[i] >> 8);
+					SPI.transfer(p[i] & 0xFF);
+				} else {//TOTEST:layer bug workaround for 8bit color!
+					//SPI.transfer(p[i] >> 8);
+					SPI.transfer(p[i] & 0xFF);
+				}
 			#endif
 		#endif
 	#endif
