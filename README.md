@@ -15,7 +15,8 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Fixed a bug when scaling it's on with showUserChar
  - Fixed a bug on println for render fonts.(this can affect code that uses b10)
  - Updated many outdated examples.
- - Changed licence from CC to GNU v3
+ - Changed licence from CC to GNU v3<br>
+
 **0.70b11p2** changes...<br>
  - Try to fix drawPixel and drawPixels color bug in 8bit mode (RA8875 hardware error).
 <br>
