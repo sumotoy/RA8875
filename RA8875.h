@@ -591,7 +591,22 @@ using Print::write;
 	#if defined(_RA8875_TXTRNDOPTIMIZER)
 	void 		_charLineRender(uint8_t bytesInLine,bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor);
 	#endif
-
+	
+	/* really need to be optimized! Fast workaround! */
+	inline __attribute__((always_inline))
+		uint8_t _color16To8bpp(uint16_t color) {
+			uint8_t temp = 0;
+			bitWrite(temp,7,bitRead(color,13));//red 2
+			bitWrite(temp,6,bitRead(color,12));//red 1
+			bitWrite(temp,5,bitRead(color,11));//red 0
+			bitWrite(temp,4,bitRead(color,7));//green 2
+			bitWrite(temp,3,bitRead(color,6));//green 1
+			bitWrite(temp,2,bitRead(color,5));//green 0
+			bitWrite(temp,1,bitRead(color,1));//blue  1
+			bitWrite(temp,0,bitRead(color,0));//blue  0
+			return temp;
+		}
+		
 	inline __attribute__((always_inline)) 
 		void _checkLimits_helper(int16_t &x,int16_t &y){
 			if (x < 0) x = 0;
