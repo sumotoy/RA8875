@@ -1,10 +1,10 @@
-RA8875 library b11p1 [gold release]
+RA8875 library b11p2 [gold release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
-##### Current version 0.70b11, it's the first preview of the 0.70b11! Please read!!!.<br>
+##### Current version 0.70b11, Please read!!!.<br>
 **0.70b11p1** changes...<br>
  - New optimized User Font Rendering engine, over 20 times faster.
  - Added template & stepByStep wiki for converting fonts with lcd-image-converter.
