@@ -9,6 +9,7 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - New optimized User Font Rendering engine, over 20 times faster.
  - Added template & stepByStep wiki for converting fonts with lcd-image-converter.
  - Changed font file scheme, now just one file and support PROGMEM for low memory cpu's.
+ - Added more fonts.
  - Added initial support for many other CPU's (ESP, Chipkit, STM32).
  - Text Rendered now correctly follows wrap rules.
  - Fixed setFontScale(x,y), x and y scale was inverted (this can affect code that uses b10)
