@@ -26,7 +26,7 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Fixed drawPixel and drawPixels for 8bit mode, added _color16To8bpp optimized.<br>
 
 **0.70b11p4** changes...<br>
- - Fixed an error in font rendering, I have to add a new parameter in font file so if someone of you have already converted some font with release prior this one you need to update the template of lcd-image-converter with the new one provided in this release and re-convert, just open the .xlm file e 'Convert', new font file will be updated.
+ - Fixed an error in font rendering, I have to add a new parameter in font file so if someone of you have already converted some font with release prior this one you need to update the template of lcd-image-converter with the new one provided in this release and re-convert, just open the .xlm file e 'Convert', new font file will be updated. Haved to upload again all fonts with new scheme but I forget to included licenses so I will provide this tomorrow, sorry for font authors!
 <br>
 
 Current beta **tested only with**:
