@@ -1,4 +1,4 @@
-RA8875 library b11p3 [gold release]
+RA8875 library b11p4 [gold release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
@@ -26,7 +26,7 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Fixed drawPixel and drawPixels for 8bit mode, added _color16To8bpp optimized.<br>
 
 **0.70b11p4** changes...<br>
- - Fixed an error in font rendering, I haved to add a new parameter in font file so if someone have converted his fonts they need to update the template of lcd-image-converter with the new one provided with this release and re-convert, just open the .xlm file e 'Convert', new font file will be updated.
+ - Fixed an error in font rendering, I have to add a new parameter in font file so if someone of you have already converted some font with release prior this one you need to update the template of lcd-image-converter with the new one provided in this release and re-convert, just open the .xlm file e 'Convert', new font file will be updated.
 <br>
 
 Current beta **tested only with**:
