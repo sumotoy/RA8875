@@ -57,6 +57,8 @@ I have tested 0.70b11 with several CPU and <b>worked</b>:<br>
  Are you sure you connect everything fine, settings are ok, you are using the correct CS pin, you don't have any other  SPI devices sharing the same line, the display has correct jumper set and you are sure that display it's correct supplied (and the supply it's stable, check also this!) but you still have nothing on screen?<br>
   Ok, in that case you may ask help but you need to double check that you do not make mistakes!<br>Please understand that   I cannot spend time to fix something that it's not a library fault!!!
 
+##### Whoah...Too many commands! I'm lost! <br>
+Not really, I provided tons of examples. The library it's scalable so it's really easy to use and as you have learned  basics the most it's done. Most libraries are so basic that you are able to do just basic stuff but with this you have a lot of power for build even complicated interfaces<br>
 
 ##### Teensy notes:
 I love Teensy 3 MCU's, so every library has special features for this micro. You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
