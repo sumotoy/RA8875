@@ -23,7 +23,10 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Command useLayers(false) re-enable 16bit bpp as well.<br>
 
 **0.70b11p3** changes...<br>
- - Fixed drawPixel and drawPixels for 8bit mode, added _color16To8bpp optimized.
+ - Fixed drawPixel and drawPixels for 8bit mode, added _color16To8bpp optimized.<br>
+
+**0.70b11p4** changes...<br>
+ - Fixed an error in font rendering, I haved to add a new parameter in font file so if someone have converted his fonts they need to update the template of lcd-image-converter with the new one provided with this release and re-convert, just open the .xlm file e 'Convert', new font file will be updated.
 <br>
 
 Current beta **tested only with**:
