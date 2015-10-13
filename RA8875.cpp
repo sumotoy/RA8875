@@ -3186,6 +3186,9 @@ void RA8875::writeTo(enum RA8875writes d)
 	  x: horizontal pos
 	  y: vertical pos
 	  color: RGB565 color
+	  NOTE:
+	  In 8bit bpp RA8875 needs a 8bit color(332) and NOT a 16bit(565),
+	  the routine deal with this...
 */
 /**************************************************************************/
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
@@ -3209,6 +3212,9 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 	  count: how many pixels
 	  x: horizontal pos
 	  y: vertical pos
+	  NOTE:
+	  In 8bit bpp RA8875 needs a 8bit color(332) and NOT a 16bit(565),
+	  the routine deal with this...
 */
 /**************************************************************************/
 void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
@@ -3253,14 +3259,14 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 				if (_altSPI){
 					SPI1.transfer(temp);
 				} else {
-					SPI.transfer(temp >> 8);
+					SPI.transfer(temp & 0xFF);
 				}
 			}
 		#else
 			if (_color_bpp > 8){
 				SPI.transfer16(temp);
 			} else {//TOTEST:layer bug workaround for 8bit color!
-				SPI.transfer(temp >> 8);
+				SPI.transfer(temp & 0xFF);
 			}
 		#endif
 	#else
@@ -3269,7 +3275,7 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 				SPI.transfer(_cs, temp >> 8, SPI_CONTINUE); 
 				SPI.transfer(_cs, temp & 0xFF, SPI_LAST);
 			} else {//TOTEST:layer bug workaround for 8bit color!
-				SPI.transfer(_cs, temp >> 8, SPI_LAST);
+				SPI.transfer(_cs, temp & 0xFF, SPI_LAST);
 			}
 		#else
 			#if defined(__AVR__) && defined(_FASTSSPORT)
@@ -3283,7 +3289,7 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 					SPI.transfer(temp >> 8);
 					SPI.transfer(temp & 0xFF);
 				} else {//TOTEST:layer bug workaround for 8bit color!
-					SPI.transfer(temp >> 8);
+					SPI.transfer(temp & 0xFF);
 				}
 			#endif
 		#endif
@@ -5552,8 +5558,6 @@ void  RA8875::writeData16(uint16_t data)
 			#else
 				SPI.transfer(data >> 8);
 				SPI.transfer(data & 0xFF);
-				//SPI.transfer(data & 0xFF);
-				//SPI.transfer(data >> 8);
 			#endif
 		#endif
 	#endif
