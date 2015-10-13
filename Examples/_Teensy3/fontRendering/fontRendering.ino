@@ -8,34 +8,32 @@ in the arduino guide!)
 
 #include <SPI.h>
 #include <RA8875.h>
-#include "fonts/akashi_36.c"//minipixel
+#include "fonts/heydings_36.c"//minipixel
 
-#define RA8875_CS 10 
-#define RA8875_RESET 9//any pin or 255 to disable it!
+#define RA8875_CS 20 
+#define RA8875_RESET 21//any pin or 255 to disable it!
 
 
-RA8875 tft = RA8875(RA8875_CS, RA8875_RESET); 
+RA8875 tft = RA8875(RA8875_CS, RA8875_RESET,7,14); 
 
 void setup()
 {
-//  Serial.begin(38400);
-//  long unsigned debug_start = millis ();
-//  while (!Serial && ((millis () - debug_start) <= 5000)) ;
-//  Serial.println("RA8875 start");
+  Serial.begin(38400);
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
+  Serial.println("RA8875 start");
 
   tft.begin(RA8875_800x480);
   tft.setRotation(0);//works at any rotation as well
-  tft.setFont(&akashi_36);
-  tft.setFontScale(3);
-  tft.setCursor(CENTER,0);
-  tft.setTextColor(RA8875_GREEN);//notice that! After grandient text will be this color!
+  tft.setFont(&heydings_36);
+  tft.setFontScale(2);
+  tft.setCursor(0,0);
+  //tft.setTextColor(RA8875_GREEN);//notice that! After grandient text will be this color!
   //grandient it's one shot, text color will be reset as the one choosed by setTextColor
-  tft.setTextGrandient(RA8875_RED,RA8875_CYAN);//works also with rendered text!
-  tft.println("CD 0123");
-  tft.println("ABCD");//notice that correctly goes in another line
-  tft.setFont(INT);
-  tft.setTextColor(RA8875_WHITE);//Force white
-  tft.println("this is the internal text.");//notice that correctly goes in another line too!
+  //tft.setTextGrandient(RA8875_RED,RA8875_CYAN);//works also with rendered text!
+  tft.println("BSuRF");
+  tft.print("_");
+
 
 }
 

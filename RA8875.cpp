@@ -1937,10 +1937,8 @@ void RA8875::_charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bc
 	} else if (c == 10){//------------------------- NEW LINE ---------------------------------
 		if (!_portrait){
 			_cursorX = 0;
-			//_cursorY += (_FNTheight + (_FNTheight * _scaleY)) + _FNTinterline + offset;
 			_cursorY += (_FNTheight * _scaleY) + _FNTinterline + offset;
 		} else {
-			//_cursorX += (_FNTheight + (_FNTheight * _scaleY)) + _FNTinterline + offset;
 			_cursorX += (_FNTheight * _scaleY) + _FNTinterline + offset;
 			_cursorY = 0;
 		}
@@ -1988,9 +1986,9 @@ void RA8875::_charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bc
 				#endif
 			} else {
 				if (_portrait){
-					if (_cursorY + charW*_scaleY >= _width) return;
+					if (_cursorY + charW * _scaleY >= _width) return;
 				} else {
-					if (_cursorX + charW*_scaleX >= _width) return;
+					if (_cursorX + charW * _scaleX >= _width) return;
 				}
 			}
 			//test purposes ----------------------------------------------------------------
@@ -2151,16 +2149,16 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 	//start by getting some glyph data...
 	#if defined(_FORCE_PROGMEM__)
 		const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[index].image->data);//char data
+		int			  totalBytes = PROGMEM_read(&_currentFont->chars[index].image->image_datalen);
 	#else
 		const uint8_t * charGlyp = _currentFont->chars[index].image->data;
+		int			  totalBytes = _currentFont->chars[index].image->image_datalen;
 	#endif
 	int i;
 	uint8_t temp = 0;
-	//calculate the datalen...
-	int totalBytes = (int)(_FNTheight * charW) / 8;
 	//some basic variable...
 	uint8_t currentXposition = 0;//the current position of the writing cursor in the x axis, from 0 to charW
-	uint8_t currentYposition = 0;//the current position of the writing cursor in the y axis, from 0 to _FNTheight
+	uint8_t currentYposition = 1;//the current position of the writing cursor in the y axis, from 1 to _FNTheight
 	int currentByte = 0;//the current byte in reading (from 0 to totalBytes)
 	bool lineBuffer[charW];//the temporary line buffer (will be _FNTheight each char)
 	int lineChecksum = 0;//part of the optimizer
@@ -2188,7 +2186,7 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 				currentXposition = 0;//reset the line x position
 				if (lineChecksum < 1){//empty line
 					#if defined(RA8875_VISPIXDEBUG)
-					drawRect(x,y + (currentYposition * _scaleY),charW * _scaleX,_scaleY,RA8875_MAGENTA);
+						drawRect(x,y + (currentYposition * _scaleY),charW * _scaleX,_scaleY,RA8875_MAGENTA);
 					#endif
 				} else if (lineChecksum == charW){//full line
 					#if !defined(RA8875_VISPIXDEBUG)
@@ -2223,7 +2221,7 @@ void RA8875::_charLineRender(uint8_t bytesInLine,bool lineBuffer[],int charW,int
 	uint8_t endPix = 0;
 	bool refPixel = false;
 
-	while (lineIndex < charW){
+	while (lineIndex <= charW){
 		refPixel = lineBuffer[lineIndex];//lineIndex pix as reference value for next pixels
 		//detect and render concurrent pixels
 		for (px=lineIndex;px<=charW;px++){
@@ -2244,7 +2242,7 @@ void RA8875::_charLineRender(uint8_t bytesInLine,bool lineBuffer[],int charW,int
 					#endif
 				}
 				lineIndex += endPix;
-				x += (endPix+widthOffset)*_scaleX;
+				x += (endPix + widthOffset) * _scaleX;
 				endPix = 0;
 				widthOffset = 1;
 				break;
