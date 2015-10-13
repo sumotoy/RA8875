@@ -20,7 +20,10 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
 **0.70b11p2** changes...<br>
  - Try to fix drawPixel and drawPixels color bug in 8bit mode (RA8875 hardware error).
- - Command useLayers(false) re-enable 16bit bpp as well.
+ - Command useLayers(false) re-enable 16bit bpp as well.<br>
+
+**0.70b11p3** changes...<br>
+ - Fixed drawPixel and drawPixels for 8bit mode, added _color16To8bpp optimized.
 <br>
 
 Current beta **tested only with**:
