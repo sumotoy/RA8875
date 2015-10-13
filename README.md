@@ -1,4 +1,4 @@
-RA8875 library b11p2 [gold release]
+RA8875 library b11p3 [gold release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
