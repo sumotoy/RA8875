@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.70b11p4
+	Version:0.70b11p5
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -589,7 +589,7 @@ using Print::write;
 	float 		_cosDeg_helper(float angle);
 	float 		_sinDeg_helper(float angle);
 	#if defined(_RA8875_TXTRNDOPTIMIZER)
-	void 		_charLineRender(uint8_t bytesInLine,bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor);
+	void 		_charLineRender(bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor);
 	#endif
 	
 	//convert a 16bit color(565) into 8bit color(332) as requested by RA8875 datasheet

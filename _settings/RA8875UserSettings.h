@@ -26,12 +26,6 @@ From 0.70b11 the Font Rendering Engine has some optimizations for render font fa
 Not all users need this so you can select if include Render Text Optimizations or not by comment the following line. */
 #define _RA8875_TXTRNDOPTIMIZER								// [default uncommented]
 
-/* [LEVEL OF TEXT RENDER OPTIMIZATION] +++++++++++++++++++++++++++++++++++++++ 
-Text Render Optimization uses byte pattern recognize to group pixels, many patterns can use a lot of resources.
-The one provided cover quite a bit almost any situation but you can add more patterns or trim the one provided.
-Actually it's better leave the following */
-#define RA8875_TXTRENDERLVL		6							// [default 6]
-
 /* [VISUALIZE RENDER TEXT OPTIMIZATIONS - >>> ONLY FOR DEBUG <<<] +++++++++++++++++++++++++++++++++++++++ 
 The Text Render optimizations introduced in b11 it's the result of testing several algorithms so it's in continue evolution.
 RA8875_VISPIXDEBUG force the rendering engine to show how the font it's rendered (Only for debug!!!).

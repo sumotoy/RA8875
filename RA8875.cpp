@@ -2162,6 +2162,7 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 	int currentByte = 0;//the current byte in reading (from 0 to totalBytes)
 	bool lineBuffer[charW];//the temporary line buffer (will be _FNTheight each char)
 	int lineChecksum = 0;//part of the optimizer
+	/*
 	uint8_t bytesInLine = 0;
 	//try to understand how many bytes in a line
 	if (charW % 8 == 0) {	// divisible by 8
@@ -2171,6 +2172,7 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 		while (bytesInLine % 8) { bytesInLine--;}
 		bytesInLine = bytesInLine / 8;
 	}
+	*/
 	//the main loop that will read all bytes of the glyph
 	while (currentByte < totalBytes){
 		//read n byte
@@ -2186,7 +2188,7 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 				currentXposition = 0;//reset the line x position
 				if (lineChecksum < 1){//empty line
 					#if defined(RA8875_VISPIXDEBUG)
-						drawRect(x,y + (currentYposition * _scaleY),charW * _scaleX,_scaleY,RA8875_MAGENTA);
+						drawRect(x,y + (currentYposition * _scaleY),charW * _scaleX,_scaleY,RA8875_BLUE);
 					#endif
 				} else if (lineChecksum == charW){//full line
 					#if !defined(RA8875_VISPIXDEBUG)
@@ -2196,7 +2198,7 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 					#endif
 						x,y + (currentYposition * _scaleY),charW * _scaleX,_scaleY,fcolor);
 				} else { //line render
-					_charLineRender(bytesInLine,lineBuffer,charW,x,y,currentYposition,fcolor);
+					_charLineRender(lineBuffer,charW,x,y,currentYposition,fcolor);
 				}
 				currentYposition++;//next line
 				lineChecksum = 0;//reset checksum
@@ -2210,23 +2212,24 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 	}
 }
 
-
-void RA8875::_charLineRender(uint8_t bytesInLine,bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor)
+/**************************************************************************/
+/*!	PRIVATE
+		Font Line render optimized routine
+		This will render ONLY a single font line by grouping chunks of same pixels
+		Version 3.0 (fixed a bug that cause xlinePos to jump of 1 pixel
+*/
+/**************************************************************************/
+void RA8875::_charLineRender(bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor)
 {
-
-	
-	int lineIndex = 0;
+	int xlinePos = 0;
 	int px;
-	uint8_t widthOffset = 0;
 	uint8_t endPix = 0;
 	bool refPixel = false;
-
-	while (lineIndex <= charW){
-		refPixel = lineBuffer[lineIndex];//lineIndex pix as reference value for next pixels
+	while (xlinePos < charW){
+		refPixel = lineBuffer[xlinePos];//xlinePos pix as reference value for next pixels
 		//detect and render concurrent pixels
-		for (px=lineIndex;px<=charW;px++){
-			if (lineBuffer[px] == lineBuffer[lineIndex] && px < charW){
-				//same pix val detected
+		for (px = xlinePos;px <= charW;px++){
+			if (lineBuffer[px] == lineBuffer[xlinePos] && px < charW){//grouping pixels with same val
 				endPix++;
 			} else {
 				if (refPixel){
@@ -2235,20 +2238,19 @@ void RA8875::_charLineRender(uint8_t bytesInLine,bool lineBuffer[],int charW,int
 					#else
 					fillRect(
 					#endif
-						x,y + (currentYposition * _scaleY),(endPix+widthOffset)*_scaleX,_scaleY,fcolor);
-					#if defined(RA8875_VISPIXDEBUG)
+						x,y + (currentYposition * _scaleY),endPix * _scaleX,_scaleY,fcolor);
 				} else {
-					drawRect(x,y + (currentYposition * _scaleY),(endPix+widthOffset)*_scaleX,_scaleY,RA8875_MAGENTA);
+					#if defined(RA8875_VISPIXDEBUG)
+					drawRect(x,y + (currentYposition * _scaleY),endPix * _scaleX,_scaleY,RA8875_BLUE);
 					#endif
 				}
-				lineIndex += endPix;
-				x += (endPix + widthOffset) * _scaleX;
+				//reset and update some vals
+				xlinePos += endPix;
+				x += endPix * _scaleX;
 				endPix = 0;
-				widthOffset = 1;
-				break;
+				break;//exit cycle for...
 			}
 		}
-		lineIndex++;
 	}
 }
 
@@ -2292,7 +2294,7 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uin
 				#endif
 			}
 			#if defined(RA8875_VISPIXDEBUG)
-			color = RA8875_MAGENTA;
+			color = RA8875_BLUE;
 			#else
 			color = bcolor;
 			#endif
