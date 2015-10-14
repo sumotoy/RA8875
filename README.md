@@ -69,7 +69,9 @@ Not really, I provided tons of examples. The library it's scalable so it's reall
 I love Teensy 3 MCU's, so every library has special features for this micro. You need to read my notes about wiring first. Some examples works only for Teensy 3.<br>
 
 ##### Convert a font
-Follow wiki https://github.com/sumotoy/RA8875/wiki/How-to-convert-a-font
+Follow wiki https://github.com/sumotoy/RA8875/wiki/How-to-convert-a-font<br>
+I'm not the author of the conversion program so please refere to author site for suggestion or bugs!<br>
+So please do not open issues for lcd-image-converter here !!!<br>
 
 ##### Description
 A Fast and Optimized library for RAiO RA8875 display driver for Teensy 3.x, Teensy LC and Arduino's (and I hope for other MCU's).<br>
