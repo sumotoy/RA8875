@@ -1,4 +1,4 @@
-RA8875 library b11p4 [gold release]
+RA8875 library b11p5 [gold release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
@@ -26,8 +26,10 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Fixed drawPixel and drawPixels for 8bit mode, added _color16To8bpp optimized.<br>
 
 **0.70b11p4** changes...<br>
- - Fixed an error in font rendering, I have to add a new parameter in font file so if someone of you have already converted some font with release prior this one you need to update the template of lcd-image-converter with the new one provided in this release and re-convert, just open the .xlm file e 'Convert', new font file will be updated. Haved to upload again all fonts with new scheme but in the hurry I forget to included licenses so I will provide this tomorrow, sorry to font authors!
-<br>
+ - Fixed an error in font rendering, I have to add a new parameter in font file so if someone of you have already converted some font with release prior this one you need to update the template of lcd-image-converter with the new one provided in this release and re-convert, just open the .xlm file e 'Convert', new font file will be updated. Haved to upload again all fonts with new scheme but in the hurry I forget to included licenses so I will provide this tomorrow, sorry to font authors!<br>
+
+**0.70b11p5** changes...<br>
+ - Fixed a bug in Font Rendering Line Optimizer that causes loss pixels in some font. Now works as it should and it's also slight faster.<br>
 
 Current beta **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
