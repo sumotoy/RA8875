@@ -83,22 +83,22 @@ This library will work also with the Adafruit board but was mainly coded for the
 
 ####  The goals...
   - All features supported
-  - 8 bit and 16 bit color depth support (done)
-  - Layer support (now support large screen but only at 256 colors) (done)
-  - Scalable complexity, start with basics but you can go trough... (done)
-  - Support for the many external ROM Font chip (done)
+  - 8 bit and 16 bit color depth support (X)
+  - Layer support (now support large screen but only at 256 colors) (X)
+  - Scalable complexity, start with basics but you can go trough... (X)
+  - Support for the many external ROM Font chip (X)
   - Support for the external SPI FLASH (on develop)
   - Working with Teensy 3.x, Teensy LC, Arduino's, Energia IDE supported MCU's (stellaris, etc.)
-  - Correct use of Print, Write and Println (done)
-  - Correct use of setCursor to mimic LiquidCrystal library (done)
-  - Compatibility with alternative SPI pinouts on Teensy 3.x,Teensy LC, this will let you use it with Audio board! (done)
-  - Can use capacitive and resistive touch screen, the capacitive with gesture and max 5 concurrent touches. (done)
-  - Full rotation support. (done)
-  - External copyright free fonts support plus large font rendering. (done)
+  - Correct use of Print, Write and Println (X)
+  - Correct use of setCursor to mimic LiquidCrystal library (X)
+  - Compatibility with alternative SPI pinouts on Teensy 3.x,Teensy LC, this will let you use it with Audio board! (X)
+  - Can use capacitive and resistive touch screen, the capacitive with gesture and max 5 concurrent touches. (X)
+  - Full rotation support. (X)
+  - External copyright free fonts support plus large font rendering. (X)
   - Support for Keypad Matrix. (still working on)
   - Internal support for IRQ's (done for Touch, still develop for other stuff)
   - Use of BTE (almost done)
-  - A lot of examples. (done)
+  - A lot of examples. (X)
 
 
 #### Wiring with your MCU
@@ -113,6 +113,10 @@ From version 0.6, Energia IDE will be supported so many MCU's can be used but sh
 Current beta has a optional Teensy instance that can use alternative SPI pinouts, this let you use Audio Board from PJRC that uses the classic SPI pinouts for RX and SD cs. You can test it with Spectrum Analyzer example that uses the Audio Board with a RA8875 TFT screen and thanks to the hardware accelleration of this chip and the use of onchip screen buffer it let you have large screen with touch capabilities with high-end audio manipulation.
 see wiky:<br>
 https://github.com/sumotoy/RA8875/wiki/Teensy-3.1---Working-with-PJRC-Audio-Board-with-SD-card-and-RA8875
+
+#### Disclaim
+First, I'm not affiliated or related to any vendor! I've buy all displays and accessories online as everyone else and received 1 in donation<br>
+I'm not responsable to any damage or money loss or problem caused by this library, this is an open source project licensed under GNU General Public License v3.0 so I accept all the GNU rules and you should follow too but for commercial products please it's mandatory you contact me first. This library it's only for civil applications, I do not allow to use for any military purposes of any kind <br>
 
 #### Licensing
 
