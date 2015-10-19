@@ -1116,6 +1116,7 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		break;
 		case GT23L16U2W:
 		case GT30L16U2W:
+		case ER3301_1:
 			temp &= 0x1F; temp |= 0x20;
 		break;
 		case GT23L24T3Y:
@@ -1650,8 +1651,8 @@ void RA8875::setFontScale(uint8_t xscale,uint8_t yscale)
 		xscale = xscale % 4; //limit to the range 0-3
 		yscale = yscale % 4; //limit to the range 0-3
 		_FNCR1_Reg &= ~(0xF); // clear bits from 0 to 3
-		_FNCR1_Reg |= yscale << 2;
-		_FNCR1_Reg |= xscale;
+		_FNCR1_Reg |= xscale << 2;
+		_FNCR1_Reg |= yscale;
 		_writeRegister(RA8875_FNCR1,_FNCR1_Reg);
 	}
 	_scaleX = xscale + 1;
@@ -3415,8 +3416,11 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 /**************************************************************************/
 void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
 {
-	if (x0 == x1 && y0 == y1) return;
-	if ((x1 - x0 == 1) && (y1 - y0 == 1)) drawPixel(x0,y0,color);
+	if ((x0 == x1 && y0 == y1) || ((x1 - x0 == 1) && (y1 - y0 == 1))) {//NEW
+		drawPixel(x0,y0,color);
+		return;
+	}
+	//if ((x1 - x0 == 1) && (y1 - y0 == 1)) drawPixel(x0,y0,color);
 	if (_portrait) { swapvals(x0,y0); swapvals(x1,y1);}
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
@@ -3443,12 +3447,16 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 /**************************************************************************/
 void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length, uint16_t color,int offset)
 {
-	drawLine(
+	if (length < 2) {//NEW
+		drawPixel(x,y,color);
+	} else {
+		drawLine(
 		x,
 		y,
 		x + (length * _cosDeg_helper(angle + offset)),//_angle_offset
 		y + (length * _sinDeg_helper(angle + offset)), 
 		color);
+	}
 }
 
 /**************************************************************************/
@@ -3465,12 +3473,16 @@ void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length,
 /**************************************************************************/
 void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t start, uint16_t length, uint16_t color,int offset)
 {
-	drawLine(
+	if (start - length < 2) {//NEW
+		drawPixel(x,y,color);
+	} else {
+		drawLine(
 		x + start * _cosDeg_helper(angle + offset),//_angle_offset
 		y + start * _sinDeg_helper(angle + offset),
 		x + (start + length) * _cosDeg_helper(angle + offset),
 		y + (start + length) * _sinDeg_helper(angle + offset), 
 		color);
+	}
 }
 
 void RA8875::roundGaugeTicker(uint16_t x, uint16_t y, uint16_t r, int from, int to, float dev,uint16_t color) 
@@ -4152,6 +4164,10 @@ void RA8875::_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, b
 	if (_portrait) swapvals(x0,y0);//0.69b21
 
 	if (r < 1) r = 1;
+	if (r < 2) {//NEW
+		drawPixel(x0,y0,color);
+		return;
+	}
 	if (r > RA8875_HEIGHT / 2) r = (RA8875_HEIGHT / 2) - 1;//this is the (undocumented) hardware limit of RA8875
 	
 	if (_textMode) _setTextMode(false);//we are in text mode?
@@ -4228,6 +4244,9 @@ void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, in
 	} else if (x0 == x2 && y0 == y2){
 		drawLine(x0, y0, x1, y1,color);
 		return;
+	} else if (x0 == x1 && y0 == y1 && x0 == x2 && y0 == y2) {//new
+        drawPixel(x0, y0, color);
+		return;
 	}
 	
 	if (y0 > y1) {swapvals(y0, y1); swapvals(x0, x1);}
@@ -4296,7 +4315,10 @@ void RA8875::_ellipseCurve_helper(int16_t xCenter, int16_t yCenter, int16_t long
 		if (longAxis > _width/2) longAxis = (_width / 2) - 1;
 		if (shortAxis > _height/2) shortAxis = (_height / 2) - 1;
 	}
-
+	if (longAxis == 1 && shortAxis == 1) {
+		drawPixel(xCenter,yCenter,color);
+		return;
+	}
 	_checkLimits_helper(xCenter,yCenter);
 	
 	if (_textMode) _setTextMode(false);//we are in text mode?
