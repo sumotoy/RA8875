@@ -2,10 +2,12 @@
 A benchmark test - measure the speed of many drawing functions of RA8875 library at any rotation
 Open your serial monitor for results
 */
+
 #include <SPI.h>
 #include <RA8875.h>
 
 #define DELAY_BETWEEN 500
+
 
 #define RA8875_RESET 9//any pin or nothing!
 
@@ -23,8 +25,8 @@ for module 3 (stellaris)
 
 void setup() {
   Serial.begin(38400);
-  //long unsigned debug_start = millis ();
-  //while (!Serial && ((millis () - debug_start) <= 5000)) ;
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
   tft.begin(RA8875_800x480);
 }
 

@@ -1,6 +1,34 @@
+/*
+Part of RA8875 library from https://github.com/sumotoy/RA8875
+License:GNU General Public License v3.0
+
+    RA8875 fast SPI library for RAiO SPI RA8875 drived TFT
+    Copyright (C) 2014  egidio massimo costa sumotoy (a t) gmail.com
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef _RA8875CONF_H_
 #define _RA8875CONF_H_
 
+
+	#define CENTER 				9998
+	#define ARC_ANGLE_MAX 		360		
+	#define ARC_ANGLE_OFFSET 	-90	
+	#define ANGLE_OFFSET		-90
+	
+	static const uint8_t _RA8875colorMask[6] = {11,5,0,13,8,3};//for color masking, first 3 byte for 65K
 	//initialization parameters---------------------------------------------------------------------
 	const static uint8_t initStrings[3][15] = {
 	//{0x07,0x03,0x03,0x27,0x00,0x05,0x04,0x03,0xEF,0x00,0x05,0x00,0x0E,0x00,0x02},//0 -> 320x240 (0A)

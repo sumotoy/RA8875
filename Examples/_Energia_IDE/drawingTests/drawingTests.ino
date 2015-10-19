@@ -1,7 +1,5 @@
 /*
-  A collection of hardware accellerated drawings to demostrate how fast is the RA8875.
-
- Works with Arduino 1.0.6 IDE, Arduino 1.6.x IDE
+   how fast is the RA8875? here's.
  */
 
 #include <SPI.h>
@@ -14,20 +12,17 @@
 RA8875 tft = RA8875(3);//select SPI module 3
 /*
 for module 3 (stellaris)
-SCLK:  PD_0
-MOSI:  PD_3
-MISO:  PD_2
-SS:    PD_1
-*/
-
+ SCLK:  PD_0
+ MOSI:  PD_3
+ MISO:  PD_2
+ SS:    PD_1
+ */
 #endif
 
 
 void setup()
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
-  Serial.println("RA8875 start");
+
   tft.begin(RA8875_800x480);
 
 }
@@ -173,5 +168,4 @@ void testtriangles(bool fill) {
 uint16_t halveColor(uint16_t rgb) {
   return (((rgb & 0b1111100000000000) >> 12) << 11 | ((rgb & 0b0000011111100000) >>  6) <<  5 | ((rgb & 0b0000000000011111) >>  1));
 }
-
 

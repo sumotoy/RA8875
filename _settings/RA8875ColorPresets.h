@@ -19,5 +19,4 @@ const uint16_t 	RA8875_PINK 			= 0xFCFF; // M.Sandercock
 const uint16_t 	RA8875_PURPLE 			= 0x8017; // M.Sandercock
 const uint16_t 	RA8875_GRAYSCALE 		= 2113;//grayscale30 = RA8875_GRAYSCALE*30
 
-
 #endif

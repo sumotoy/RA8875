@@ -8,25 +8,16 @@ will reveal the background) in the layer 2 by using AND function. The result its
 fast hudge vertical bars gauge that it's not possible to do with a tiny microcontroller
 and if you have a Teensy 3.1 you still have resources for a complete FFT and more!
 Created by Max MC Costa as a demo for RA8875 library
-
- */
+For 800x480 see the 800x480 folder!
+*/
 
 #include <SPI.h>
 #include <RA8875.h>
 
-/*
-Arduino's
- You are using 4 wire SPI here, so:
- MOSI:  11//Arduino UNO
- MISO:  12//Arduino UNO
- SCK:   13//Arduino UNO
- the rest of pin below:
- */
 
-#define RA8875_CS 10 //see below...
-/*
- Arduino's 8 bit: any
- */
+
+#define RA8875_CS 10
+
 #define RA8875_RESET 9//any pin or 255 to disable it!
 
 
@@ -146,4 +137,3 @@ void updateBars(uint8_t vals[], uint16_t origX, uint16_t origY,uint16_t maxbars,
     updateBar(vals[i], origX + (i * _barWidth) + (i * _spacer), origY,single);
   }
 }
-

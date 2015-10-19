@@ -1,34 +1,20 @@
 /*
-  A collection of hardware accellerated drawings to demostrate how fast is the RA8875.
-
- Works with Arduino 1.0.6 IDE, Arduino 1.6.x IDE
+   how fast is the RA8875? here's.
  */
 
 #include <SPI.h>
 #include <RA8875.h>
 
-/*
-Teensy3.x and Arduino's
-You are using 4 wire SPI here, so:
- MOSI:  11//Arduino UNO
- MISO:  12//Arduino UNO
- SCK:   13//Arduino UNO
- the rest of pin below:
- */
-
 #define RA8875_CS 10 //see below...
-/*
-Arduino's 8 bit: any
-*/
+
 #define RA8875_RESET 9//any pin or nothing!
 
-RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);
+
 
 void setup()
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
-  Serial.println("RA8875 start");
+
   tft.begin(RA8875_800x480);
 
 }
@@ -174,5 +160,4 @@ void testtriangles(bool fill) {
 uint16_t halveColor(uint16_t rgb) {
   return (((rgb & 0b1111100000000000) >> 12) << 11 | ((rgb & 0b0000011111100000) >>  6) <<  5 | ((rgb & 0b0000000000011111) >>  1));
 }
-
 

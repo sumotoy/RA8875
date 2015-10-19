@@ -9,7 +9,7 @@ If you have a buzzer connected to pin 8 you will have sound as well.
 #include <Wire.h>
 #endif
 
-#define RA8875_CS 10//53 for MEGA2560
+#define RA8875_CS 10
 #define RA8875_RESET 9
 #if defined(USE_FT5206_TOUCH)
 #define RA8875_INT        2

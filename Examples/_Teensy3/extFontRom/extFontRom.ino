@@ -12,38 +12,28 @@ Library can handle the following Font ROM:
 GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, 
 GT23L32S4W, GT30H32S4W, ER3303_1
 Each font ROM has it's encoding so follow font rom datasheet!
+Not working? You don't have the correct font rom installed!
+Choose yours!
 
- Works with Arduino 1.0.6 IDE, Arduino 1.6.x IDE
+
  ******************************************************************/
 
 #include <SPI.h>
 #include <RA8875.h>
 
-/*
-Teensy3.x
-You are using 4 wire SPI here, so:
- MOSI:  11//Teensy3.x
- MISO:  12//Teensy3.x
- SCK:   13//Teensy3.x
- the rest of pin below:
- */
 
-#define RA8875_CS 10 //see below...
-/*
-Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
-*/
+#define RA8875_CS 10
+
 #define RA8875_RESET 9//any pin or nothing!
 
-RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);
 
 uint16_t tx, ty;
 
 void setup() 
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
-  Serial.println("RA8875 start");
-  tft.begin(RA8875_480x272);
+
+  tft.begin(RA8875_800x480);
 
   //tft.changeMode(TEXT);
   tft.setTextColor(RA8875_WHITE);

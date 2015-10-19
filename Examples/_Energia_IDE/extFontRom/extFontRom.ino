@@ -12,8 +12,10 @@ Library can handle the following Font ROM:
 GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, 
 GT23L32S4W, GT30H32S4W, ER3303_1
 Each font ROM has it's encoding so follow font rom datasheet!
+Not working? You don't have the correct font rom installed!
+Choose yours!
 
- Works with Energia 0013 IDE
+
  ******************************************************************/
 
 #include <SPI.h>
@@ -23,24 +25,23 @@ Each font ROM has it's encoding so follow font rom datasheet!
 #define RA8875_RESET 9//any pin or nothing!
 
 #if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
+
 RA8875 tft = RA8875(3);//select SPI module 3
 /*
 for module 3 (stellaris)
-SCLK:  PD_0
-MOSI:  PD_3
-MISO:  PD_2
-SS:    PD_1
-*/
+ SCLK:  PD_0
+ MOSI:  PD_3
+ MISO:  PD_2
+ SS:    PD_1
+ */
 #endif
 
 uint16_t tx, ty;
 
 void setup() 
 {
-  Serial.begin(9600);
-  //while (!Serial) {;}
-  Serial.println("RA8875 start");
-  tft.begin(RA8875_480x272);
+
+  tft.begin(RA8875_800x480);
 
   //tft.changeMode(TEXT);
   tft.setTextColor(RA8875_WHITE);

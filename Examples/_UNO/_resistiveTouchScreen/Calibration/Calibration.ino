@@ -1,64 +1,9 @@
-/* Simply Touch screen library calibration V2:
- this will help you to calibrate your touch screen by modify
- 4 parameters inside RA8875/_utility/RA8875Calibration.h file:
-
- TOUCSRCAL_XLOW  //min value of x you can get
- TOUCSRCAL_XHIGH  //max value of x you can get
- TOUCSRCAL_YLOW //min value of y you can get
- TOUCSRCAL_YHIGH  //max value of y you can get
-
- Normally those parameters are set as 0.
- Only for RESISTIVE TOUCH SCREEN!
-
- It's not a bullet-proof scientist alghorithm but calibrate
- using this method will be fast and enough accurate for basic
- touch screen operations like buttons, etc. If you need more
- precision and you don't want waste resources consider a capacitive touch!
-
- Now run this program and open Serial Monitor or follow screen instrunctions.
-
- Works with Arduino 1.0.6 IDE, Arduino 1.6.x IDE
-*/
-
-
-#include <SPI.h>
-#include <RA8875.h>
-
-/*
-Arduino's
-You are using 4 wire SPI here, so:
- MOSI:  11//Arduino UNO (for MEGA refere to arduino site)
- MISO:  12//Arduino UNO (for MEGA refere to arduino site)
- SCK:   13//Arduino UNO (for MEGA refere to arduino site)
- the rest of pin below:
- */
-
-#define RA8875_INT 2 //Use this because it's correspond to INT 0
-#define RA8875_CS 10//uno can use any, MEGA use 53
-/* Arduino's 8 bit: any */
-#define RA8875_RESET 9//any pin or nothing!
-
-
-RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's
-
-
-const uint8_t samples = 20;
-uint16_t tempData[samples][2];
-volatile int count = 0;
-uint16_t tx, ty;//used as temp
-uint16_t _XLOW_VAR;
-uint16_t _YLOW_VAR;
-uint16_t _XHIGH_VAR;
-uint16_t _YHIGH_VAR;
-bool proceed;
-int scount = 0;
-
 void setup() {
   Serial.begin(38400);
-  //long unsigned debug_start = millis ();
-  //while (!Serial && ((millis () - debug_start) <= 5000)) ;
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
   tft.begin(RA8875_800x480);//initialize RA8875
-  /* Adafruit_480x272 Adafruit_800x480 RA8875_480x272 RA8875_800x480 */
+/* Adafruit_480x272 Adafruit_800x480 RA8875_480x272 RA8875_800x480 */
   tft.useINT(RA8875_INT);//We use generic int helper for Internal Resistive Touch
   tft.touchBegin();//enable touch support for RA8875
   if (tft.touchCalibrated()) {//already calibrated?
@@ -117,7 +62,7 @@ void loop() {
           valx = valx / samples;
           valy = valy / samples;
           tft.fillWindow();
-           if (tft.width() > 480)  tft.setFontScale(1);
+          if (tft.width() > 480)  tft.setFontScale(1);
           tft.setCursor(CENTER, CENTER);
           tft.setTextColor(RA8875_WHITE);
           tft.println("Top/Left done. Please do not touch screen...");

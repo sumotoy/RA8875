@@ -9,11 +9,11 @@ code has many changes to fix the rotation issues.
 #include <SPI.h>
 #include <RA8875.h>
 
-
 #define RA8875_CS 10 //see below...
 #define RA8875_RESET 9//any pin or 255 to disable it!
 
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's
+
 
 
 void setup() 
@@ -51,4 +51,5 @@ void loop()
   if (rot > 3) rot = 0;
   rot++;
 }
+
 

@@ -2,19 +2,34 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.70b10
+	Version:0.70b11p6
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
-An attemp to create a full featured library support for RA8875 chip from RAiO
-that is alternative to the buggy and incomplete Adafruit_RA8875 (but thanks Ada 
-and PaintYourDragon to bring us something almost working for free!).
+An attemp to create a full featured library support for RA8875 chip from RAiO.
+Works with many SPI drived RA8875 Boards included Adafruit, Eastrising(buydisplay).
+NOT work if you have a I2C or Parallel based display!
 
 -------------------------------------------------------------------------------------
 					>>>>>>>>>>>> About Copyrights <<<<<<<<<<<<<<<
 -------------------------------------------------------------------------------------
-I spent quite a lot of time to improve and bring to life all features so if you clone,
-copy or modify please leave all my original notes intact!
+License:GNU General Public License v3.0
+
+    RA8875 fast SPI library for RAiO SPI RA8875 drived TFT
+    Copyright (C) 2014  egidio massimo costa sumotoy (a t) gmail.com
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------------
 					     >>>>>>>>>>>> Thanks to <<<<<<<<<<<<<<<
 -------------------------------------------------------------------------------------
@@ -22,9 +37,8 @@ Teensy 3.1, a tiny MCU but monster of performances at tiny price, Arduino should
 Paul Stoffregen, the 'guru' behind many arduino magic, the father of Teensy
 Bill Greyman, another 'maestro', greatly inspired many coders
 Jnmattern & Marek Buriak for drawArc
-Adafruit, not a great example of coding but thanks for sharing
 Last but not less important the contributors and beta tester of this library:
-M.Sandercrock, the experimentalist.
+M.Sandercrock, the experimentalist, and many others
 -------------------------------------------------------------------------------------
 				>>>>>>>>>>>>>>>>>>>>> Wiring <<<<<<<<<<<<<<<<<<<<<<<<<
 -------------------------------------------------------------------------------------
@@ -107,69 +121,19 @@ MOSI     11		51           YES       MOSI
 MISO     12		50            NO       MISO
 RST      9		 5           YES       RST
 CS       10		53           YES       CS
-basic setup:
-21.132 / 4.772
 */
 
 #ifndef _RA8875MC_H_
 #define _RA8875MC_H_
 
-#if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
-	#include "Energia.h"
-	#undef byte
-	#define byte uint8_t
-	#if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
-		#define NEEDS_SET_MODULE
-		#define _FASTCPU
-	#elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
-		#define NEEDS_SET_MODULE
-		#define _FASTCPU
-	#elif defined(__MSP430MCU__)//MSP430???
-		// don't know
-	#elif defined(TMS320F28069)//C2000???
-		// don't know
-	#elif defined(__CC3200R1M1RGC__)//CC3200???
-		// don't know
-	#endif
-	static uint8_t SPImodule;
-	static uint8_t SPDR;
-#else
-	#include "Arduino.h"
-#endif
+#include "_settings/RA8875_CPU_commons.h"
 
-#include "Print.h"
-
-#ifdef __AVR__
-  #include <math.h>
-#endif
-
-//PROGMEM fixup
-#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//teensy 3 or 3.1 or LC
-	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
-	#define _FASTCPU
-	#ifdef PROGMEM
-		#undef  PROGMEM
-		#define PROGMEM __attribute__((section(".progmem.data")))
-	#endif
-#elif defined(__32MX320F128H__) || defined(__32MX795F512L__) || (defined(ARDUINO) && defined(__arm__) && !defined(CORE_TEENSY))//chipkit uno, chipkit max, arduino DUE	
-	#define _FASTCPU
-	#ifndef __PGMSPACE_H_
-	  #define __PGMSPACE_H_ 1
-	  #define PROGMEM
-	  #define PGM_P  const char *
-	  #define PSTR(str) (str)
-	  #define pgm_read_byte_near(addr) pgm_read_byte(addr)
-	  #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
-	  #define pgm_read_word(addr) (*(const unsigned short *)(addr))
-	#endif
-#else
-	#include <avr/pgmspace.h>
-#endif
-
-
-  
 #if !defined(swapvals)
-	#define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
+	#if defined(__XTENSA__)
+		#define swapvals(a, b) { int16_t t = a; a = b; b = t; }
+	#else
+		#define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
+	#endif
 #endif
 
 enum RA8875sizes { 			RA8875_480x272, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_800x480 };
@@ -177,7 +141,7 @@ enum RA8875tcursor { 		NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
 enum RA8875tsize { 			X16=0,X24,X32 };//0,1,2
 enum RA8875fontSource { 	INT=0, EXT };//0,1
 enum RA8875fontCoding { 	ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
-enum RA8875extRomType { 	GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1 };
+enum RA8875extRomType { 	GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1, ER3301_1 };
 enum RA8875extRomCoding { 	GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
 enum RA8875extRomFamily { 	STANDARD, ARIAL, ROMAN, BOLD };
 enum RA8875boolean { 		LAYER1, LAYER2, TRANSPARENT, LIGHTEN, OR, AND, FLOATING };
@@ -214,10 +178,6 @@ template <typename T> T PROGMEM_read (const T * sce)
   }
 #endif
 
-#define CENTER 				9998
-#define ARC_ANGLE_MAX 		360		
-#define ARC_ANGLE_OFFSET 	-90	
-#define ANGLE_OFFSET		-90
 
 #if defined(__MKL26Z64__)
 	static bool _altSPI;
@@ -227,18 +187,17 @@ template <typename T> T PROGMEM_read (const T * sce)
 #endif
 
 
-static const uint8_t _RA8875colorMask[6] = {11,5,0,13,8,3};//for color masking, first 3 byte for 65K
 
 class RA8875 : public Print {
  public:
-	//void 		debugData(uint16_t data,uint8_t len=8);
-	//void 		test(const char *str);
+	// void 		debugData(uint16_t data,uint8_t len=8);
+	// void 		showLineBuffer(uint8_t data[],int len);
 //------------- INSTANCE -------------------------------------------------------------------
 	#if defined(__MK20DX128__) || defined(__MK20DX256__)//Teensy 3.0, Teensy 3.1
 		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
 	#elif defined(__MKL26Z64__)//TeensyLC with FT5206_TOUCH
 		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
-	#elif defined(__SAM3X8E__)//DUE
+	#elif defined(___DUESTUFF)//DUE
 		RA8875(const uint8_t CSp, const uint8_t RSTp=255);
 	#elif defined(NEEDS_SET_MODULE)//ENERGIA
 		RA8875::RA8875(const uint8_t module, const uint8_t RSTp=255);
@@ -292,7 +251,7 @@ class RA8875 : public Print {
 	inline uint16_t Color565(uint8_t r,uint8_t g,uint8_t b) { return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3); }
 	inline uint16_t Color24To565(int32_t color_) { return ((((color_ >> 16) & 0xFF) / 8) << 11) | ((((color_ >> 8) & 0xFF) / 4) << 5) | (((color_) &  0xFF) / 8);}
 	inline uint16_t htmlTo565(int32_t color_) { return (uint16_t)(((color_ & 0xF80000) >> 8) | ((color_ & 0x00FC00) >> 5) | ((color_ & 0x0000F8) >> 3));}
-	inline void Color565ToRGB(uint16_t color, uint8_t &r, uint8_t &g, uint8_t &b){r = (((color & 0xF800) >> 11) * 527 + 23) >> 6; g = (((color & 0x07E0) >> 5) * 259 + 33) >> 6; b = ((color & 0x001F) * 527 + 23) >> 6;}
+	inline void 	Color565ToRGB(uint16_t color, uint8_t &r, uint8_t &g, uint8_t &b){r = (((color & 0xF800) >> 11) * 527 + 23) >> 6; g = (((color & 0x07E0) >> 5) * 259 + 33) >> 6; b = ((color & 0x001F) * 527 + 23) >> 6;}
 //-------------- CURSOR ----------------------------------------------------------------------
 	void 		cursorIncrement(bool on);
 	void 		setCursorBlinkRate(uint8_t rate);//set blink rate of the cursor 0...255 0:faster
@@ -311,7 +270,7 @@ class RA8875 : public Print {
 	void 		setTextColor(uint16_t fcolor);//set text color (backgroud will be transparent)
 	void 		setTextGrandient(uint16_t fcolor1,uint16_t fcolor2);
 	void    	setFontScale(uint8_t scale);//global font scale (w+h)
-	void    	setFontScale(uint8_t vscale,uint8_t hscale);//font scale separated by w and h
+	void    	setFontScale(uint8_t xscale,uint8_t yscale);//font scale separated by w and h
 	void    	setFontSize(enum RA8875tsize ts);//X16,X24,X32
 	void 		setFontSpacing(uint8_t spc);//0:disabled ... 63:pix max
 	void 		setFontInterline(uint8_t pix);//0...63 pix
@@ -449,7 +408,8 @@ using Print::write;
 	int16_t 		 			   RA8875_WIDTH, 	   RA8875_HEIGHT;//absolute
 	int16_t 		 			  _width, 			  _height;
 	int16_t						  _cursorX, 		  _cursorY;
-	uint8_t 		 			  _FNTscaleX, 		  _FNTscaleY;	
+	uint8_t						  _scaleX,			  _scaleY;
+	bool						  _scaling;
 	uint8_t						  _FNTwidth, 		  _FNTheight;
 	uint8_t						  _FNTbaselineLow, 	  _FNTbaselineTop;
 	volatile uint8_t			  _TXTparameters;
@@ -487,13 +447,13 @@ using Print::write;
 	#endif
 
 	
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+	#if defined(___TEENSYES)//all of them (32 bit only)
 		uint8_t 				  _cs;
 		uint8_t 				  _miso, _mosi, _sclk;
 	#elif defined(ENERGIA)
 		uint8_t _cs;
 	#else
-		#if defined(__SAM3X8E__)
+		#if defined(___DUESTUFF)
 			#if defined(_FASTSSPORT)
 				uint32_t 		  _cs, cspinmask;
 			#else
@@ -598,10 +558,15 @@ using Print::write;
 	//      TEXT writing stuff-------------------------------------------
 	void    	_textWrite(const char* buffer, uint16_t len=0);//thanks to Paul Stoffregen for the initial version of this one
 	void 		_charWrite(const char c,uint8_t offset);
-	void 		_charWriteR(const char c,uint8_t xScale,uint8_t yScale,uint8_t offset,uint16_t fcolor,uint16_t bcolor);
+	void 		_charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bcolor);
 	int 		_getCharCode(uint8_t ch);
-	void 		_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uint16_t fcolor,uint16_t bcolor);
-	void 		_drawChar_com(int16_t x,int16_t y,int16_t w,const uint8_t *data);
+	#if defined(_RA8875_TXTRNDOPTIMIZER)
+		void 		_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcolor);
+	#else
+		void 		_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uint16_t fcolor,uint16_t bcolor);
+	#endif
+	
+	//void 		_drawChar_com(int16_t x,int16_t y,int16_t w,const uint8_t *data);
 	void 		_textPosition(int16_t x, int16_t y,bool update);
 	void 		_setFNTdimensions(uint8_t index);
 	int16_t 	_STRlen_helper(const char* buffer,uint16_t len=0);
@@ -623,9 +588,16 @@ using Print::write;
 	void 		_curve_addressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 	float 		_cosDeg_helper(float angle);
 	float 		_sinDeg_helper(float angle);
-
-
-
+	#if defined(_RA8875_TXTRNDOPTIMIZER)
+	void 		_charLineRender(bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor);
+	#endif
+	
+	//convert a 16bit color(565) into 8bit color(332) as requested by RA8875 datasheet
+	inline __attribute__((always_inline))
+		uint8_t _color16To8bpp(uint16_t color) {
+			return ((color & 0x3800) >> 6 | (color & 0x00E0) >> 3 | (color & 0x0003));
+		}
+		
 	inline __attribute__((always_inline)) 
 		void _checkLimits_helper(int16_t &x,int16_t &y){
 			if (x < 0) x = 0;
@@ -638,19 +610,22 @@ using Print::write;
 		
 	inline __attribute__((always_inline)) 	
 		void _center_helper(int16_t &x, int16_t &y){
-			//if (x == CENTER) x = RA8875_WIDTH/2;
-			//if (y == CENTER) y = RA8875_HEIGHT/2;
 			if (x == CENTER) x = _width/2;
 			if (y == CENTER) y = _height/2;
 		}
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+	#if defined(___TEENSYES)//all of them (32 bit only)
+		// nothing, already done
 	#elif defined(ENERGIA)
+		// TODO
 	#else
-		#if defined(__SAM3X8E__)
+		#if defined(___DUESTUFF)
+		// DUE
 			#if defined(_FASTSSPORT)
 				volatile uint32_t *csport;
 			#endif
 		#else
+		// AVR,XTENSA,ARM (not DUE),STM,CHIPKIT
+	    //TODO:must check if all processor are compatible
 			#if defined(_FASTSSPORT)
 				volatile uint8_t *csport;
 			#endif
@@ -665,14 +640,14 @@ using Print::write;
 			#else
 				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
 			#endif
-		#elif !defined(ENERGIA)
+		#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF)
 			cli();//protect from interrupts
-		#endif
-		#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+		#endif//end has transaction
+		#if defined(___TEENSYES)//all of them (32 bit only)
 			digitalWriteFast(_cs, LOW);
 		#else
 			#if !defined(ENERGIA)//UNO,DUE,ETC.
-				#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
+				#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
 					//nothing
 				#else//DUE (normal),UNO,ETC.
 					#if defined(_FASTSSPORT)
@@ -689,11 +664,11 @@ using Print::write;
 	
 	inline __attribute__((always_inline)) 
 	void _endSend(){
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+	#if defined(___TEENSYES)//all of them (32 bit only)
 		digitalWriteFast(_cs, HIGH);
 	#else
 		#if !defined(ENERGIA)
-			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
+			#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
 				//nothing
 			#else//DUE (normal),UNO,ETC.
 				#if defined(_FASTSSPORT)
@@ -712,7 +687,7 @@ using Print::write;
 		#else
 			SPI.endTransaction();
 		#endif
-	#elif !defined(ENERGIA)
+	#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF)
 		sei();//enable interrupts
 	#endif
 } 
@@ -729,7 +704,7 @@ using Print::write;
 
 #if defined(_FASTCPU)
 inline __attribute__((always_inline)) 
-void _slowDownSPI(bool slow,uint32_t slowSpeed=10000000)
+void _slowDownSPI(bool slow,uint32_t slowSpeed=10000000UL)
 {
 	#if defined(SPI_HAS_TRANSACTION)
 		if (slow){
@@ -747,13 +722,13 @@ void _slowDownSPI(bool slow,uint32_t slowSpeed=10000000)
 		}
 	#else
 		if (slow){
-			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 				SPI.setClockDivider(_cs,SPI_SPEED_SAFE);
 			#else
 				SPI.setClockDivider(SPI_SPEED_SAFE);
 			#endif
 		} else {
-			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 				SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
 			#else
 				SPI.setClockDivider(SPI_SPEED_WRITE);

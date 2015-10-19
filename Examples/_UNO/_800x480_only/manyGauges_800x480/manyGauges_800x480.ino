@@ -1,7 +1,8 @@
 /*
-ROUND GAUGE EXAMPLE with ballistic!
+ROUND GAUGE EXAMPLE with ballistic! only 800x480
 This example show how to create 3 round gauge that react like the real one with (almost) correct ballistic
 The 3 gauges read analog values from A0,A1 & A2
+It's slow since the ballistic uses delay, a better example will be posted soon
 Created by S.U.M.O.T.O.Y - Max MC Costa
 If you modify or get better result please let me know
 */
@@ -27,13 +28,8 @@ const uint8_t degreesVal[6][2] = {
 };
 
 
-#define RA8875_CS 10 //any pin
-#define RA8875_RESET 8//any pin or nothing!
-/*
-Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
-*/
-
-
+#define RA8875_CS 10
+#define RA8875_RESET 9//any pin or nothing!
 
 RA8875 tft = RA8875(RA8875_CS, RA8875_RESET);
 
@@ -104,5 +100,4 @@ void drawPointerHelper(uint8_t index, int16_t val, uint16_t x, uint16_t y, uint1
   tft.drawLine(x, y, w, h, color);
   tft.fillCircle(x, y, 2, color);
 }
-
 

@@ -1,8 +1,12 @@
+/*
+A similar clock example but this time uses some RA8875 gauges library function!
+ */
+
 #include <SPI.h>
 #include <RA8875.h>
 
-#define RA8875_CS 20 //see below...
-#define RA8875_RESET 21//any pin or nothing!
+#define RA8875_CS 10 //see below...
+#define RA8875_RESET 9//any pin or nothing!
 /*
 Teensy 3.x can use: 2,6,9,10,15,20,21,22,23
 */

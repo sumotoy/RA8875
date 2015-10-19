@@ -8,18 +8,17 @@ An ultra-simple sketch to test Layers.
 #define RA8875_CS 10
 #define RA8875_RESET 9
 
-#if defined(__SAM3X8E__)
-#undef __FlashStringHelper::F(string_literal)
-#define F(string_literal) string_literal
-#endif
 
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);
 
 void setup() {
   Serial.begin(38400);
+  //uncomment for leonardo
+  /*
   long unsigned debug_start = millis ();
   while (!Serial && ((millis () - debug_start) <= 5000)) ;
   tft.begin(RA8875_800x480);
+  */
   Serial.println(F("Turn ON layers (automatically)"));
   tft.writeTo(L1);//If layers off it will turn on
   //remember to turn off or layers remain active forever!

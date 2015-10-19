@@ -1,3 +1,55 @@
+
+/* Simply Touch screen library calibration V2:
+ this will help you to calibrate your touch screen by modify
+ 4 parameters inside RA8875/_utility/RA8875Calibration.h file:
+ TOUCSRCAL_XLOW  //min value of x you can get
+ TOUCSRCAL_XHIGH  //max value of x you can get
+ TOUCSRCAL_YLOW //min value of y you can get
+ TOUCSRCAL_YHIGH  //max value of y you can get
+ Normally those parameters are set as 0.
+  Only for RESISTIVE TOUCH SCREEN!
+ It's not a bullet-proof scientist alghorithm but calibrate
+ using this method will be fast and enough accurate for basic
+ touch screen operations like buttons, etc. If you need more
+ precision and you don't want waste resources consider a capacitive touch!
+ Now run this program and open Serial Monitor or follow screen instrunctions.
+ Works with Arduino 1.0.6 IDE, Arduino 1.6.x IDE
+*/
+#include <SPI.h>
+#include <RA8875.h>
+
+/*
+Arduino's
+You are using 4 wire SPI here, so:
+ MOSI:  11//DUE refere to arduino site
+ MISO:  12//DUE refere to arduino site
+ SCK:   13//DUE refere to arduino site
+ the rest of pin below:
+ */
+
+#define RA8875_INT 2 //any pin
+#define RA8875_CS 10 //see below...
+/* DUE: should be any but not sure */
+#define RA8875_RESET 9//any pin or nothing!
+
+RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//arduino's
+
+
+const uint8_t samples = 20;
+uint16_t tempData[samples][2];
+volatile int count = 0;
+uint16_t tx, ty;//used as temp
+uint16_t _XLOW_VAR;
+uint16_t _YLOW_VAR;
+uint16_t _XHIGH_VAR;
+uint16_t _YHIGH_VAR;
+bool proceed;
+int scount = 0;
+
+#if !defined(USE_RA8875_TOUCH) || defined(_AVOID_TOUCHSCREEN)
+#error "you need to enable resistive touchscreen by uncommenting USE_RA8875_TOUCH in settings!"
+#endif
+
 void setup() {
   Serial.begin(38400);
   long unsigned debug_start = millis ();

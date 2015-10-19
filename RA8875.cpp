@@ -1,6 +1,26 @@
+/*
+Part of RA8875 library from https://github.com/sumotoy/RA8875
+License:GNU General Public License v3.0
+
+    RA8875 fast SPI library for RAiO SPI RA8875 drived TFT
+    Copyright (C) 2014  egidio massimo costa sumotoy (a t) gmail.com
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <SPI.h>
 #include "RA8875.h"
-
 
 
 #if defined (USE_FT5206_TOUCH)
@@ -58,7 +78,7 @@ Bit:	Called by:		In use:
 		_rst = RSTp;
 		_altSPI = false;
 //---------------------------------DUE--------------------------------------------
-#elif defined(__SAM3X8E__)//DUE
+#elif defined(___DUESTUFF)//DUE
 	RA8875::RA8875(const uint8_t CSp, const uint8_t RSTp) 
 	{
 		_cs = CSp;
@@ -168,6 +188,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_textMode = false;
 	_brightness = 255;
 	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
+	_scaleX = 1; _scaleY = 1;
+	_scaling = false;
 	_EXTFNTsize = X16;
 	_FNTspacing = 0;
 	//_FNTrender = false;
@@ -206,15 +228,15 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	switch (_displaySize){
 		case RA8875_480x272:
 		case Adafruit_480x272:
-			_width = 480;
-			_height = 272;
+			_width = 	480;
+			_height = 	272;
 			_initIndex = 0;
 		break;
 		case RA8875_800x480:
 		case Adafruit_800x480:
 		case RA8875_800x480ALT:
-			_width = 800;
-			_height = 480;
+			_width = 	800;
+			_height = 	480;
 			_hasLayerLimits = true;
 			_maxLayers = 1;
 			if (_color_bpp < 16) _maxLayers = 2;
@@ -371,10 +393,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		#endif
 	#endif
 	#if !defined(ENERGIA)//everithing but ENERGIA
-		#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//all Tensy's 32bit
+		#if defined(___TEENSYES)//all of them (32 bit only)
 			pinMode(_cs, OUTPUT);
 			digitalWrite(_cs, HIGH);
-		#elif defined(__SAM3X8E__)// DUE
+		#elif defined(___DUESTUFF)// DUE
 			#if defined(SPI_DUE_MODE_EXTENDED)
 				//DUE SPI mode extended you can use only follow pins
 				if (_cs == 4 || _cs == 10 || _cs == 52) {
@@ -395,6 +417,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 					digitalWrite(_cs, HIGH);
 				#endif
 			#endif
+		#elif defined(__XTENSA__)
+			SPI.begin();
+			pinMode(_cs, OUTPUT);
+			digitalWrite(_cs, HIGH);
 		#else
 			//UNO,MEGA,Yun,nano,duemilanove and other 8 bit arduino's
 			SPI.begin();
@@ -420,7 +446,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 
 	//set SPI SPEED, starting at low speed, after init will raise up!
 	#if defined(SPI_HAS_TRANSACTION)
-		_SPImaxSpeed = 4000000;//we start in low speed here!
+		_SPImaxSpeed = 4000000UL;//we start in low speed here!
 	#else//do not use SPItransactons
 		#if defined (__AVR__)//8 bit arduino's
 			SPI.begin();
@@ -428,7 +454,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			delay(1);
 			SPI.setDataMode(SPI_MODE3);
 		#else
-			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 				SPI.setClockDivider(_cs,SPI_SPEED_SAFE);
 				delay(1);
 				SPI.setDataMode(_cs,SPI_MODE3);
@@ -449,7 +475,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	//------- time for capacitive touch stuff -----------------
 	#if defined(USE_FT5206_TOUCH)
 		Wire.begin();
-		#if defined(__SAM3X8E__)
+		#if defined(___DUESTUFF)
 			// Force 400 KHz I2C, rawr! (Uses pins 20, 21 for SDA, SCL)
 			TWI1->TWI_CWGR = 0;
 			TWI1->TWI_CWGR = ((VARIANT_MCK / (2 * 400000)) - 4) * 0x101;
@@ -538,7 +564,7 @@ void RA8875::_initialize()
 				_SPImaxSpeed = MAXSPISPEED;
 			#endif
 		#else
-			#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+			#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 				SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
 			#else
 				SPI.setClockDivider(SPI_SPEED_WRITE);
@@ -767,10 +793,8 @@ void RA8875::setActiveWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB)
 	if (XR >= RA8875_WIDTH) XR = RA8875_WIDTH;
 	if (YB >= RA8875_HEIGHT) YB = RA8875_HEIGHT;
 	
-	_activeWindowXL = XL;
-	_activeWindowXR = XR;
-	_activeWindowYT = YT;
-	_activeWindowYB = YB;
+	_activeWindowXL = XL; _activeWindowXR = XR;
+	_activeWindowYT = YT; _activeWindowYB = YB;
 	_updateActiveWindow(false);
 }
 
@@ -781,10 +805,8 @@ void RA8875::setActiveWindow(int16_t XL,int16_t XR ,int16_t YT ,int16_t YB)
 /**************************************************************************/
 void RA8875::setActiveWindow(void)
 {
-	_activeWindowXL = 0;
-	_activeWindowXR = RA8875_WIDTH;
-	_activeWindowYT = 0;
-	_activeWindowYB = RA8875_HEIGHT;
+	_activeWindowXL = 0; _activeWindowXR = RA8875_WIDTH;
+	_activeWindowYT = 0; _activeWindowYB = RA8875_HEIGHT;
 	if (_portrait){swapvals(_activeWindowXL,_activeWindowYT); swapvals(_activeWindowXR,_activeWindowYB);}
 	_updateActiveWindow(true);
 }
@@ -801,10 +823,8 @@ void RA8875::setActiveWindow(void)
 /**************************************************************************/
 void RA8875::getActiveWindow(int16_t &XL,int16_t &XR ,int16_t &YT ,int16_t &YB)//0.69b24
 {
-	XL = _activeWindowXL;
-	XR = _activeWindowXR;
-	YT = _activeWindowYT;
-	YB = _activeWindowYB;
+	XL = _activeWindowXL; XR = _activeWindowXR;
+	YT = _activeWindowYT; YB = _activeWindowYB;
 }
 
 /**************************************************************************/
@@ -1013,25 +1033,23 @@ void RA8875::showUserChar(uint8_t symbolAddrs,uint8_t wide)
 	oldReg1State |= (1 << 7);//set to CGRAM
 	oldReg1State |= (1 << 5);//TODO:check this (page 19)
 	_writeRegister(RA8875_FNCR0,oldReg1State);
-	if (_FNTscaleX > 0 || _FNTscaleY > 0){//reset scale (not compatible with this!)
+	if (_scaling){//reset scale (not compatible with this!)
 		oldReg2State = _FNCR1_Reg;
 		oldReg2State &= ~(0xF); // clear bits from 0 to 3
 		_writeRegister(RA8875_FNCR1,oldReg2State);
 	}
 	//layers?
+
  	if (_useMultiLayers){
 		if (_currentLayer == 0){
 			writeTo(L1);
 		} else {
 			writeTo(L2);
 		}
-	} 
-	//fix a post b10 preview 2 error
-	/*
-	else {
-		writeTo(L1);
+	} else {
+		//writeTo(L1);
 	}
-	*/
+
 	writeCommand(RA8875_MRWC);
 	_writeData(symbolAddrs);
 	if (wide > 0){
@@ -1098,6 +1116,7 @@ void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCodi
 		break;
 		case GT23L16U2W:
 		case GT30L16U2W:
+		case ER3301_1:
 			temp &= 0x1F; temp |= 0x20;
 		break;
 		case GT23L24T3Y:
@@ -1244,8 +1263,8 @@ void RA8875::setFont(enum RA8875fontSource s)
 		return;
 	}
 	_spaceCharWidth = _FNTwidth;
-	_FNTscaleX = 0;//reset font scale
-	_FNTscaleY = 0;//reset font scale
+	//setFontScale(0);
+	_scaleX = 1; _scaleY = 1;//reset font scale
 }
 
 
@@ -1291,8 +1310,8 @@ void RA8875::setFont(const tFont *font)
 			return;
 		}
 	}
-	_FNTscaleX = 0;//reset font scale
-	_FNTscaleY = 0;//reset font scale
+	_scaleX = 1; _scaleY = 1;//reset font scale
+	//setFontScale(0);
 	_TXTparameters |= (1 << 7);//render ON
 }
 
@@ -1393,6 +1412,7 @@ void RA8875::setCursor(int16_t x, int16_t y,bool autocenter)
 	
 	_cursorX = x;
 	_cursorY = y;
+
 	//if _relativeCenter or _absoluteCenter do not apply to registers yet!
 	// Have to go to _textWrite first to calculate the lenght of the entire string and recalculate the correct x,y
 	if (_relativeCenter || _absoluteCenter) return;
@@ -1418,14 +1438,13 @@ void RA8875::_textPosition(int16_t x, int16_t y,bool update)
 		_writeRegister(RA8875_F_CURYL,(y & 0xFF));
 		_writeRegister(RA8875_F_CURYH,(y >> 8));
 	#else
-	if (bitRead(_TXTparameters,7) == 0){
-		_writeRegister(RA8875_F_CURXL,(x & 0xFF));
-		_writeRegister(RA8875_F_CURXH,(x >> 8));
-		_writeRegister(RA8875_F_CURYL,(y & 0xFF));
-		_writeRegister(RA8875_F_CURYH,(y >> 8));
-	}
+		if (bitRead(_TXTparameters,7) == 0){
+			_writeRegister(RA8875_F_CURXL,(x & 0xFF));
+			_writeRegister(RA8875_F_CURXH,(x >> 8));
+			_writeRegister(RA8875_F_CURYL,(y & 0xFF));
+			_writeRegister(RA8875_F_CURYH,(y >> 8));
+		}
 	#endif
-
 	if (update){ _cursorX = x; _cursorY = y;}
 }
 
@@ -1612,15 +1631,7 @@ void RA8875::setTextGrandient(uint16_t fcolor1,uint16_t fcolor2)
 /**************************************************************************/
 void RA8875::setFontScale(uint8_t scale)
 {
-	if (bitRead(_TXTparameters,7) == 0){
-		scale = scale % 4; //limit to the range 0-3
-		_FNCR1_Reg &= ~(0xF); // clear bits from 0 to 3
-		_FNCR1_Reg |= scale << 2;
-		_FNCR1_Reg |= scale;
-		_writeRegister(RA8875_FNCR1,_FNCR1_Reg);
-	}
-	_FNTscaleX = scale;
-	_FNTscaleY = scale;
+	setFontScale(scale,scale);
 }
 
 /**************************************************************************/
@@ -1629,22 +1640,24 @@ void RA8875::setFontScale(uint8_t scale)
 		With Rendered fonts the max scale it's not limited
 		This time you can specify different values for vertical and horizontal
 		Parameters:
-		vscale: 0..3  -> 0:normal, 1:x2, 2:x3, 3:x4 for internal fonts - 0...xxx for Rendered Fonts
-		hscale: 0..3  -> 0:normal, 1:x2, 2:x3, 3:x4 for internal fonts - 0...xxx for Rendered Fonts
+		xscale: 0..3  -> 0:normal, 1:x2, 2:x3, 3:x4 for internal fonts - 0...xxx for Rendered Fonts
+		yscale: 0..3  -> 0:normal, 1:x2, 2:x3, 3:x4 for internal fonts - 0...xxx for Rendered Fonts
 */
 /**************************************************************************/
-void RA8875::setFontScale(uint8_t vscale,uint8_t hscale)
+void RA8875::setFontScale(uint8_t xscale,uint8_t yscale)
 {
+	_scaling = false;
 	if (bitRead(_TXTparameters,7) == 0){
-		vscale = vscale % 4; //limit to the range 0-3
-		hscale = hscale % 4; //limit to the range 0-3
+		xscale = xscale % 4; //limit to the range 0-3
+		yscale = yscale % 4; //limit to the range 0-3
 		_FNCR1_Reg &= ~(0xF); // clear bits from 0 to 3
-		_FNCR1_Reg |= hscale << 2;
-		_FNCR1_Reg |= vscale;
+		_FNCR1_Reg |= xscale << 2;
+		_FNCR1_Reg |= yscale;
 		_writeRegister(RA8875_FNCR1,_FNCR1_Reg);
 	}
-	_FNTscaleX = hscale;
-	_FNTscaleY = vscale;
+	_scaleX = xscale + 1;
+	_scaleY = yscale + 1;
+	if (_scaleX > 1 || _scaleY > 1) _scaling = true;
 }
 
 /**************************************************************************/
@@ -1719,12 +1732,12 @@ uint8_t RA8875::getFontWidth(boolean inColums)
 		temp = (((_FNCR0_Reg >> 2) & 0x3) + 1) * _FNTwidth;
 	}
 	if (inColums){
-		if (_FNTscaleX < 1) return (_width / temp);
-		temp = temp * (1 + _FNTscaleX);
+		if (_scaleX < 2) return (_width / temp);
+		temp = temp * _scaleX;
 		return (_width / temp);
 	} else {
-		if (_FNTscaleX < 1) return temp;
-		temp = temp * (1 + _FNTscaleX);
+		if (_scaleX < 2) return temp;
+		temp = temp * _scaleX;
 		return temp;
 	}
 }
@@ -1748,12 +1761,12 @@ uint8_t RA8875::getFontHeight(boolean inRows)
 		temp = (((_FNCR0_Reg >> 0) & 0x3) + 1) * _FNTheight;
 	}
 	if (inRows){
-		if (_FNTscaleY < 1) return (_height / temp);
-		temp = temp * (1 +_FNTscaleY);
+		if (_scaleY < 2) return (_height / temp);
+		temp = temp * _scaleY;
 		return (_height / temp);
 	} else {
-		if (_FNTscaleY < 1) return temp;
-		temp = temp * (1 + _FNTscaleY);
+		if (_scaleY < 2) return temp;
+		temp = temp * _scaleY;
 		return temp;
 	}
 }
@@ -1780,46 +1793,46 @@ void RA8875::setFontSpacing(uint8_t spc)
 /**************************************************************************/
 /*!	PRIVATE
 		draw a string
-		Works for all fonts, internal, ROM, external
+		Works for all fonts, internal, ROM, external (render)
 */
 /**************************************************************************/
+
 void RA8875::_textWrite(const char* buffer, uint16_t len)
  {
 	uint16_t i;
-	if (len == 0) len = strlen(buffer);
+	if (len == 0) len = strlen(buffer);//try get the info from the buffer
 	if (len == 0) return;//better stop here, the string it's really empty!
-	bool renderOn = bitRead(_TXTparameters,7);
+	bool renderOn = bitRead(_TXTparameters,7);//detect if render fonts active
 	
-	uint8_t xScale = 1 + _FNTscaleX;
-	uint8_t yScale = 1 + _FNTscaleY;
 	uint8_t loVOffset = 0;
 	uint8_t hiVOffset = 0;
 	uint8_t interlineOffset = 0;
 	uint16_t fcolor = _foreColor;
 	uint16_t bcolor = _backColor;
+	uint16_t strngWidth = 0;
+	uint16_t strngHeight = 0;
 	if (!renderOn){
-		loVOffset = _FNTbaselineLow * yScale;//calculate lower baseline
-		hiVOffset = _FNTbaselineTop * yScale;//calculate topline
+		loVOffset = _FNTbaselineLow * _scaleY;//calculate lower baseline
+		hiVOffset = _FNTbaselineTop * _scaleY;//calculate topline
 		//now check for offset if using an external fonts rom (RA8875 bug)
-		if (bitRead(_TXTparameters,0) == 1) interlineOffset = 3 * yScale;
+		if (bitRead(_TXTparameters,0) == 1) interlineOffset = 3 * _scaleY;
 	}
 	
 	//_absoluteCenter or _relativeCenter cases...................
-	if (_absoluteCenter || _relativeCenter){
-		
-		uint16_t strngLen = _STRlen_helper(buffer,len) * xScale;
-		uint16_t strngHeight = (_FNTheight * yScale) - (loVOffset + hiVOffset);//the REAL heigh
-		
-		if (_absoluteCenter){
+	//plus calculate the real width & height of the entire text in render mode (not trasparent)
+	if (_absoluteCenter || _relativeCenter || (renderOn && !_backTransparent)){
+		strngWidth = _STRlen_helper(buffer,len) * _scaleX;//this calculates the width of the entire text
+		strngHeight = (_FNTheight * _scaleY) - (loVOffset + hiVOffset);//the REAL heigh
+		if (_absoluteCenter && strngWidth > 0){//Avoid operations for strngWidth = 0
 			_absoluteCenter = false;
-			_cursorX = _cursorX - (strngLen / 2);
+			_cursorX = _cursorX - (strngWidth / 2);
 			_cursorY = _cursorY - (strngHeight / 2) - hiVOffset;
 			if (_portrait) swapvals(_cursorX,_cursorY);
-		} else if (_relativeCenter){
+		} else if (_relativeCenter && strngWidth > 0){//Avoid operations for strngWidth = 0
 			_relativeCenter = false;
 			if (bitRead(_TXTparameters,5)) {//X = center
 				if (!_portrait){
-					_cursorX = (_width / 2) - (strngLen / 2);
+					_cursorX = (_width / 2) - (strngWidth / 2);
 				} else {
 					_cursorX = (_height / 2) - (strngHeight / 2) - hiVOffset;
 				}
@@ -1829,22 +1842,23 @@ void RA8875::_textWrite(const char* buffer, uint16_t len)
 				if (!_portrait){
 					_cursorY = (_height / 2) - (strngHeight / 2) - hiVOffset;
 				} else {
-					_cursorY = (_width / 2) - (strngLen / 2);
+					_cursorY = (_width / 2) - (strngWidth / 2);
 				}
 				_TXTparameters &= ~(1 << 6);//reset
 			}
 		}
-		#if defined(FORCE_RA8875_TXTREND_FOLLOW_CURS)
-			_textPosition(_cursorX,_cursorY,false);
-		#else
-			if (!renderOn) _textPosition(_cursorX,_cursorY,false);
-		#endif
-	}// end _absoluteCenter || _relativeCenter
+		//if ((_absoluteCenter || _relativeCenter) &&  strngWidth > 0){//Avoid operations for strngWidth = 0
+		if (strngWidth > 0){//Avoid operations for strngWidth = 0
+			#if defined(FORCE_RA8875_TXTREND_FOLLOW_CURS)
+				_textPosition(_cursorX,_cursorY,false);
+			#else
+				if (!renderOn) _textPosition(_cursorX,_cursorY,false);
+			#endif
+		}
+	}//_absoluteCenter,_relativeCenter,(renderOn && !_backTransparent)
 //-----------------------------------------------------------------------------------------------
-
-	//Loop trouch chars and write them
-	if (!_textMode && !renderOn) _setTextMode(true);//  go to text
-	if (_textMode && renderOn) _setTextMode(false);//  go to graphic
+	if (!_textMode && !renderOn) _setTextMode(true);//   go to text
+	if (_textMode && renderOn)   _setTextMode(false);//  go to graphic
 	//colored text vars
 	uint16_t grandientLen = 0;
 	uint16_t grandientIndex = 0;
@@ -1864,6 +1878,14 @@ void RA8875::_textWrite(const char* buffer, uint16_t len)
 			if (buffer[i] != 13 && buffer[i] != 10 && buffer[i] != 32) grandientLen++;//lenght of the interpolation
 		}
 	}
+	#if defined(RA8875_TXTBENCH) && !defined(RA8875_VISPIXDEBUG)//for testing purposes
+		unsigned long start = micros();
+	#endif
+	#if defined(_RA8875_TXTRNDOPTIMIZER)
+	//instead write the background by using pixels (trough text rendering) better this trick
+	if (renderOn && !_backTransparent && strngWidth > 0) fillRect(_cursorX,_cursorY,strngWidth,strngHeight,_backColor);//bColor
+	#endif
+	//Loop trough every char and write them one by one...
 	for (i=0;i<len;i++){
 		if (_FNTgrandient){
 			if (buffer[i] != 13 && buffer[i] != 10 && buffer[i] != 32){
@@ -1875,11 +1897,11 @@ void RA8875::_textWrite(const char* buffer, uint16_t len)
 			}
 		}
 		if (!renderOn){
-			_charWrite(buffer[i],interlineOffset);
+			_charWrite(buffer[i],interlineOffset);					// internal,ROM fonts
 		} else {
-			_charWriteR(buffer[i],xScale,yScale,interlineOffset,fcolor,bcolor);
+			_charWriteR(buffer[i],interlineOffset,fcolor,bcolor);   // user fonts
 		}
-	}
+	}//end loop
 	if (_FNTgrandient){//recover text color after colored text
 		_FNTgrandient = false;
 		 //recover original text color
@@ -1893,19 +1915,32 @@ void RA8875::_textWrite(const char* buffer, uint16_t len)
 			fcolor = recoverColor;
 		}
 	}
+	#if defined(RA8875_TXTBENCH) && !defined(RA8875_VISPIXDEBUG)
+	  unsigned long result = micros() - start;
+	  Serial.print("Text Rendered in:");
+	  Serial.print(result);
+	  Serial.print(" ms");
+	  Serial.print("\n");
+	#endif
 }
 
-void RA8875::_charWriteR(const char c,uint8_t xScale,uint8_t yScale,uint8_t offset,uint16_t fcolor,uint16_t bcolor)
+/**************************************************************************/
+/*!	PRIVATE
+	Main routine that write a single char in render mode, this actually call another subroutine that do the paint job
+	but this one take care of all the calculations...
+	NOTE: It identify correctly println and /n & /r
+*/
+/**************************************************************************/
+void RA8875::_charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bcolor)
 {
-
 	if (c == 13){//------------------------------- CARRIAGE ----------------------------------
 		//ignore
 	} else if (c == 10){//------------------------- NEW LINE ---------------------------------
 		if (!_portrait){
 			_cursorX = 0;
-			_cursorY += (_FNTheight + (_FNTheight * yScale)) + _FNTinterline + offset;
+			_cursorY += (_FNTheight * _scaleY) + _FNTinterline + offset;
 		} else {
-			_cursorX += (_FNTheight + (_FNTheight * yScale)) + _FNTinterline + offset;
+			_cursorX += (_FNTheight * _scaleY) + _FNTinterline + offset;
 			_cursorY = 0;
 		}
 		#if defined(FORCE_RA8875_TXTREND_FOLLOW_CURS)
@@ -1913,11 +1948,11 @@ void RA8875::_charWriteR(const char c,uint8_t xScale,uint8_t yScale,uint8_t offs
 		#endif
 	} else if (c == 32){//--------------------------- SPACE ---------------------------------
 		if (!_portrait){
-			fillRect(_cursorX,_cursorY,(_spaceCharWidth * xScale),(_FNTheight * yScale),bcolor);//bColor
-			_cursorX += (_spaceCharWidth * xScale) + _FNTspacing;
+			fillRect(_cursorX,_cursorY,(_spaceCharWidth * _scaleX),(_FNTheight * _scaleY),bcolor);//bColor
+			_cursorX += (_spaceCharWidth * _scaleX) + _FNTspacing;
 		} else {
-			fillRect(_cursorY,_cursorX,(_spaceCharWidth * xScale),(_FNTheight * yScale),bcolor);//bColor
-			_cursorY += (_spaceCharWidth * xScale) + _FNTspacing;
+			fillRect(_cursorY,_cursorX,(_spaceCharWidth * _scaleX),(_FNTheight * _scaleY),bcolor);//bColor
+			_cursorY += (_spaceCharWidth * _scaleX) + _FNTspacing;
 		}
 		// #if defined(FORCE_RA8875_TXTREND_FOLLOW_CURS)
 			// _textPosition(_cursorX,_cursorY,false);
@@ -1925,37 +1960,73 @@ void RA8875::_charWriteR(const char c,uint8_t xScale,uint8_t yScale,uint8_t offs
 	} else {//-------------------------------------- CHAR ------------------------------------
 		int charIndex = _getCharCode(c);//get char code
 		if (charIndex > -1){//valid?
-			int16_t charW = 0;
+			int charW = 0;
 			//get charW and glyph
 			#if defined(_FORCE_PROGMEM__)
 				charW = PROGMEM_read(&_currentFont->chars[charIndex].image->image_width);
-				const uint8_t * charGlyps = PROGMEM_read(&_currentFont->chars[charIndex].image->data);
+				#if !defined(_RA8875_TXTRNDOPTIMIZER)
+					const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[charIndex].image->data);
+				#endif
 			#else
 				charW = _currentFont->chars[charIndex].image->image_width;
-				const uint8_t * charGlyps = _currentFont->chars[charIndex].image->data;
+				#if !defined(_RA8875_TXTRNDOPTIMIZER)
+					const uint8_t * charGlyp = _currentFont->chars[charIndex].image->data;
+				#endif
 			#endif
-			//draw char----------------------------------------------------------------
-			
-			// if (!_portrait){
-				// fillRect(_cursorX,_cursorY,(charW * xScale),(_FNTheight * yScale),RA8875_YELLOW);//bColor
-			// } else {
-				// fillRect(_cursorY,_cursorX,(charW * xScale),(_FNTheight * yScale),RA8875_YELLOW);//bColor
-			// }
-			//-------------------------Actual drawing here -----------------------------------
-			if (!_FNTcompression){
-				if (!_portrait){
-					_drawChar_unc(_cursorX,_cursorY,charW,charGlyps,fcolor,bcolor);
-				} else {
-					_drawChar_unc(_cursorY,_cursorX,charW,charGlyps,fcolor,bcolor);
+			//check if goes out of screen and goes to a new line (if wrap) or just avoid
+			if (bitRead(_TXTparameters,2)){//wrap?
+				if (!_portrait && (_cursorX + charW * _scaleX) >= _width){
+					_cursorX = 0;
+					_cursorY += (_FNTheight * _scaleY) + _FNTinterline + offset;
+				} else if (_portrait && (_cursorY + charW * _scaleY) >= _width){
+					_cursorX += (_FNTheight * _scaleY) + _FNTinterline + offset;
+					_cursorY = 0;
 				}
-			} else {//compressed fonts
+				#if defined(FORCE_RA8875_TXTREND_FOLLOW_CURS)
+					//_textPosition(_cursorX,_cursorY,false);
+				#endif
+			} else {
+				if (_portrait){
+					if (_cursorY + charW * _scaleY >= _width) return;
+				} else {
+					if (_cursorX + charW * _scaleX >= _width) return;
+				}
 			}
+			//test purposes ----------------------------------------------------------------
+			/*
+			if (!_portrait){
+				fillRect(_cursorX,_cursorY,(charW * _scaleX),(_FNTheight * _scaleY),RA8875_YELLOW);//bColor
+			} else {
+				fillRect(_cursorY,_cursorX,(charW * _scaleX),(_FNTheight * _scaleY),RA8875_YELLOW);//bColor
+			}
+			*/
+			//-------------------------Actual single char drawing here -----------------------------------
+			if (!_FNTcompression){
+				#if defined(_RA8875_TXTRNDOPTIMIZER)
+					if (!_portrait){
+						_drawChar_unc(_cursorX,_cursorY,charW,charIndex,fcolor);
+					} else {
+						_drawChar_unc(_cursorY,_cursorX,charW,charIndex,fcolor);
+					}
+				#else
+					if (!_portrait){
+						_drawChar_unc(_cursorX,_cursorY,charW,charGlyp,fcolor,bcolor);
+					} else {
+						_drawChar_unc(_cursorY,_cursorX,charW,charGlyp,fcolor,bcolor);
+					}
+				#endif
+			} else {
+				//TODO
+				//RLE compressed fonts
+			}
+
 			//add charW to total -----------------------------------------------------
 			if (!_portrait){
-				_cursorX += (charW * xScale) + _FNTspacing;
+				_cursorX += (charW * _scaleX) + _FNTspacing;
 			} else {
-				_cursorY += (charW * xScale) + _FNTspacing;
+				_cursorY += (charW * _scaleX) + _FNTspacing;
 			}
+
 			// #if defined(FORCE_RA8875_TXTREND_FOLLOW_CURS)
 				// _textPosition(_cursorX,_cursorY,false);
 			// #endif
@@ -1965,7 +2036,7 @@ void RA8875::_charWriteR(const char c,uint8_t xScale,uint8_t yScale,uint8_t offs
 
 /**************************************************************************/
 /*!	PRIVATE
-		Write a single char, only INT and FONT ROM char
+		Write a single char, only INT and FONT ROM char (internal RA9975 render)
 		NOTE: It identify correctly println and /n & /r
 */
 /**************************************************************************/
@@ -1977,9 +2048,9 @@ void RA8875::_charWrite(const char c,uint8_t offset)
 	} else if (c == 10){//'\n'
 		if (!_portrait){
 			_cursorX = 0;
-			_cursorY += (_FNTheight + (_FNTheight * _FNTscaleY)) + _FNTinterline + offset;
+			_cursorY += (_FNTheight + (_FNTheight * (_scaleY - 1))) + _FNTinterline + offset;
 		} else {
-			_cursorX += (_FNTheight + (_FNTheight * _FNTscaleY)) + _FNTinterline + offset;
+			_cursorX += (_FNTheight + (_FNTheight * (_scaleY - 1))) + _FNTinterline + offset;
 			_cursorY = 0;
 		}
 		_textPosition(_cursorX,_cursorY,false);
@@ -2025,29 +2096,29 @@ int RA8875::_getCharCode(uint8_t ch)
 
 /**************************************************************************/
 /*!	PRIVATE
-		This helper loop trough a text string and return how long is in pixel
-		NOTE: It identify correctly println and /n & /r
+		This helper loop trough a text string and return how long is (in pixel)
+		NOTE: It identify correctly println and /n & /r and forget non present chars
 */
 /**************************************************************************/
 int16_t RA8875::_STRlen_helper(const char* buffer,uint16_t len)
 {
-	if (bitRead(_TXTparameters,7) == 0){
+	if (bitRead(_TXTparameters,7) == 0){		//_renderFont not active
 		return (len * _FNTwidth);
-	} else {
+	} else {									//_renderFont active
 		int charIndex = -1;
 		uint16_t i;
-		if (len == 0) len = strlen(buffer);
-		if (len == 0) return 0;//better stop here
-		if (_FNTwidth > 0){// fixed width
+		if (len == 0) len = strlen(buffer);		//try to get data from string
+		if (len == 0) return 0;					//better stop here
+		if (_FNTwidth > 0){						// fixed width font
 			return ((len * _spaceCharWidth));
-		} else {// variable width, need to loop trough entire string!
+		} else {								// variable width, need to loop trough entire string!
 			uint16_t totW = 0;
-			for (i = 0;i < len;i++){//loop trough buffer
-				if (buffer[i] == 32){//a space
+			for (i = 0;i < len;i++){			//loop trough buffer
+				if (buffer[i] == 32){			//a space
 					totW += _spaceCharWidth;
 				} else if (buffer[i] != 13 && buffer[i] != 10 && buffer[i] != 32){//avoid special char
 					charIndex = _getCharCode(buffer[i]);
-					if (charIndex > -1) {//found
+					if (charIndex > -1) {		//found!
 						#if defined(_FORCE_PROGMEM__)
 							totW += (PROGMEM_read(&_currentFont->chars[charIndex].image->image_width));
 						#else
@@ -2056,16 +2127,152 @@ int16_t RA8875::_STRlen_helper(const char* buffer,uint16_t len)
 					}
 				}//inside permitted chars
 			}//buffer loop
-			return totW;
+			return totW;						//return data
 		}//end variable w font
+	}
+}
+
+
+
+#if defined(_RA8875_TXTRNDOPTIMIZER)
+
+/**************************************************************************/
+/*!	PRIVATE
+		Here's the char render engine for uncompressed fonts, it actually render a single char.
+		It's actually 2 functions, this one take care of every glyph line
+		and perform some optimization second one paint concurrent pixels in chunks.
+		To show how optimizations works try uncomment RA8875_VISPIXDEBUG in settings.
+		Please do not steal this part of code!
+*/
+/**************************************************************************/
+void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcolor)
+{
+	//start by getting some glyph data...
+	#if defined(_FORCE_PROGMEM__)
+		const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[index].image->data);//char data
+		int			  totalBytes = PROGMEM_read(&_currentFont->chars[index].image->image_datalen);
+	#else
+		const uint8_t * charGlyp = _currentFont->chars[index].image->data;
+		int			  totalBytes = _currentFont->chars[index].image->image_datalen;
+	#endif
+	int i;
+	uint8_t temp = 0;
+	//some basic variable...
+	uint8_t currentXposition = 0;//the current position of the writing cursor in the x axis, from 0 to charW
+	uint8_t currentYposition = 1;//the current position of the writing cursor in the y axis, from 1 to _FNTheight
+	int currentByte = 0;//the current byte in reading (from 0 to totalBytes)
+	bool lineBuffer[charW];//the temporary line buffer (will be _FNTheight each char)
+	int lineChecksum = 0;//part of the optimizer
+	/*
+	uint8_t bytesInLine = 0;
+	//try to understand how many bytes in a line
+	if (charW % 8 == 0) {	// divisible by 8
+		bytesInLine = charW / 8;
+	} else {						// when it's divisible by 8?
+		bytesInLine = charW;
+		while (bytesInLine % 8) { bytesInLine--;}
+		bytesInLine = bytesInLine / 8;
+	}
+	*/
+	//the main loop that will read all bytes of the glyph
+	while (currentByte < totalBytes){
+		//read n byte
+		#if defined(_FORCE_PROGMEM__)
+			temp = PROGMEM_read(&charGlyp[currentByte]);
+		#else
+			temp = charGlyp[currentByte];
+		#endif
+		for (i=7; i>=0; i--){
+			//----------------------------------- exception
+			if (currentXposition >= charW){
+				//line buffer has been filled!
+				currentXposition = 0;//reset the line x position
+				if (lineChecksum < 1){//empty line
+					#if defined(RA8875_VISPIXDEBUG)
+						drawRect(x,y + (currentYposition * _scaleY),charW * _scaleX,_scaleY,RA8875_BLUE);
+					#endif
+				} else if (lineChecksum == charW){//full line
+					#if !defined(RA8875_VISPIXDEBUG)
+					fillRect(
+					#else
+					drawRect(
+					#endif
+						x,y + (currentYposition * _scaleY),charW * _scaleX,_scaleY,fcolor);
+				} else { //line render
+					_charLineRender(lineBuffer,charW,x,y,currentYposition,fcolor);
+				}
+				currentYposition++;//next line
+				lineChecksum = 0;//reset checksum
+			}//end exception
+			//-------------------------------------------------------
+			lineBuffer[currentXposition] = bitRead(temp,i);//continue fill line buffer
+			lineChecksum += lineBuffer[currentXposition];
+			currentXposition++;
+		}
+		currentByte++;
 	}
 }
 
 /**************************************************************************/
 /*!	PRIVATE
-
+		Font Line render optimized routine
+		This will render ONLY a single font line by grouping chunks of same pixels
+		Version 3.0 (fixed a bug that cause xlinePos to jump of 1 pixel
 */
 /**************************************************************************/
+void RA8875::_charLineRender(bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor)
+{
+	int xlinePos = 0;
+	int px;
+	uint8_t endPix = 0;
+	bool refPixel = false;
+	while (xlinePos < charW){
+		refPixel = lineBuffer[xlinePos];//xlinePos pix as reference value for next pixels
+		//detect and render concurrent pixels
+		for (px = xlinePos;px <= charW;px++){
+			if (lineBuffer[px] == lineBuffer[xlinePos] && px < charW){//grouping pixels with same val
+				endPix++;
+			} else {
+				if (refPixel){
+					#if defined(RA8875_VISPIXDEBUG)
+					drawRect(
+					#else
+					fillRect(
+					#endif
+						x,y + (currentYposition * _scaleY),endPix * _scaleX,_scaleY,fcolor);
+				} else {
+					#if defined(RA8875_VISPIXDEBUG)
+					drawRect(x,y + (currentYposition * _scaleY),endPix * _scaleX,_scaleY,RA8875_BLUE);
+					#endif
+				}
+				//reset and update some vals
+				xlinePos += endPix;
+				x += endPix * _scaleX;
+				endPix = 0;
+				break;//exit cycle for...
+			}
+		}
+	}
+}
+
+#else
+/**************************************************************************/
+/*!
+      This is the old rendering engine, pretty basic but slow, here for an alternative.
+	  Note that this can be enabled only by commenting 
+	  
+	  #define _RA8875_TXTRNDOPTIMIZER 
+	  
+	  in RA8875UserSettings.h file!
+	  Parameters:
+	  x:
+	  Y:
+	  w: the width of the font
+	  data: the data glyph
+	  fcolor: foreground color
+	  bcolor: background color
+*/
+/**************************************************************************/	
 void RA8875::_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uint16_t fcolor,uint16_t bcolor)
 {
 	// if ((x >= _width)             			||  // Clip right
@@ -2073,8 +2280,6 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uin
 		// ((x + w * _FNTscaleX - 1) < 0) 	||  // Clip left
 		// ((y + _FNTheight * _FNTscaleY - 1) < 0))   	// Clip top
     // return;
-	uint8_t scaleX = _FNTscaleX + 1;
-	uint8_t scaleY = _FNTscaleY + 1;
 	uint16_t color;
 	uint16_t bitCount = 0;
 	uint8_t line = 0;
@@ -2089,14 +2294,22 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uin
 					line = *data++;
 				#endif
 			}
+			#if defined(RA8875_VISPIXDEBUG)
+			color = RA8875_BLUE;
+			#else
 			color = bcolor;
+			#endif
 			if (line & 0x80) color = fcolor;
-			if (scaleX > 1 || scaleY > 1) {// big
+			if (_scaling) {// big
+				#if defined(RA8875_VISPIXDEBUG)
+				drawRect(
+				#else
 				fillRect(
-					x + (j * scaleX), 
-					y + (i * scaleY), 
-					scaleX, 
-					scaleY, 
+				#endif
+					x + (j * _scaleX), 
+					y + (i * _scaleY), 
+					_scaleX, 
+					_scaleY, 
 					color
 				);
 			} else {  // def size
@@ -2106,10 +2319,13 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uin
 		}
 	}
 }
+#endif
 
+/*
 void RA8875::_drawChar_com(int16_t x,int16_t y,int16_t w,const uint8_t *data)
 {
 }
+*/
 
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2751,9 +2967,11 @@ void RA8875::useLayers(boolean on)
 		_useMultiLayers = false;
 		_DPCR_Reg &= ~(1 << 7);
 		clearActiveWindow(false);
+		
 	}
 	
 	_writeRegister(RA8875_DPCR,_DPCR_Reg);
+	if (!_useMultiLayers && _color_bpp < 16) setColorBpp(16);//bring color back to 16
 	/*
 	if (clearBuffer) { 
 		clearWindow(true);
@@ -2969,6 +3187,9 @@ void RA8875::writeTo(enum RA8875writes d)
 	  x: horizontal pos
 	  y: vertical pos
 	  color: RGB565 color
+	  NOTE:
+	  In 8bit bpp RA8875 needs a 8bit color(332) and NOT a 16bit(565),
+	  the routine deal with this...
 */
 /**************************************************************************/
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
@@ -2977,7 +3198,11 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
-	writeData16(color); 
+	if (_color_bpp > 8){
+		writeData16(color); 
+	} else {//TOTEST:layer bug workaround for 8bit color!
+		_writeData(_color16To8bpp(color)); 
+	}
 }
 
 /**************************************************************************/
@@ -2988,12 +3213,18 @@ void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 	  count: how many pixels
 	  x: horizontal pos
 	  y: vertical pos
+	  NOTE:
+	  In 8bit bpp RA8875 needs a 8bit color(332) and NOT a 16bit(565),
+	  the routine deal with this...
 */
 /**************************************************************************/
 void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 {
-    setXY(x,y);
+    //setXY(x,y);
+	uint16_t temp = 0;
+	uint16_t i;
 	if (_textMode) _setTextMode(false);//we are in text mode?
+	setXY(x,y);
     writeCommand(RA8875_MRWC);
     _startSend();
 	//set data
@@ -3011,27 +3242,56 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 		#endif
 	#endif
 	//the loop
-	for (uint16_t i=0;i<count;i++){
-	#if !defined(ENERGIA) && !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
+	for (i=0;i<count;i++){
+		if (_color_bpp < 16) {
+			temp = _color16To8bpp(p[i]);//TOTEST:layer bug workaround for 8bit color!
+		} else {
+			temp = p[i];
+		}
+	#if !defined(ENERGIA) && !defined(___DUESTUFF) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
-			if (_altSPI){
-				SPI1.transfer16(p[i]);
-			} else {
-				SPI.transfer16(p[i]);
+			if (_color_bpp > 8){
+				if (_altSPI){
+					SPI1.transfer16(temp);
+				} else {
+					SPI.transfer16(temp);
+				}
+			} else {//TOTEST:layer bug workaround for 8bit color!
+				if (_altSPI){
+					SPI1.transfer(temp);
+				} else {
+					SPI.transfer(temp & 0xFF);
+				}
 			}
 		#else
-			SPI.transfer16(p[i]);
+			if (_color_bpp > 8){
+				SPI.transfer16(temp);
+			} else {//TOTEST:layer bug workaround for 8bit color!
+				SPI.transfer(temp & 0xFF);
+			}
 		#endif
 	#else
-		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
-			SPI.transfer(_cs, p[i] >> 8, SPI_CONTINUE); 
-			SPI.transfer(_cs, p[i] & 0xFF, SPI_LAST);
+		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
+			if (_color_bpp > 8){
+				SPI.transfer(_cs, temp >> 8, SPI_CONTINUE); 
+				SPI.transfer(_cs, temp & 0xFF, SPI_LAST);
+			} else {//TOTEST:layer bug workaround for 8bit color!
+				SPI.transfer(_cs, temp & 0xFF, SPI_LAST);
+			}
 		#else
 			#if defined(__AVR__) && defined(_FASTSSPORT)
-				_spiwrite16(p[i]);
+				if (_color_bpp > 8){
+					_spiwrite16(temp);
+				} else {//TOTEST:layer bug workaround for 8bit color!
+					_spiwrite(temp >> 8);
+				}
 			#else
-				SPI.transfer(p[i] >> 8);
-				SPI.transfer(p[i] & 0xFF);
+				if (_color_bpp > 8){
+					SPI.transfer(temp >> 8);
+					SPI.transfer(temp & 0xFF);
+				} else {//TOTEST:layer bug workaround for 8bit color!
+					SPI.transfer(temp & 0xFF);
+				}
 			#endif
 		#endif
 	#endif
@@ -3075,7 +3335,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
 			SPI.transfer(0x00);//first byte it's dummy
 		#endif
 	#endif
-	#if !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
+	#if !defined(___DUESTUFF) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
 			if (_altSPI){
 				color  = SPI1.transfer16(0x0);
@@ -3086,7 +3346,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
 			color  = SPI.transfer16(0x0);
 		#endif
 	#else
-		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 			color  = SPI.transfer(_cs, 0x0, SPI_CONTINUE); 
 			color |= (SPI.transfer(_cs, 0x0, SPI_LAST) << 8);
 		#else
@@ -3156,8 +3416,11 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 /**************************************************************************/
 void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
 {
-	if (x0 == x1 && y0 == y1) return;
-	if ((x1 - x0 == 1) && (y1 - y0 == 1)) drawPixel(x0,y0,color);
+	if ((x0 == x1 && y0 == y1) || ((x1 - x0 == 1) && (y1 - y0 == 1))) {//NEW
+		drawPixel(x0,y0,color);
+		return;
+	}
+	//if ((x1 - x0 == 1) && (y1 - y0 == 1)) drawPixel(x0,y0,color);
 	if (_portrait) { swapvals(x0,y0); swapvals(x1,y1);}
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
@@ -3184,12 +3447,16 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 /**************************************************************************/
 void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length, uint16_t color,int offset)
 {
-	drawLine(
+	if (length < 2) {//NEW
+		drawPixel(x,y,color);
+	} else {
+		drawLine(
 		x,
 		y,
 		x + (length * _cosDeg_helper(angle + offset)),//_angle_offset
 		y + (length * _sinDeg_helper(angle + offset)), 
 		color);
+	}
 }
 
 /**************************************************************************/
@@ -3206,12 +3473,16 @@ void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length,
 /**************************************************************************/
 void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t start, uint16_t length, uint16_t color,int offset)
 {
-	drawLine(
+	if (start - length < 2) {//NEW
+		drawPixel(x,y,color);
+	} else {
+		drawLine(
 		x + start * _cosDeg_helper(angle + offset),//_angle_offset
 		y + start * _sinDeg_helper(angle + offset),
 		x + (start + length) * _cosDeg_helper(angle + offset),
 		y + (start + length) * _sinDeg_helper(angle + offset), 
 		color);
+	}
 }
 
 void RA8875::roundGaugeTicker(uint16_t x, uint16_t y, uint16_t r, int from, int to, float dev,uint16_t color) 
@@ -3506,6 +3777,7 @@ void RA8875::drawQuad(int16_t x0, int16_t y0,int16_t x1, int16_t y1,int16_t x2, 
 	drawLine(x3, y3, x0, y0, color);//low 2
 }
 
+
 /**************************************************************************/
 /*!
       Draw a filled quadrilater by connecting 4 points
@@ -3777,7 +4049,7 @@ void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
       yCenter:   y location of the ellipse center
       longAxis:  Size in pixels of the long axis
       shortAxis: Size in pixels of the short axis
-      curvePart: Curve to draw in clock-wise dir: 0[180-270Â°],1[270-0Â°],2[0-90Â°],3[90-180Â°]
+      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
       color: RGB565 color
 */
 /**************************************************************************/
@@ -3802,7 +4074,7 @@ void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16
       yCenter:   y location of the ellipse center
       longAxis:  Size in pixels of the long axis
       shortAxis: Size in pixels of the short axis
-      curvePart: Curve to draw in clock-wise dir: 0[180-270Â°],1[270-0Â°],2[0-90Â°],3[90-180Â°]
+      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
       color: RGB565 color
 */
 /**************************************************************************/
@@ -3840,10 +4112,10 @@ void RA8875::drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
 	} else {			 //render as rect
-		if (w < h && (r*2) >= w) r = w/2-1;
-		if (w > h && (r*2) >= h) r = h/2-1;
+		if (w < h && (r * 2) >= w) r = (w / 2) - 1;
+		if (w > h && (r * 2) >= h) r = (h / 2) - 1;
 		if (r == w || r == h) drawRect(x,y,w,h,color);
-		_roundRect_helper(x, y, (x+w)-1, (y+h)-1, r, color, false);
+		_roundRect_helper(x, y, (x + w) - 1, (y + h) - 1, r, color, false);
 	}
 }
 
@@ -3867,10 +4139,10 @@ void RA8875::fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r
 	if (w < 2 && h < 2){ //render as pixel
 		drawPixel(x,y,color);
 	} else {			 //render as rect
-		if (w < h && (r*2) >= w) r = w/2-1;
-		if (w > h && (r*2) >= h) r = h/2-1;
+		if (w < h && (r * 2) >= w) r = (w / 2) - 1;
+		if (w > h && (r  *2) >= h) r = (h / 2) - 1;
 		if (r == w || r == h) drawRect(x,y,w,h,color);
-		_roundRect_helper(x, y, (x+w)-1, (y+h)-1, r, color, true);
+		_roundRect_helper(x, y, (x + w) - 1, (y + h) - 1, r, color, true);
 	}
 }
 
@@ -3892,7 +4164,11 @@ void RA8875::_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, b
 	if (_portrait) swapvals(x0,y0);//0.69b21
 
 	if (r < 1) r = 1;
-	if (r > RA8875_HEIGHT/2) r = (RA8875_HEIGHT/2) - 1;//this is the (undocumented) hardware limit of RA8875
+	if (r < 2) {//NEW
+		drawPixel(x0,y0,color);
+		return;
+	}
+	if (r > RA8875_HEIGHT / 2) r = (RA8875_HEIGHT / 2) - 1;//this is the (undocumented) hardware limit of RA8875
 	
 	if (_textMode) _setTextMode(false);//we are in text mode?
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
@@ -3900,11 +4176,11 @@ void RA8875::_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, b
 	#endif
 	if (color != _foreColor) setForegroundColor(color);//0.69b30 avoid several SPI calls
 	
-	_writeRegister(RA8875_DCHR0,x0 & 0xFF);
-	_writeRegister(RA8875_DCHR0+1,x0 >> 8);
+	_writeRegister(RA8875_DCHR0,    x0 & 0xFF);
+	_writeRegister(RA8875_DCHR0 + 1,x0 >> 8);
 
-	_writeRegister(RA8875_DCVR0,y0 & 0xFF);
-	_writeRegister(RA8875_DCVR0+1,y0 >> 8);	   
+	_writeRegister(RA8875_DCVR0,    y0 & 0xFF);
+	_writeRegister(RA8875_DCVR0 + 1,y0 >> 8);	   
 	_writeRegister(RA8875_DCRR,r); 
 
 	writeCommand(RA8875_DCR);
@@ -3968,6 +4244,9 @@ void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, in
 	} else if (x0 == x2 && y0 == y2){
 		drawLine(x0, y0, x1, y1,color);
 		return;
+	} else if (x0 == x1 && y0 == y1 && x0 == x2 && y0 == y2) {//new
+        drawPixel(x0, y0, color);
+		return;
 	}
 	
 	if (y0 > y1) {swapvals(y0, y1); swapvals(x0, x1);}
@@ -4006,10 +4285,10 @@ void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, in
 	_line_addressing(x0,y0,x1,y1);
 	//p2
 
-	_writeRegister(RA8875_DTPH0,x2 & 0xFF);
-	_writeRegister(RA8875_DTPH0+1,x2 >> 8);
-	_writeRegister(RA8875_DTPV0,y2 & 0xFF);
-	_writeRegister(RA8875_DTPV0+1,y2 >> 8);
+	_writeRegister(RA8875_DTPH0,    x2 & 0xFF);
+	_writeRegister(RA8875_DTPH0 + 1,x2 >> 8);
+	_writeRegister(RA8875_DTPV0,    y2 & 0xFF);
+	_writeRegister(RA8875_DTPV0 + 1,y2 >> 8);
 	
 	writeCommand(RA8875_DCR);
 	filled == true ? _writeData(0xA1) : _writeData(0x81);
@@ -4030,13 +4309,16 @@ void RA8875::_ellipseCurve_helper(int16_t xCenter, int16_t yCenter, int16_t long
 	if (_portrait) {
 		swapvals(xCenter,yCenter);
 		swapvals(longAxis,shortAxis);
-		if (longAxis > _height/2) longAxis = (_height/2) - 1;
-		if (shortAxis > _width/2) shortAxis = (_width/2) - 1;
+		if (longAxis > _height/2) longAxis = (_height / 2) - 1;
+		if (shortAxis > _width/2) shortAxis = (_width / 2) - 1;
 	} else {
-		if (longAxis > _width/2) longAxis = (_width/2) - 1;
-		if (shortAxis > _height/2) shortAxis = (_height/2) - 1;
+		if (longAxis > _width/2) longAxis = (_width / 2) - 1;
+		if (shortAxis > _height/2) shortAxis = (_height / 2) - 1;
 	}
-
+	if (longAxis == 1 && shortAxis == 1) {
+		drawPixel(xCenter,yCenter,color);
+		return;
+	}
 	_checkLimits_helper(xCenter,yCenter);
 	
 	if (_textMode) _setTextMode(false);//we are in text mode?
@@ -4088,10 +4370,10 @@ void RA8875::_roundRect_helper(int16_t x, int16_t y, int16_t w, int16_t h, int16
 	
 	_line_addressing(x,y,w,h);
 
-	_writeRegister(RA8875_ELL_A0,r & 0xFF);
-	_writeRegister(RA8875_ELL_A0+1,r >> 8);
-	_writeRegister(RA8875_ELL_B0,r & 0xFF);
-	_writeRegister(RA8875_ELL_B0+1,r >> 8);
+	_writeRegister(RA8875_ELL_A0,    r & 0xFF);
+	_writeRegister(RA8875_ELL_A0 + 1,r >> 8);
+	_writeRegister(RA8875_ELL_B0,    r & 0xFF);
+	_writeRegister(RA8875_ELL_B0 + 1,r >> 8);
 
 	writeCommand(RA8875_ELLIPSE);
 	filled == true ? _writeData(0xE0) : _writeData(0xA0);
@@ -4126,10 +4408,10 @@ void RA8875::_drawArc_helper(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t
 	startAngle = (start / _arcAngle_max) * 360;	// 252
 	endAngle = (end / _arcAngle_max) * 360;		// 807
 
-	while (startAngle < 0) startAngle += 360;
-	while (endAngle < 0) endAngle += 360;
+	while (startAngle < 0)   startAngle += 360;
+	while (endAngle < 0)     endAngle += 360;
 	while (startAngle > 360) startAngle -= 360;
-	while (endAngle > 360) endAngle -= 360;
+	while (endAngle > 360)   endAngle -= 360;
 
 
 	if (startAngle > endAngle) {
@@ -4270,26 +4552,26 @@ void RA8875::_updateActiveWindow(bool full)
 {
 	if (full){
 		// X
-		_writeRegister(RA8875_HSAW0,0x00);
-		_writeRegister(RA8875_HSAW0+1,0x00);   
-		_writeRegister(RA8875_HEAW0,(RA8875_WIDTH) & 0xFF);
-		_writeRegister(RA8875_HEAW0+1,(RA8875_WIDTH) >> 8);
+		_writeRegister(RA8875_HSAW0,    0x00);
+		_writeRegister(RA8875_HSAW0 + 1,0x00);   
+		_writeRegister(RA8875_HEAW0,    (RA8875_WIDTH) & 0xFF);
+		_writeRegister(RA8875_HEAW0 + 1,(RA8875_WIDTH) >> 8);
 		// Y 
-		_writeRegister(RA8875_VSAW0,0x00);
-		_writeRegister(RA8875_VSAW0+1,0x00); 
-		_writeRegister(RA8875_VEAW0,(RA8875_HEIGHT) & 0xFF); 
-		_writeRegister(RA8875_VEAW0+1,(RA8875_HEIGHT) >> 8);
+		_writeRegister(RA8875_VSAW0,    0x00);
+		_writeRegister(RA8875_VSAW0 + 1,0x00); 
+		_writeRegister(RA8875_VEAW0,    (RA8875_HEIGHT) & 0xFF); 
+		_writeRegister(RA8875_VEAW0 + 1,(RA8875_HEIGHT) >> 8);
 	} else {
 		// X
-		_writeRegister(RA8875_HSAW0,_activeWindowXL & 0xFF);
-		_writeRegister(RA8875_HSAW0+1,_activeWindowXL >> 8);   
-		_writeRegister(RA8875_HEAW0,_activeWindowXR & 0xFF);
-		_writeRegister(RA8875_HEAW0+1,_activeWindowXR >> 8);
+		_writeRegister(RA8875_HSAW0,    _activeWindowXL & 0xFF);
+		_writeRegister(RA8875_HSAW0 + 1,_activeWindowXL >> 8);   
+		_writeRegister(RA8875_HEAW0,    _activeWindowXR & 0xFF);
+		_writeRegister(RA8875_HEAW0 + 1,_activeWindowXR >> 8);
 		// Y 
-		_writeRegister(RA8875_VSAW0,_activeWindowYT & 0xFF);
-		_writeRegister(RA8875_VSAW0+1,_activeWindowYT >> 8); 
-		_writeRegister(RA8875_VEAW0,_activeWindowYB & 0xFF); 
-		_writeRegister(RA8875_VEAW0+1,_activeWindowYB >> 8);
+		_writeRegister(RA8875_VSAW0,     _activeWindowYT & 0xFF);
+		_writeRegister(RA8875_VSAW0 + 1,_activeWindowYT >> 8); 
+		_writeRegister(RA8875_VEAW0,    _activeWindowYB & 0xFF); 
+		_writeRegister(RA8875_VEAW0 + 1,_activeWindowYB >> 8);
 	}
 }
 
@@ -4302,17 +4584,17 @@ void RA8875::_updateActiveWindow(bool full)
 void RA8875::_line_addressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 {
 	//X0
-	_writeRegister(RA8875_DLHSR0,x0 & 0xFF);
-	_writeRegister(RA8875_DLHSR0+1,x0 >> 8);
+	_writeRegister(RA8875_DLHSR0,    x0 & 0xFF);
+	_writeRegister(RA8875_DLHSR0 + 1,x0 >> 8);
 	//Y0
-	_writeRegister(RA8875_DLVSR0,y0 & 0xFF);
-	_writeRegister(RA8875_DLVSR0+1,y0 >> 8);
+	_writeRegister(RA8875_DLVSR0,    y0 & 0xFF);
+	_writeRegister(RA8875_DLVSR0 + 1,y0 >> 8);
 	//X1
-	_writeRegister(RA8875_DLHER0,x1 & 0xFF);
-	_writeRegister(RA8875_DLHER0+1,x1 >> 8);
+	_writeRegister(RA8875_DLHER0,    x1 & 0xFF);
+	_writeRegister(RA8875_DLHER0 + 1,x1 >> 8);
 	//Y1
-	_writeRegister(RA8875_DLVER0,y1 & 0xFF);
-	_writeRegister(RA8875_DLVER0+1,y1 >> 8);
+	_writeRegister(RA8875_DLVER0,    y1 & 0xFF);
+	_writeRegister(RA8875_DLVER0 + 1,y1 >> 8);
 }
 
 /**************************************************************************/
@@ -4324,15 +4606,15 @@ void RA8875::_line_addressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 void RA8875::_curve_addressing(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 {
 	//center
-	_writeRegister(RA8875_DEHR0,x0 & 0xFF);
-	_writeRegister(RA8875_DEHR0+1,x0 >> 8);
-	_writeRegister(RA8875_DEVR0,y0 & 0xFF);
-	_writeRegister(RA8875_DEVR0+1,y0 >> 8);
+	_writeRegister(RA8875_DEHR0,    x0 & 0xFF);
+	_writeRegister(RA8875_DEHR0 + 1,x0 >> 8);
+	_writeRegister(RA8875_DEVR0,    y0 & 0xFF);
+	_writeRegister(RA8875_DEVR0 + 1,y0 >> 8);
 	//long,short ax
-	_writeRegister(RA8875_ELL_A0,x1 & 0xFF);
-	_writeRegister(RA8875_ELL_A0+1,x1 >> 8);
-	_writeRegister(RA8875_ELL_B0,y1 & 0xFF);
-	_writeRegister(RA8875_ELL_B0+1,y1 >> 8);
+	_writeRegister(RA8875_ELL_A0,    x1 & 0xFF);
+	_writeRegister(RA8875_ELL_A0 + 1,x1 >> 8);
+	_writeRegister(RA8875_ELL_B0,    y1 & 0xFF);
+	_writeRegister(RA8875_ELL_B0 + 1,y1 >> 8);
 }
 
 
@@ -4509,7 +4791,7 @@ void RA8875::useINT(const uint8_t INTpin,const uint8_t INTnum)
 {
 	_intPin = INTpin;
 	_intNum = INTnum;
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+	#if defined(___TEENSYES)//all of them (32 bit only)
 		pinMode(_intPin ,INPUT_PULLUP);
 	#else
 		pinMode(_intPin ,INPUT);
@@ -4620,7 +4902,7 @@ void RA8875::useCapINT(const uint8_t INTpin,const uint8_t INTnum)
 {
 	_intCTSPin = INTpin;
 	_intCTSNum = INTnum;
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+	#if defined(___TEENSYES)//all of them (32 bit only)
 		pinMode(_intCTSPin ,INPUT_PULLUP);
 	#else
 		pinMode(_intCTSPin ,INPUT);
@@ -4807,7 +5089,7 @@ void RA8875::_initializeFT5206(void)
 void RA8875::_sendRegFT5206(uint8_t reg,const uint8_t val)
 {
     // save I2C bitrate
-	#if !defined(__SAM3X8E__)
+	#if !defined(___DUESTUFF)
 		uint8_t twbrbackup = TWBR;
 		TWBR = 12; // upgrade to 400KHz!
 	#endif
@@ -4815,7 +5097,7 @@ void RA8875::_sendRegFT5206(uint8_t reg,const uint8_t val)
 	Wire.write(reg);
 	Wire.write(val);
 	Wire.endTransmission(_ctpAdrs);
-	#if !defined(__SAM3X8E__)
+	#if !defined(___DUESTUFF)
 		TWBR = twbrbackup;
 	#endif
 }
@@ -4938,7 +5220,7 @@ void RA8875::touchBegin(void)
 		6,5,4:TP Sample Time Adjusting (000...111)
 		3:Touch Panel Wakeup Enable 0(disable),1(enable)
 		2,1,0:ADC Clock Setting (000...111) set fixed to 010: (System CLK) / 4, 10Mhz Max! */
-		#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__) || defined(__SAM3X8E__)//fast processors
+		#if defined(___TEENSYES) ||  defined(___DUESTUFF)//fast 32 bit processors
 			_writeRegister(RA8875_TPCR0, TP_ENABLE | TP_ADC_SAMPLE_16384_CLKS | TP_ADC_CLKDIV_32);
 		#else
 			_writeRegister(RA8875_TPCR0, TP_ENABLE | TP_ADC_SAMPLE_4096_CLKS | TP_ADC_CLKDIV_16);
@@ -4963,7 +5245,7 @@ void RA8875::touchBegin(void)
 /**************************************************************************/
 void RA8875::touchEnable(boolean enabled) {
 	if (_intPin < 255){
-		/* another F?%&$%Â£!*Â§ bug of the RA8875!
+		/* another grrrr bug of the RA8875!
 		if we are in text mode the RA chip cannot get back the
 		INT mode!
 		*/
@@ -5130,9 +5412,9 @@ void RA8875::sleep(boolean sleep)
 				_slowDownSPI(true);
 			#else
 				#if defined(SPI_HAS_TRANSACTION)
-					_SPImaxSpeed = 4000000;
+					_SPImaxSpeed = 4000000UL;
 				#else
-					#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+					#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 						SPI.setClockDivider(_cs,SPI_SPEED_READ);
 					#else
 						SPI.setClockDivider(SPI_SPEED_READ);
@@ -5169,7 +5451,7 @@ void RA8875::sleep(boolean sleep)
 						_SPImaxSpeed = MAXSPISPEED;
 					#endif
 				#else
-					#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+					#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 						SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
 					#else
 						SPI.setClockDivider(SPI_SPEED_WRITE);
@@ -5230,7 +5512,7 @@ uint8_t RA8875::_readRegister(const uint8_t reg)
 void RA8875::_writeData(uint8_t data) 
 {
 	_startSend();
-	#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+	#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 		SPI.transfer(_cs, RA8875_DATAWRITE, SPI_CONTINUE); 
 		SPI.transfer(_cs, data, SPI_LAST);
 	#else
@@ -5278,7 +5560,7 @@ void  RA8875::writeData16(uint16_t data)
 			SPI.transfer(RA8875_DATAWRITE);
 		#endif
 	#endif
-	#if !defined(ENERGIA) && !defined(__SAM3X8E__) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
+	#if !defined(ENERGIA) && !defined(___DUESTUFF) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
 		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
 			if (_altSPI){
 				SPI1.transfer16(data);
@@ -5289,7 +5571,7 @@ void  RA8875::writeData16(uint16_t data)
 			SPI.transfer16(data);
 		#endif
 	#else
-		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 			SPI.transfer(_cs, highByte(data), SPI_CONTINUE); 
 			SPI.transfer(_cs, lowByte(data), SPI_LAST);
 		#else
@@ -5298,8 +5580,6 @@ void  RA8875::writeData16(uint16_t data)
 			#else
 				SPI.transfer(data >> 8);
 				SPI.transfer(data & 0xFF);
-				//SPI.transfer(data & 0xFF);
-				//SPI.transfer(data >> 8);
 			#endif
 		#endif
 	#endif
@@ -5316,14 +5596,14 @@ uint8_t RA8875::_readData(bool stat)
 	#if defined(SPI_HAS_TRANSACTION)
 		if (_inited) _SPImaxSpeed = _SPImaxSpeed/2;
 	#else
-		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 			if (_inited) SPI.setClockDivider(_cs,SPI_SPEED_READ);
 		#else
 			if (_inited) SPI.setClockDivider(SPI_SPEED_READ);
 		#endif
 	#endif
 	_startSend();
-	#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+	#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 		stat == true ? SPI.transfer(_cs, RA8875_CMDREAD, SPI_CONTINUE) : SPI.transfer(_cs, RA8875_DATAREAD, SPI_CONTINUE);
 		uint8_t x = SPI.transfer(_cs, 0x0, SPI_LAST);
 	#else
@@ -5350,7 +5630,7 @@ uint8_t RA8875::_readData(bool stat)
 	#if defined(SPI_HAS_TRANSACTION)
 		if (_inited) _SPImaxSpeed = _SPImaxSpeed*2;
 	#else
-		#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 			if (_inited) SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
 		#else
 			if (_inited) SPI.setClockDivider(SPI_SPEED_WRITE);
@@ -5380,7 +5660,7 @@ uint8_t	RA8875::readStatus(void)
 void RA8875::writeCommand(const uint8_t d) 
 {
 	_startSend();
-	#if defined(__SAM3X8E__) && defined(SPI_DUE_MODE_EXTENDED)
+	#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
 		SPI.transfer(_cs, RA8875_CMDWRITE, SPI_CONTINUE); 
 		SPI.transfer(_cs, d, SPI_LAST);
 	#else
@@ -5406,21 +5686,34 @@ void RA8875::writeCommand(const uint8_t d)
 }
 
 
-
-
-/* void RA8875::debugData(uint16_t data,uint8_t len)
+/*
+ void RA8875::debugData(uint16_t data,uint8_t len)
 {
 	int i;
-  for (i=len-1; i>=0; i--){
-    if (bitRead(data,i)==1){
-      Serial.print("1");
-    } 
-    else {
-      Serial.print("0");
-    }
-  }
-  Serial.print(" -> 0x");
-  Serial.print(data,HEX);
-  //Serial.print("\n");
+	for (i=len-1; i>=0; i--){
+		if (bitRead(data,i)==1){
+			Serial.print("1");
+		} else {
+			Serial.print("0");
+		}
+	}
+	Serial.print(" -> 0x");
+	Serial.print(data,HEX);
+	Serial.print("\n");
+} 
+*/
 
-} */
+/*
+ void RA8875::showLineBuffer(uint8_t data[],int len)
+{
+	int i;
+	for (i=0; i<len; i++){
+		if (data[i] == 1){
+			Serial.print("1");
+		} else {
+			Serial.print("0");
+		}
+	}
+	Serial.print("\n");
+} 
+*/

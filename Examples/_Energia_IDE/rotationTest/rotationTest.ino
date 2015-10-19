@@ -9,18 +9,18 @@ code has many changes to fix the rotation issues.
 #include <SPI.h>
 #include <RA8875.h>
 
-
-#define RA8875_RESET 9//any pin or 255 to disable it!
+#define RA8875_RESET 9//any pin or nothing!
 
 #if defined(NEEDS_SET_MODULE)//Energia, this case is for stellaris/tiva
+
 RA8875 tft = RA8875(3);//select SPI module 3
 /*
 for module 3 (stellaris)
-SCLK:  PD_0
-MOSI:  PD_3
-MISO:  PD_2
-SS:    PD_1
-*/
+ SCLK:  PD_0
+ MOSI:  PD_3
+ MISO:  PD_2
+ SS:    PD_1
+ */
 #endif
 
 void setup() 

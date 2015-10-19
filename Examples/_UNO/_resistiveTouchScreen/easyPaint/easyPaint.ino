@@ -2,7 +2,6 @@
   This version use the new touch screen functions, much easier!
   Did you have already calibrated your screen? Better do as soon you can
   Open TouchScreenCalibration example and follow instructions.
- Works with Arduino 1.0.6 IDE, Arduino 1.6.x IDE
 */
 
 /*
@@ -10,29 +9,15 @@ You are using 4 wire SPI here, so:
  MOSI:11
  MISO:12
  SCK:13
- if you are using MEGA 1280 or 2560 plese refere to correct pin
- since they are different!
- 
- Other pins:
  */
 
 #include <SPI.h>
 #include <RA8875.h>
 
-/*
-Teensy3.x and Arduino's
-You are using 4 wire SPI here, so:
- MOSI:  11//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
- MISO:  12//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
- SCK:   13//Teensy3.x/Arduino UNO (for MEGA/DUE refere to arduino site)
- the rest of pin below:
- */
 
 #define RA8875_INT 2 //any pin
 #define RA8875_CS 10 //see below...
-/*
-Arduino's 8 bit: any
-*/
+
 #define RA8875_RESET 9//any pin or nothing!
 
 RA8875 tft = RA8875(RA8875_CS,RA8875_RESET);//Teensy3/arduino's
@@ -54,9 +39,8 @@ void interface(){
 
 void setup() 
 {
-  Serial.begin(38400);
-  //long unsigned debug_start = millis ();
-  //while (!Serial && ((millis () - debug_start) <= 5000)) ;
+  Serial.begin(9600);
+  //while (!Serial) {;}
   Serial.println("RA8875 start");
 
   tft.begin(RA8875_480x272);//initialize library

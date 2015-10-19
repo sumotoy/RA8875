@@ -1,6 +1,8 @@
 /*
 Initialization test.
 It uses Serial to help identify initialization issues...
+Note that this detect ONLY CS SPI pin errors, it doesn't actually
+detect any other configuration problem!
 */
 
 #include <SPI.h>

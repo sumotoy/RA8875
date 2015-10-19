@@ -1,8 +1,9 @@
 /*
-Basic Text Functions
+Basic Text Functions (only internal fonts)
  Here's an example of how to use text commands on RA8875
- It show also ho to use cursor options...
- */
+ It shows many commands and all commented so you can figure out the library ability
+*/
+
 #include <SPI.h>
 #include <RA8875.h>
 
@@ -28,7 +29,7 @@ void setup()
   while (!Serial && ((millis () - debug_start) <= 5000)) ;
   Serial.println("RA8875 start");
   //initialization routine
-  tft.begin(RA8875_800x480);
+  tft.begin(RA8875_800x480);//or whatever you have
   //following it's already by begin function but
   //if you like another background color....
   tft.fillWindow(RA8875_BLACK);//fill window black
@@ -51,36 +52,36 @@ void setup()
   Serial.println(tft.getFontHeight());
   tft.setTextColor(RA8875_RED);
   tft.print("Hello World");
-  //You notice that font location has been
-  //automatically increased by chip, unfortunatly not
-  //tracked by library but we can use a command for that...
-  int16_t currentX, currentY;
-  tft.getCursor(currentX, currentY);
+  //We can use current cursor location for some job...
+  int16_t currentX, currentY;//we need this for store current cursor location
+  tft.getCursor(currentX, currentY);//now we transfer to the currentX,currentY vars the location
   //now we have the location, lets draw a white pixel
   tft.drawPixel(currentX, currentY, RA8875_WHITE); //did you see the white dot?
-  tft.setFontScale(0);//font x0
+  tft.setFontScale(0);//reset font scale
   //here's an alternative...
-  //tft.setFontScale(0,1);vScale,hScale arbitrary v & h scaling
+  //tft.setFontScale(0,1);xscale,yscale arbitrary x & y scaling
   tft.setCursor(0, 50);
   tft.setTextColor(RA8875_YELLOW);
   tft.println("ABCDEF 1 2 3 4");//this time println!
-  tft.setFontSpacing(5);//now give 5 pix spacing
+  tft.setFontSpacing(5);//now give 5 pix extra spacing between chars
   tft.println("ABCDEF 1 2 3 4");
-  tft.setFontSpacing(0);//reset
+  tft.setFontSpacing(0);//reset spacing
   //here's a useful feature of setCursor
   tft.setCursor(CENTER, CENTER); //this set text exact in the screen regardless his lenght and scale
   tft.setFontScale(1);//font x2
+  tft.setTextGrandient(RA8875_YELLOW,RA8875_MAGENTA);
   tft.print("I'm in the center");
   //now use the autocenter feature
-  tft.setFontScale(0);//x0
-  tft.drawRect((tft.width() / 2) - 25, (tft.height() / 2) - 100, 50, 50, RA8875_RED);
+  tft.setFontScale(0);//reset font scale
+  tft.drawRect((tft.width() / 2) - 25, (tft.height() / 2) - 100, 50, 50, RA8875_RED);//draw a box above the center
   tft.setTextColor(RA8875_YELLOW);
-  //this will center the text
+  //this will center the text inside the box!!!
   tft.setCursor((tft.width() / 2), (tft.height() / 2) - 75, true);
   tft.print("AB");
-  tft.setFontScale(0);//font x2
+  tft.setFontScale(0);//reset font scale
   tft.setTextColor(RA8875_CYAN, RA8875_BLACK);
   tft.setCursor(50, 100);
+  // Now play with cursor styles
   tft.print("Cursor Example: IBEAM");
   tft.showCursor(IBEAM, true); //activate cursor iBeam blinking
   delay(3000);
