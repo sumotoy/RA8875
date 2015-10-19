@@ -1,4 +1,4 @@
-RA8875 library b11p5 [gold release]
+RA8875 library b11p6 [gold release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
@@ -30,6 +30,10 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
 **0.70b11p5** changes...<br>
  - Fixed a bug in Font Rendering Line Optimizer that causes loss pixels in some font. Now works as it should and it's also slight faster.<br>
+
+**0.70b11p6** changes...<br>
+ - Fixed a stupid error in setFontScale (was inverted), some improvements in several drawings functions, added ER3301_1 font rom.<br>
+ 
 
 Current beta **tested only with**:
 * EastRising RA8875 5"Inch (480x272) with resistive Touch or FT chip capacitive<br>
