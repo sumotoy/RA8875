@@ -1,4 +1,4 @@
-RA8875 library [gold release]
+RA8875 library
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
