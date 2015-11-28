@@ -2,8 +2,9 @@ RA8875 library b11p6 [gold release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
-This is the last <b>'development'</b> version, last <b>stable</b> version is here:<br>
+This is the last <b>'development'</b> version, last known <b>stable</b> version is here:<br>
 https://github.com/sumotoy/RA8875/tree/0.70<br>
+The development release normally contain bug fixes so it's almost safe to use but if you have problems you can switch back to the stable release (I try to keep as stable I can)<br>
 Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
 ##### Current version 0.70b11, Please read!!!.<br>
