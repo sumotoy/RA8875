@@ -35,6 +35,9 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
 **0.70b11p6** changes...<br>
  - Fixed a stupid error in setFontScale (was inverted), some improvements in several drawings functions, added ER3301_1 font rom.<br>
+
+**0.70b11p7** changes...<br>
+ - Added an user option in _settings/RA8875UserSettings.h to use alternative Wire1 on Arduino DUE, experimental since I'm actually don't have a DUE.<br>
  
 
 Current beta **tested only with**:
