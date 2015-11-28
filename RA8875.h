@@ -129,8 +129,9 @@ CS       10		53           YES       CS
 #include "_settings/RA8875_CPU_commons.h"
 
 #if !defined(swapvals)
-	#if defined(__XTENSA__)
+	#if defined(ESP8266)
 		#define swapvals(a, b) { int16_t t = a; a = b; b = t; }
+		//#define swapvals(a, b) { typeid(a) t = a; a = b; b = t; }
 	#else
 		#define swapvals(a, b) { typeof(a) t = a; a = b; b = t; }
 	#endif
@@ -169,7 +170,7 @@ CJK-Uni:	\u4E00 -> \u9FD5	/u4E ... /u9F
 #include "_settings/RA8875ColorPresets.h"
 #include "_settings/RA8875UserSettings.h"
 
-#if defined(_FORCE_PROGMEM__)
+#if defined(_FORCE_PROGMEM__) && !defined(ESP8266)
 template <typename T> T PROGMEM_read (const T * sce)
   {
   static T temp;
@@ -178,9 +179,7 @@ template <typename T> T PROGMEM_read (const T * sce)
   }
 #endif
 
-// using capacitive touch on due with alternative wire1 instead wire
-#if defined(USE_FT5206_TOUCH) && defined(___DUESTUFF) && defined(USE_DUE_WIRE1_INTERFACE)
-#endif
+
 
 #if defined(__MKL26Z64__)
 	static bool _altSPI;
@@ -189,6 +188,9 @@ template <typename T> T PROGMEM_read (const T * sce)
 	static volatile uint32_t _SPImaxSpeed;//holder for SPI speed
 #endif
 
+#if defined(ESP8266) && defined(_FASTSSPORT)
+	#include <eagle_soc.h>
+#endif
 
 
 class RA8875 : public Print {
@@ -462,6 +464,12 @@ using Print::write;
 			#else
 				uint8_t 		  _cs;
 			#endif
+		#elif defined(ESP8266)	
+			#if defined(_FASTSSPORT)
+				uint32_t 		  _cs;
+			#else
+				uint8_t 		  _cs;
+			#endif
 		#else
 			#if defined(_FASTSSPORT)
 				uint8_t 		  _cs, cspinmask;
@@ -621,13 +629,16 @@ using Print::write;
 	#elif defined(ENERGIA)
 		// TODO
 	#else
-		#if defined(___DUESTUFF)
-		// DUE
+		#if defined(___DUESTUFF) // DUE
 			#if defined(_FASTSSPORT)
 				volatile uint32_t *csport;
 			#endif
-		#else
-		// AVR,XTENSA,ARM (not DUE),STM,CHIPKIT
+		#elif defined(ESP8266) // ESP8266
+				uint32_t _pinRegister(uint8_t pin)
+				__attribute__((always_inline)) {
+					return _BV(pin);
+				}
+		#else// AVR,ARM (not DUE),STM,CHIPKIT
 	    //TODO:must check if all processor are compatible
 			#if defined(_FASTSSPORT)
 				volatile uint8_t *csport;
@@ -640,10 +651,12 @@ using Print::write;
 		#if defined(SPI_HAS_TRANSACTION)
 			#if defined(__MKL26Z64__)	
 				_altSPI == true ? SPI1.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3)) : SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
+			#elif defined(ESP8266)	
+				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE0));//it works, anyway ESP doesn't work in MODE3!
 			#else
 				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
 			#endif
-		#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF)
+		#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF) && !defined(ESP8266)
 			cli();//protect from interrupts
 		#endif//end has transaction
 		#if defined(___TEENSYES)//all of them (32 bit only)
@@ -653,7 +666,13 @@ using Print::write;
 				#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
 					//nothing
 				#else//DUE (normal),UNO,ETC.
-					#if defined(_FASTSSPORT)
+					#if defined(ESP8266)	
+						#if defined(_FASTSSPORT)
+							GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, _pinRegister(_cs));//L
+						#else
+							digitalWrite(_cs, LOW);// for now
+						#endif
+					#elif !defined(ESP8266) && defined(_FASTSSPORT)
 						*csport &= ~cspinmask;
 					#else
 						digitalWrite(_cs, LOW);
@@ -674,7 +693,13 @@ using Print::write;
 			#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
 				//nothing
 			#else//DUE (normal),UNO,ETC.
-				#if defined(_FASTSSPORT)
+				#if defined(ESP8266)	
+					#if defined(_FASTSSPORT)
+						GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, _pinRegister(_cs));//H
+					#else
+						digitalWrite(_cs, HIGH);//for now
+					#endif
+				#elif !defined(ESP8266) && defined(_FASTSSPORT)
 					*csport |= cspinmask;
 				#else
 					digitalWrite(_cs, HIGH);
@@ -690,7 +715,7 @@ using Print::write;
 		#else
 			SPI.endTransaction();
 		#endif
-	#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF)
+	#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF) && !defined(ESP8266)
 		sei();//enable interrupts
 	#endif
 } 

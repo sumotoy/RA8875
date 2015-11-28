@@ -59,6 +59,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#endif
 	#define __PRGMTAG_	PROGMEM
 	#include "Arduino.h"
+	#include <pins_arduino.h>
 	#include <math.h>
 	#include <avr/pgmspace.h>
 #elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
@@ -69,12 +70,12 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 --------------------------------------------------------------
 */
 	#define ___TEENSYES
-	#define _FASTCPU
+	#define _FASTCPU//It's a fast CPU with a fast SPI
 	#include "Arduino.h"
-	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h
+	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h (maybe not needed)
 	#if defined(_FORCE_PROGMEM__)
-		#undef _FORCE_PROGMEM__
-		#define PROGMEM __attribute__((section(".progmem.data")))
+		#undef _FORCE_PROGMEM__//force library not use PROGMEM
+		#define PROGMEM __attribute__((section(".progmem.data")))//Mmm... Maybe not needed
 	#endif
 	#define __PRGMTAG_	
 #elif defined(__32MX320F128H__) || defined(__32MX795F512L__) //chipkit uno, chipkit max
@@ -82,11 +83,15 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 --------------------------------------------------------------
 			CHIPKIT UNO, CHIPKIT MAX
 	Partially supported and never tested
+	the following defines need some changes!
 --------------------------------------------------------------
 */
 	#define ___CHIPKIT
-	#define _FASTCPU
+	#define _FASTCPU//It's a fast CPU with a fast SPI
 	#include "Arduino.h"
+	#if defined(_FORCE_PROGMEM__)
+		#undef _FORCE_PROGMEM__
+	#endif
 	#ifndef __PGMSPACE_H_
 	  #define __PGMSPACE_H_ 1
 	  #define PROGMEM
@@ -97,7 +102,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	  #define pgm_read_word(addr) (*(const unsigned short *)(addr))
 	#endif
 	#define __PRGMTAG_	
-#elif defined (__arm__) && defined(_VARIANT_ARDUINO_DUE_X_)
+#elif defined (__arm__) && defined(ARDUINO_ARCH_SAM)
 /* 
 --------------------------------------------------------------
 			ARDUINO DUE
@@ -105,8 +110,9 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 --------------------------------------------------------------
 */
 	#define ___DUESTUFF
-	#define _FASTCPU
+	#define _FASTCPU//It's a fast CPU with a fast SPI
 	#include "Arduino.h"
+	#include <pins_arduino.h>
 	#ifndef __PGMSPACE_H_
 	  #define __PGMSPACE_H_ 1
 	  #define PROGMEM
@@ -117,6 +123,17 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	  #define pgm_read_word(addr) (*(const unsigned short *)(addr))
 	#endif
 	#define __PRGMTAG_	
+#elif defined (__arm__) && defined(ARDUINO_ARCH_SAMD)
+/* 
+--------------------------------------------------------------
+			ARDUINO ZERO
+	Actually NOT supported
+--------------------------------------------------------------
+*/
+	#include "Arduino.h"
+	#include <pins_arduino.h>
+	#define ___ZEROSTUFF
+	#error "your board it's not supported yet!"
 #elif defined (__arm__) && defined(__SAM3X8E__)
 /* 
 --------------------------------------------------------------
@@ -127,6 +144,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#define ___DUESTUFF
 	#define _FASTCPU
 	#include "Arduino.h"
+	#include <pins_arduino.h>
 	#ifndef __PGMSPACE_H_
 	  #define __PGMSPACE_H_ 1
 	  #define PROGMEM
@@ -149,7 +167,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 		#undef _FORCE_PROGMEM__
 	#endif
 	#define __PRGMTAG_	
-#elif defined(__arm__) && !defined(__XTENSA__) && !defined(___TEENSYES)
+#elif defined(__arm__) && !defined(ESP8266) && !defined(___TEENSYES)
 /* 
 --------------------------------------------------------------
 			ARM generic
@@ -162,19 +180,26 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#include "Arduino.h"
 	#define __PRGMTAG_	
 	#warning "Generic Arm detected, not sure if your board it's compatible!"
-#elif defined(__XTENSA__)
+#elif defined(ESP8266)
 /* 
 --------------------------------------------------------------
-			XTENSA (ESP)
+			XTENSA (ESP8266)
 	It compiles but never tested
 --------------------------------------------------------------
 */
 	#include "Arduino.h"
+	#include <pins_arduino.h>
+	#define _FASTCPU
 	#if defined(_FORCE_PROGMEM__)
 		#undef _FORCE_PROGMEM__
 		#define PROGMEM __attribute__((section(".progmem.data")))
 	#endif
 	#define __PRGMTAG_	
+/* 
+--------------------------------------------------------------
+			NOT SUPPORTED
+--------------------------------------------------------------
+*/
 #else
 	#error "your board it's not supported yet!"
 #endif

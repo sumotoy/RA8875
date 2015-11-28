@@ -411,8 +411,8 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 				}
 			#else
 				//DUE in normal SPI mode
-				SPI.begin();
 				pinMode(_cs, OUTPUT);
+				SPI.begin();
 				#if defined(_FASTSSPORT)
 					csport = portOutputRegister(digitalPinToPort(_cs));
 					cspinmask = digitalPinToBitMask(_cs);
@@ -421,14 +421,18 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 					digitalWrite(_cs, HIGH);
 				#endif
 			#endif
-		#elif defined(__XTENSA__)
-			SPI.begin();
+		#elif defined(ESP8266)
 			pinMode(_cs, OUTPUT);
-			digitalWrite(_cs, HIGH);
+			SPI.begin();
+			#if defined(_FASTSSPORT)
+				GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, _pinRegister(_cs));//H
+			#else
+				digitalWrite(_cs, HIGH);//for now
+			#endif
 		#else
 			//UNO,MEGA,Yun,nano,duemilanove and other 8 bit arduino's
-			SPI.begin();
 			pinMode(_cs, OUTPUT);
+			SPI.begin();
 			csport = portOutputRegister(digitalPinToPort(_cs));//pinMode(_cs, OUTPUT);
 			cspinmask = digitalPinToBitMask(_cs);
 			*csport |= cspinmask;//hi
@@ -1308,7 +1312,11 @@ void RA8875::setFont(const tFont *font)
 		int temp = _getCharCode(0x20);
 		if (temp > -1){
 		#if defined(_FORCE_PROGMEM__)
+			#if defined(ESP8266)
+			_spaceCharWidth = FPSTR(&_currentFont->chars[temp].image->image_width);
+			#else
 			_spaceCharWidth = PROGMEM_read(&_currentFont->chars[temp].image->image_width);
+			#endif
 		#else
 			_spaceCharWidth = (_currentFont->chars[temp].image->image_width);
 		#endif
@@ -1972,9 +1980,16 @@ void RA8875::_charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bc
 			int charW = 0;
 			//get charW and glyph
 			#if defined(_FORCE_PROGMEM__)
-				charW = PROGMEM_read(&_currentFont->chars[charIndex].image->image_width);
-				#if !defined(_RA8875_TXTRNDOPTIMIZER)
-					const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[charIndex].image->data);
+				#if defined(ESP8266)
+					charW = FPSTR(&_currentFont->chars[charIndex].image->image_width);
+					#if !defined(_RA8875_TXTRNDOPTIMIZER)
+						const uint8_t * charGlyp = FPSTR(&_currentFont->chars[charIndex].image->data);
+					#endif
+				#else
+					charW = PROGMEM_read(&_currentFont->chars[charIndex].image->image_width);
+					#if !defined(_RA8875_TXTRNDOPTIMIZER)
+						const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[charIndex].image->data);
+					#endif
 				#endif
 			#else
 				charW = _currentFont->chars[charIndex].image->image_width;
@@ -2129,7 +2144,11 @@ int16_t RA8875::_STRlen_helper(const char* buffer,uint16_t len)
 					charIndex = _getCharCode(buffer[i]);
 					if (charIndex > -1) {		//found!
 						#if defined(_FORCE_PROGMEM__)
-							totW += (PROGMEM_read(&_currentFont->chars[charIndex].image->image_width));
+							#if defined(ESP8266)
+								totW += (FPSTR(&_currentFont->chars[charIndex].image->image_width));
+							#else
+								totW += (PROGMEM_read(&_currentFont->chars[charIndex].image->image_width));
+							#endif
 						#else
 							totW += (_currentFont->chars[charIndex].image->image_width);
 						#endif
@@ -2158,8 +2177,13 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 {
 	//start by getting some glyph data...
 	#if defined(_FORCE_PROGMEM__)
-		const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[index].image->data);//char data
-		int			  totalBytes = PROGMEM_read(&_currentFont->chars[index].image->image_datalen);
+		#if defined(ESP8266)
+			const uint8_t * charGlyp = FPSTR(&_currentFont->chars[index].image->data);//char data
+			int			  totalBytes = FPSTR(&_currentFont->chars[index].image->image_datalen);
+		#else
+			const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[index].image->data);//char data
+			int			  totalBytes = PROGMEM_read(&_currentFont->chars[index].image->image_datalen);
+		#endif
 	#else
 		const uint8_t * charGlyp = _currentFont->chars[index].image->data;
 		int			  totalBytes = _currentFont->chars[index].image->image_datalen;
@@ -2187,7 +2211,11 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcol
 	while (currentByte < totalBytes){
 		//read n byte
 		#if defined(_FORCE_PROGMEM__)
-			temp = PROGMEM_read(&charGlyp[currentByte]);
+			#if defined(ESP8266)
+				temp = FPSTR(&charGlyp[currentByte]);
+			#else
+				temp = PROGMEM_read(&charGlyp[currentByte]);
+			#endif
 		#else
 			temp = charGlyp[currentByte];
 		#endif
@@ -2298,7 +2326,11 @@ void RA8875::_drawChar_unc(int16_t x,int16_t y,int16_t w,const uint8_t *data,uin
 		for (j = 0; j<w; j++) {			//X		
 			if (bitCount++%8 == 0) {
 				#if defined(_FORCE_PROGMEM__)
-					line = PROGMEM_read(&*data++);
+					#if defined(ESP8266)
+						line = FPSTR(&*data++);
+					#else
+						line = PROGMEM_read(&*data++);
+					#endif
 				#else
 					line = *data++;
 				#endif

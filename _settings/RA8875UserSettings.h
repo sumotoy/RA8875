@@ -184,6 +184,9 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 	#elif defined(___DUESTUFF)							 //[DUE]
 		const static uint32_t MAXSPISPEED	= 15000000UL;  // try experiment higher values but NOT over 22000000!
 		//#define _FASTSSPORT
+	#elif defined(ESP8266)	
+		const static uint32_t MAXSPISPEED	= 22000000UL;  //don't go higher than 22000000!;
+		#define _FASTSSPORT
 	// TODO: add more CPU here!
 	#else												 //rest of the world (UNO, etc)
 		const static uint32_t MAXSPISPEED	= 10000000UL;  //be careful, higher values result in extremely slow rendering!
@@ -221,6 +224,10 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
 			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV6	//10.5Mhz
 			//#define _FASTSSPORT
+		#elif defined(ESP8266)//legacy
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4	//8mhz
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV4
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV4	//10.5Mhz
 		#else
 		// TODO: Add more CPU here!
 	//rest of the world included UNO, etc.
@@ -242,7 +249,7 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 	#elif !defined(USE_RA8875_TOUCH) && !defined(USE_FT5206_TOUCH)
 		#define _AVOID_TOUCHSCREEN
 	#elif defined(USE_FT5206_TOUCH) && !defined(USE_RA8875_TOUCH)
-		#include "Wire.h"//include the support for FT5206
+		//#include "Wire.h"//include the support for FT5206
 		static const uint8_t _FT5206REgisters[9] = {
 			0x16,0x3C,0xE9,0x01,0x01,0xA0,0x0A,0x06,0x28
 		};
