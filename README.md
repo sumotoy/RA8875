@@ -1,4 +1,4 @@
-RA8875 library b11p [early release]
+RA8875 library b11 [early release]
 ==============================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
