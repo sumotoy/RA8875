@@ -47,8 +47,8 @@ Current beta **tested only with**:
  All tested with Teensy 3.0, Teensy 3.1, Teensy LC, Arduino DUE, Arduino UNO, Arduino MEGA<br>
 Check 'Proof of working' in wiki.<br>
 
-##### Not Working? <br>
-I have tested 0.70b11 with several CPU and <b>worked</b>:<br>
+##### Not Working? Check here!<br>
+<b>I have tested 0.70b11 with several CPU and <b>worked</b>:</b><br>
  - Teensy 3.1
  - Teensy 3.0
  - Teensy LC
@@ -57,12 +57,17 @@ I have tested 0.70b11 with several CPU and <b>worked</b>:<br>
  - Arduino DUE
  - Arduino MEGA
  - Arduino YUN
- Display tested:
+ <br>
+ <b>Display tested:</b><br>
  - EastRising RA8875 5" (480x272)
  - EastRising RA8875 5" (800x480)
  - EastRising RA8875 7" (800x480)
  - Adafruit (480x272) 
  - Adafruit (800x480)<br>
+ <b>Planned but still not working:</b>
+ - Energia (basic support added but never tested)
+ - ESP8266 (compile but several problems with HEAP and PROGMEM to fix)<br>
+ <br>
  If your display not works, please check your connections, supply values, etc.<br>
  Remember it's an SPI connection so there's hardware limitations on some CPU, for example DUE can use as CS pin 4,10   or 52, Teensy can use more but not all, 8 Bit arduino can use almost any, etc..<br>
  Still not working? Check my wiki, **check carefully!**<br>
