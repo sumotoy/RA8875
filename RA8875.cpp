@@ -24,6 +24,10 @@ License:GNU General Public License v3.0
 
 
 #if defined (USE_FT5206_TOUCH)
+	#include <Wire.h>
+	#if defined(___DUESTUFF) && defined(USE_DUE_WIRE1_INTERFACE)
+		#define Wire Wire1
+	#endif
 	const uint8_t _ctpAdrs = 0x38;
 	const uint8_t coordRegStart[5] = {0x03,0x09,0x0F,0x15,0x1B};
 	static volatile bool _FT5206_INT = false;
@@ -476,9 +480,14 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	#if defined(USE_FT5206_TOUCH)
 		Wire.begin();
 		#if defined(___DUESTUFF)
+			Wire.setClock(400000UL); // Set I2C frequency to 400kHz
+			/*
+			#if !defined(USE_DUE_WIRE1_INTERFACE)//sorry but I do not own a DUE, have to learn about Wire1
 			// Force 400 KHz I2C, rawr! (Uses pins 20, 21 for SDA, SCL)
 			TWI1->TWI_CWGR = 0;
 			TWI1->TWI_CWGR = ((VARIANT_MCK / (2 * 400000)) - 4) * 0x101;
+			#endif
+			*/
 		#else
 			#if ARDUINO >= 157
 				Wire.setClock(400000UL); // Set I2C frequency to 400kHz

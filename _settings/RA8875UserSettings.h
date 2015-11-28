@@ -62,6 +62,14 @@ Please choose at list one (NOT both), if you comment both it's the same as _AVOI
 //#define USE_RA8875_TOUCH//resistive touch screen
 //#define USE_FT5206_TOUCH//capacitive touch screen
 
+/* [USE ALTERNATIVE I2C/WIRE ON ARDUINO DUE] +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Arduino DUE has 2 I2C interfaces, default use Wire but you can force library to use Wire1.
+Just uncomment the line below, this option works only for Arduino DUE and has NO effects
+on other CPU!
+*/
+
+//#define USE_DUE_WIRE1_INTERFACE//force use Wire1 (only for DUE, no effects on other CPU)
+
 /* [Default Interrupt Number for Touchscreen] [RA8875 & FT5206] ++++++++++++++++++++++++++++++++++
 Some microcontroller like Teensy 3,3.1 and LC automatically assign ISR number (since they
 can virtually assign ISR to any pin) but some old one like Arduino UNO have ISR hardcoded */

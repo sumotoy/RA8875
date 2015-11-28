@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.70b11p6
+	Version:0.70b11p7
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -178,6 +178,9 @@ template <typename T> T PROGMEM_read (const T * sce)
   }
 #endif
 
+// using capacitive touch on due with alternative wire1 instead wire
+#if defined(USE_FT5206_TOUCH) && defined(___DUESTUFF) && defined(USE_DUE_WIRE1_INTERFACE)
+#endif
 
 #if defined(__MKL26Z64__)
 	static bool _altSPI;
