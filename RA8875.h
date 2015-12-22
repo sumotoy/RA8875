@@ -165,6 +165,7 @@ Katakana:   \u30A0 -> \u30FF	/u30
 CJK-Uni:	\u4E00 -> \u9FD5	/u4E ... /u9F
 */
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
+
 #include "_settings/font.h"
 #include "_settings/RA8875Registers.h"
 #include "_settings/RA8875ColorPresets.h"
@@ -634,10 +635,12 @@ using Print::write;
 				volatile uint32_t *csport;
 			#endif
 		#elif defined(ESP8266) // ESP8266
+			#if defined(_FASTSSPORT)
 				uint32_t _pinRegister(uint8_t pin)
 				__attribute__((always_inline)) {
 					return _BV(pin);
 				}
+			#endif
 		#else// AVR,ARM (not DUE),STM,CHIPKIT
 	    //TODO:must check if all processor are compatible
 			#if defined(_FASTSSPORT)
@@ -659,6 +662,7 @@ using Print::write;
 		#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF) && !defined(ESP8266)
 			cli();//protect from interrupts
 		#endif//end has transaction
+		
 		#if defined(___TEENSYES)//all of them (32 bit only)
 			digitalWriteFast(_cs, LOW);
 		#else

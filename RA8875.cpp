@@ -224,10 +224,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_color_bpp = 16;
 	_colorIndex = 0;
 
-	if (colors != 16) {
-		_color_bpp = 8;
-		_colorIndex = 3;
-	}
+	if (colors != 16) { _color_bpp = 8; _colorIndex = 3; }
 
 	switch (_displaySize){
 		case RA8875_480x272:
@@ -359,6 +356,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			_errorCode |= (1 << 2);//set
 			return;
 		}
+		pinMode(_cs, OUTPUT);
 		SPI.begin();
 		
 	#elif defined(__MKL26Z64__)//TeensyLC
@@ -374,6 +372,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 					if (_mosi != 11) SPI1.setMOSI(_mosi);
 					if (_miso != 12) SPI1.setMISO(_miso);
 					if (_sclk != 13) SPI1.setSCK(_sclk);
+					pinMode(_cs, OUTPUT);
 					SPI1.begin();
 				} else {//default SPI channel 0 (12Mhz)
 					_altSPI = false;
@@ -384,6 +383,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 						_errorCode |= (1 << 2);//set
 						return;
 					}
+					pinMode(_cs, OUTPUT);
 					SPI.begin();
 				}
 			} else {
@@ -392,13 +392,15 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			}
 		#else
 			_altSPI = false;
+			pinMode(_cs, OUTPUT);
 			SPI.begin();
 			_errorCode |= (1 << 3);//set
 		#endif
-	#endif
+	#endif//end Teensy LC
+	
 	#if !defined(ENERGIA)//everithing but ENERGIA
 		#if defined(___TEENSYES)//all of them (32 bit only)
-			pinMode(_cs, OUTPUT);
+			//pinMode(_cs, OUTPUT);
 			digitalWrite(_cs, HIGH);
 		#elif defined(___DUESTUFF)// DUE
 			#if defined(SPI_DUE_MODE_EXTENDED)
@@ -457,6 +459,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		_SPImaxSpeed = 4000000UL;//we start in low speed here!
 	#else//do not use SPItransactons
 		#if defined (__AVR__)//8 bit arduino's
+			pinMode(_cs, OUTPUT);
 			SPI.begin();
 			SPI.setClockDivider(SPI_SPEED_SAFE);
 			delay(1);
@@ -1981,18 +1984,18 @@ void RA8875::_charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bc
 			//get charW and glyph
 			#if defined(_FORCE_PROGMEM__)
 				#if defined(ESP8266)
-					charW = FPSTR(&_currentFont->chars[charIndex].image->image_width);
+						charW = FPSTR(&_currentFont->chars[charIndex].image->image_width);
 					#if !defined(_RA8875_TXTRNDOPTIMIZER)
 						const uint8_t * charGlyp = FPSTR(&_currentFont->chars[charIndex].image->data);
 					#endif
 				#else
-					charW = PROGMEM_read(&_currentFont->chars[charIndex].image->image_width);
+						charW = PROGMEM_read(&_currentFont->chars[charIndex].image->image_width);
 					#if !defined(_RA8875_TXTRNDOPTIMIZER)
 						const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[charIndex].image->data);
 					#endif
 				#endif
 			#else
-				charW = _currentFont->chars[charIndex].image->image_width;
+					charW = _currentFont->chars[charIndex].image->image_width;
 				#if !defined(_RA8875_TXTRNDOPTIMIZER)
 					const uint8_t * charGlyp = _currentFont->chars[charIndex].image->data;
 				#endif

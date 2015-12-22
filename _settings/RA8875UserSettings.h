@@ -185,8 +185,8 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 		const static uint32_t MAXSPISPEED	= 15000000UL;  // try experiment higher values but NOT over 22000000!
 		//#define _FASTSSPORT
 	#elif defined(ESP8266)	
-		const static uint32_t MAXSPISPEED	= 22000000UL;  //don't go higher than 22000000!;
-		#define _FASTSSPORT
+		const static uint32_t MAXSPISPEED	= 8000000;  //don't go higher than 22000000!;
+		//#define _FASTSSPORT
 	// TODO: add more CPU here!
 	#else												 //rest of the world (UNO, etc)
 		const static uint32_t MAXSPISPEED	= 10000000UL;  //be careful, higher values result in extremely slow rendering!
