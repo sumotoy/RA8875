@@ -43,9 +43,15 @@ void setup()
   //while (!Serial) {;}
   Serial.println("RA8875 start");
 
+ 
   tft.begin(RA8875_480x272);//initialize library
-
-  tft.touchBegin(RA8875_INT);//enable Touch support!
+  tft.useINT(RA8875_INT);//We use generic int helper for Internal Resistive Touch
+  tft.touchBegin();//enable Touch support!
+  if (!tft.touchCalibrated()) {//already calibrated?
+    Serial.println("Maybe better you calibrate first!");
+  }
+  //this enable an ISR on CPU and RA8875 INT
+  tft.enableISR(true);
   interface();
 }
 
@@ -53,7 +59,7 @@ uint16_t choosenColor = 0;
 
 void loop() 
 {
-  if (tft.touchDetect()){//easy!
+  if (tft.touched()){//easy!
       tft.touchReadPixel(&tx, &ty);//read directly in pixel!
       if (ty >= 0 && ty <= 55){ //interface area
         if ((tx > 10 && tx < (10+40))){
