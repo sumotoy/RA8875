@@ -3759,7 +3759,11 @@ void RA8875::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 void RA8875::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 {
 	_center_helper(x0,y0);
-	if (r <= 0) return;
+	if (r < 1) return;
+	if (r < 2) {
+		drawPixel(x0,y0,color);
+		return;
+	}
 	_circle_helper(x0, y0, r, color, true);
 }
 
@@ -4058,7 +4062,7 @@ void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
       yCenter:   y location of the ellipse center
       longAxis:  Size in pixels of the long axis
       shortAxis: Size in pixels of the short axis
-      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
+      curvePart: Curve to draw in clock-wise dir: 0[180-270Â°],1[270-0Â°],2[0-90Â°],3[90-180Â°]
       color: RGB565 color
 */
 /**************************************************************************/
@@ -4083,7 +4087,7 @@ void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16
       yCenter:   y location of the ellipse center
       longAxis:  Size in pixels of the long axis
       shortAxis: Size in pixels of the short axis
-      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
+      curvePart: Curve to draw in clock-wise dir: 0[180-270Â°],1[270-0Â°],2[0-90Â°],3[90-180Â°]
       color: RGB565 color
 */
 /**************************************************************************/
@@ -4210,27 +4214,31 @@ void RA8875::_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, b
 		[private]
 */
 /**************************************************************************/
-void RA8875::_rect_helper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled)
+void RA8875::_rect_helper(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled)
 {
-	if (w < 1 || h < 1) return;//why draw invisible rects?
-	if (w >= _width) return;
-	if (h >= _height) return;
-	
-	if (_portrait) {swapvals(x,y); swapvals(w,h);}
+	if (_portrait) {swapvals(x1,y1); swapvals(x2,y2);}
+	if ((x1 < 0 && x2 < 0) || (x1 >= RA8875_WIDTH && x2 >= RA8875_WIDTH) ||
+	    (y1 < 0 && y2 < 0) || (y1 >= RA8875_HEIGHT && y2 >= RA8875_HEIGHT))
+		return;	// All points are out of bounds, don't draw anything
 
-	_checkLimits_helper(x,y);
+	_checkLimits_helper(x1,y1);	// Truncate rectangle that is off screen, still draw remaining rectangle
+	_checkLimits_helper(x2,y2);
 
-	if (_textMode) _setTextMode(false);//we are in text mode?
+	if (_textMode) _setTextMode(false);	//we are in text mode?
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
 	#endif
 	if (color != _foreColor) setForegroundColor(color);
 	
-	_line_addressing(x,y,w,h);
+	if (x1==x2 && y1==y2)		// Width & height can still be 1 pixel, so render as a pixel
+		drawPixel(x1,y1,color);
+	else {
+		_line_addressing(x1,y1,x2,y2);
 
-	writeCommand(RA8875_DCR);
-	filled == true ? _writeData(0xB0) : _writeData(0x90);
-	_waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
+		writeCommand(RA8875_DCR);
+		filled == true ? _writeData(0xB0) : _writeData(0x90);
+		_waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
+	}
 }
 
 
