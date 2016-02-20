@@ -41,7 +41,8 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
  - Added an user option in _settings/RA8875UserSettings.h to use alternative Wire1 on Arduino DUE, experimental since I'm actually don't have a DUE.<br>
 
 **0.70b11p8** changes...(will be downloadable in few hours)<br>
- - Fixed some small bugs (thanks Mr Tom), added some extra support for different CPU's, fixed a couple of examples.<br>
+ - Fixed some small bugs (thanks Mr Tom), added some extra support for different CPU's, fixed a couple of examples.
+ - Introduced some major changes in initialization, it seems works but better check with differents MCU's before apply as 'gold master'<br>
  
 
 Current beta **tested only with**:
