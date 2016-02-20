@@ -18,15 +18,18 @@ License:GNU General Public License v3.0
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-#include <SPI.h>
+#if !defined(SPARK)//SPI already included in applications.h
+	#include <SPI.h>
+#endif
 #include "RA8875.h"
 
 
 #if defined (USE_FT5206_TOUCH)
-	#include <Wire.h>
-	#if defined(___DUESTUFF) && defined(USE_DUE_WIRE1_INTERFACE)
-		#define Wire Wire1
+	#if !defined(SPARK)//wire it's already included in applications.h
+		#include <Wire.h>
+		#if defined(___DUESTUFF) && defined(USE_DUE_WIRE1_INTERFACE)
+			#define Wire Wire1
+		#endif
 	#endif
 	const uint8_t _ctpAdrs = 0x38;
 	const uint8_t coordRegStart[5] = {0x03,0x09,0x0F,0x15,0x1B};
@@ -83,6 +86,12 @@ Bit:	Called by:		In use:
 		_altSPI = false;
 //---------------------------------DUE--------------------------------------------
 #elif defined(___DUESTUFF)//DUE
+	RA8875::RA8875(const uint8_t CSp, const uint8_t RSTp) 
+	{
+		_cs = CSp;
+		_rst = RSTp;
+//---------------------------------SPARK----------------------------------------
+#elif defined(SPARK)//SPARK
 	RA8875::RA8875(const uint8_t CSp, const uint8_t RSTp) 
 	{
 		_cs = CSp;
@@ -431,6 +440,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			#else
 				digitalWrite(_cs, HIGH);//for now
 			#endif
+		#elif defined(SPARK)
+			pinMode(_cs, OUTPUT);
+			SPI.begin();
+			pinSetFast(_cs, HIGH);//for now
 		#else
 			//UNO,MEGA,Yun,nano,duemilanove and other 8 bit arduino's
 			pinMode(_cs, OUTPUT);
@@ -473,6 +486,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 				SPI.setClockDivider(SPI_SPEED_SAFE);
 				delay(1);
 				SPI.setDataMode(SPI_MODE0);
+			#elif defined(SPARK)
+				SPI.setClockDivider(SPI_SPEED_SAFE);
+				delay(1);
+				SPI.setDataMode(SPI_MODE0);
 			#else
 				SPI.setClockDivider(SPI_SPEED_SAFE);
 				delay(1);
@@ -500,6 +517,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			#endif
 			*/
 		#else
+			//TODO, Dunno what to do here with SPARK
 			#if ARDUINO >= 157
 				Wire.setClock(400000UL); // Set I2C frequency to 400kHz
 			#else
@@ -3277,7 +3295,7 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
     writeCommand(RA8875_MRWC);
     _startSend();
 	//set data
-	#if defined(__AVR__) && defined(_FASTSSPORT)
+	#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 		_spiwrite(RA8875_DATAWRITE);
 	#else
 		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
@@ -3328,7 +3346,7 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 				SPI.transfer(_cs, temp & 0xFF, SPI_LAST);
 			}
 		#else
-			#if defined(__AVR__) && defined(_FASTSSPORT)
+			#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 				if (_color_bpp > 8){
 					_spiwrite16(temp);
 				} else {//TOTEST:layer bug workaround for 8bit color!
@@ -3367,7 +3385,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
 		_slowDownSPI(true);
 	#endif
     _startSend();
-	#if defined(__AVR__) && defined(_FASTSSPORT)
+	#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 		_spiwrite(RA8875_DATAREAD);
 		_spiwrite(0x00);
 	#else
@@ -3399,7 +3417,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
 			color  = SPI.transfer(_cs, 0x0, SPI_CONTINUE); 
 			color |= (SPI.transfer(_cs, 0x0, SPI_LAST) << 8);
 		#else
-			#if defined(__AVR__) && defined(_FASTSSPORT)
+			#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 				color  = _spiread();
 				color |= (_spiread() << 8);
 			#else
@@ -5575,7 +5593,7 @@ void RA8875::_writeData(uint8_t data)
 		SPI.transfer(_cs, RA8875_DATAWRITE, SPI_CONTINUE); 
 		SPI.transfer(_cs, data, SPI_LAST);
 	#else
-		#if defined(__AVR__) && defined(_FASTSSPORT)
+		#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 			_spiwrite(RA8875_DATAWRITE);
 			_spiwrite(data);
 		#else
@@ -5606,7 +5624,7 @@ void RA8875::_writeData(uint8_t data)
 void  RA8875::writeData16(uint16_t data) 
 {
 	_startSend();
-	#if defined(__AVR__) && defined(_FASTSSPORT)
+	#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 		_spiwrite(RA8875_DATAWRITE);
 	#else
 		#if defined(__MKL26Z64__)	
@@ -5634,7 +5652,7 @@ void  RA8875::writeData16(uint16_t data)
 			SPI.transfer(_cs, highByte(data), SPI_CONTINUE); 
 			SPI.transfer(_cs, lowByte(data), SPI_LAST);
 		#else
-			#if defined(__AVR__) && defined(_FASTSSPORT)
+			#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 				_spiwrite16(data);
 			#else
 				SPI.transfer(data >> 8);
@@ -5666,7 +5684,7 @@ uint8_t RA8875::_readData(bool stat)
 		stat == true ? SPI.transfer(_cs, RA8875_CMDREAD, SPI_CONTINUE) : SPI.transfer(_cs, RA8875_DATAREAD, SPI_CONTINUE);
 		uint8_t x = SPI.transfer(_cs, 0x0, SPI_LAST);
 	#else
-		#if defined(__AVR__) && defined(_FASTSSPORT)
+		#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 			stat == true ? _spiwrite(RA8875_CMDREAD) : _spiwrite(RA8875_DATAREAD);
 			uint8_t x = _spiread();
 		#else
@@ -5723,7 +5741,7 @@ void RA8875::writeCommand(const uint8_t d)
 		SPI.transfer(_cs, RA8875_CMDWRITE, SPI_CONTINUE); 
 		SPI.transfer(_cs, d, SPI_LAST);
 	#else
-		#if defined(__AVR__) && defined(_FASTSSPORT)
+		#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
 			_spiwrite(RA8875_CMDWRITE);
 			_spiwrite(d);
 		#else

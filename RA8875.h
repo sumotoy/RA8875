@@ -103,8 +103,18 @@ SD CS:		pin 2  (selectable 3*)
 SD CARD ID: pin xx (selectable and optional)
 *(3) On Teensy3.x not all pin are usable for CS's! 
 can be used: 2,6,9,10,15,20,21,22,23
+-------------------------------------------------------------------------------------
+TFT side	Particle Spark  (caution, never tested!)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+CLK:		 	A3
+MOSI:			A5
+MISO:			A4
+CS:				A2
+INT:		
+SDA:			D0
+SCL:			D1
 
-
+Benchmark results for reference --------------------------------------
 Screen fill              16635		16585		16561		8326
 Test Pixel               60			77			63			53
 Test Pixels              39780		52085		41885		35412
@@ -210,6 +220,8 @@ class RA8875 : public Print {
 	#elif defined(__MKL26Z64__)//TeensyLC with FT5206_TOUCH
 		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
 	#elif defined(___DUESTUFF)//DUE
+		RA8875(const uint8_t CSp, const uint8_t RSTp=255);
+	#elif defined(SPARK)//SPARK
 		RA8875(const uint8_t CSp, const uint8_t RSTp=255);
 	#elif defined(NEEDS_SET_MODULE)//ENERGIA
 		RA8875::RA8875(const uint8_t module, const uint8_t RSTp=255);
@@ -477,6 +489,12 @@ using Print::write;
 			#else
 				uint8_t 		  _cs;
 			#endif
+		#elif defined(SPARK)
+			#if defined(_FASTSSPORT)
+				uint32_t 		  _cs;
+			#else
+				uint8_t 		  _cs;
+			#endif
 		#else
 			#if defined(_FASTSSPORT)
 				uint8_t 		  _cs, cspinmask;
@@ -648,6 +666,8 @@ using Print::write;
 				__attribute__((always_inline)) {
 					return _BV(pin);
 				}
+		#elif defined(SPARK)
+			// Mmmm, dunno... put nothing for now
 		#else// AVR,ARM (not DUE),STM,CHIPKIT
 	    //TODO:must check if all processor are compatible
 			#if defined(_FASTSSPORT)
@@ -665,10 +685,12 @@ using Print::write;
 				_altSPI == true ? SPI1.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3)) : SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
 			#elif defined(ESP8266)	
 				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE0));//it works, anyway ESP doesn't work in MODE3!
+			#elif defined(SPARK)	
+				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE0));//TODO !
 			#else
 				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
 			#endif
-		#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF) && !defined(ESP8266)
+		#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF) && !defined(ESP8266) && !defined(SPARK)
 			cli();//protect from interrupts
 		#endif//end has transaction
 		
@@ -684,6 +706,8 @@ using Print::write;
 					#else
 						digitalWrite(_cs, LOW);// for now
 					#endif
+				#elif defined(SPARK)
+					pinResetFast(_cs, LOW);
 				#elif !defined(ESP8266) && defined(_FASTSSPORT)
 					*csport &= ~cspinmask;
 				#else
@@ -708,8 +732,10 @@ using Print::write;
 				#if defined(_FASTSSPORT)
 					GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, _pinRegister(_cs));//H
 				#else
-					digitalWrite(_cs, HIGH);//for now
+					digitalWrite(_cs, HIGH);
 				#endif
+			#elif defined(SPARK)
+				pinSetFast(_cs, HIGH);
 			#elif !defined(ESP8266) && defined(_FASTSSPORT)
 				*csport |= cspinmask;
 			#else
@@ -726,7 +752,7 @@ using Print::write;
 		#else
 			SPI.endTransaction();
 		#endif
-	#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF) && !defined(ESP8266)
+	#elif !defined(ENERGIA) && !defined(SPI_HAS_TRANSACTION) && !defined(___STM32STUFF) && !defined(ESP8266) && !defined(SPARK)
 		sei();//enable interrupts
 	#endif
 } 
@@ -805,6 +831,24 @@ void _slowDownSPI(bool slow,uint32_t slowSpeed=10000000UL)
 			r = SPDR;
 			return r;
 		}
+#elif defined(SPARK)
+		void _spiwrite16(uint16_t d) 
+			__attribute__((always_inline)) {
+			SPI.transfer(d >> 8);
+			SPI.transfer(d & 0xFF);
+		}
+
+		void _spiwrite(uint8_t c) 
+			__attribute__((always_inline)) {
+			SPI.transfer(c);
+		}
+		
+		uint8_t _spiread(void) 
+			__attribute__((always_inline)) {
+			uint8_t r = SPI.transfer(0x00);
+			return r;
+		}
+		
 #endif
 };
 #endif

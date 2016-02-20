@@ -167,19 +167,6 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 		#undef _FORCE_PROGMEM__
 	#endif
 	#define __PRGMTAG_	
-#elif defined(__arm__) && !defined(ESP8266) && !defined(___TEENSYES)
-/* 
---------------------------------------------------------------
-			ARM generic
-	Mistery....
---------------------------------------------------------------
-*/
-	#if defined(_FORCE_PROGMEM__)
-		#undef _FORCE_PROGMEM__
-	#endif
-	#include "Arduino.h"
-	#define __PRGMTAG_	
-	#warning "Generic Arm detected, not sure if your board it's compatible!"
 #elif defined(ESP8266)
 /* 
 --------------------------------------------------------------
@@ -195,18 +182,40 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 		#define PROGMEM __attribute__((section(".progmem.data")))
 	#endif
 	#define __PRGMTAG_	
+#elif defined (__arm__) && defined(SPARK)
 /* 
 --------------------------------------------------------------
 			PARTICLE PHOTON, ETC.
 	Still in development
 --------------------------------------------------------------
 */
-#elif defined(SPARK)
 	#include "application.h"
+	#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+	#define pgm_read_byte_near(addr) (*(const unsigned char *)(addr))
+	#define pgm_read_word(addr) (*(const unsigned short *)(addr))
+	#define pgm_read_word_near(addr) (*(const unsigned short *)(addr))
+	#if !defined(_FORCE_PROGMEM__)
+		#define _FORCE_PROGMEM__
+	#else
+		#undef PROGMEM
+		#define PROGMEM __attribute__((section(".progmem.data")))//fix the compiler warning
+	#endif
+	#define __PRGMTAG_	PROGMEM
+#elif defined(__arm__) && !defined(ESP8266) && !defined(___TEENSYES) && !defined(SPARK) && !defined(STM32F2XX) && !defined(STM32F10X_MD) && !defined(STM32_SERIES_F1) && !defined(STM32_SERIES_F2) && !defined(ESP8266)
+/* 
+--------------------------------------------------------------
+			ARM generic
+	Mistery....
+--------------------------------------------------------------
+*/
 	#if defined(_FORCE_PROGMEM__)
 		#undef _FORCE_PROGMEM__
 	#endif
+	#include "Arduino.h"
 	#define __PRGMTAG_	
+	#warning "Generic Arm detected, not sure if your board it's compatible!"
+
+
 /* 
 --------------------------------------------------------------
 			NOT SUPPORTED
