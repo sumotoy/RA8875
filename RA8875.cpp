@@ -224,7 +224,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_color_bpp = 16;
 	_colorIndex = 0;
 
-	if (colors != 16) { _color_bpp = 8; _colorIndex = 3; }
+	if (colors != 16) {
+		_color_bpp = 8;
+		_colorIndex = 3;
+	}
 
 	switch (_displaySize){
 		case RA8875_480x272:
@@ -358,7 +361,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		}
 		pinMode(_cs, OUTPUT);
 		SPI.begin();
-		
+		digitalWrite(_cs, HIGH);
 	#elif defined(__MKL26Z64__)//TeensyLC
 		//always uses SPI ransaction
 		#if TEENSYDUINO > 121//not supported prior 1.22!
@@ -385,6 +388,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 					}
 					pinMode(_cs, OUTPUT);
 					SPI.begin();
+					digitalWrite(_cs, HIGH);
 				}
 			} else {
 				_errorCode |= (1 << 1);//set
@@ -394,15 +398,11 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 			_altSPI = false;
 			pinMode(_cs, OUTPUT);
 			SPI.begin();
+			digitalWrite(_cs, HIGH);
 			_errorCode |= (1 << 3);//set
 		#endif
-	#endif//end Teensy LC
-	
-	#if !defined(ENERGIA)//everithing but ENERGIA
-		#if defined(___TEENSYES)//all of them (32 bit only)
-			//pinMode(_cs, OUTPUT);
-			digitalWrite(_cs, HIGH);
-		#elif defined(___DUESTUFF)// DUE
+	#elif !defined(ENERGIA)//everithing but ENERGIA
+		#if defined(___DUESTUFF)// DUE
 			#if defined(SPI_DUE_MODE_EXTENDED)
 				//DUE SPI mode extended you can use only follow pins
 				if (_cs == 4 || _cs == 10 || _cs == 52) {
@@ -469,6 +469,10 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 				SPI.setClockDivider(_cs,SPI_SPEED_SAFE);
 				delay(1);
 				SPI.setDataMode(_cs,SPI_MODE3);
+			#elif defined (ESP8266)
+				SPI.setClockDivider(SPI_SPEED_SAFE);
+				delay(1);
+				SPI.setDataMode(SPI_MODE0);
 			#else
 				SPI.setClockDivider(SPI_SPEED_SAFE);
 				delay(1);
@@ -565,7 +569,8 @@ void RA8875::_initialize()
 	setFont(INT);	//set internal font use
 	//postburner PLL!
 	_setSysClock(sysClockPar[_initIndex][0],sysClockPar[_initIndex][1],initStrings[_initIndex][2]);
-	_inited = true;//from here we will go at high speed!
+	_inited = true;
+	//from here we will go at high speed!
 	#if defined(_FASTCPU)
 		_slowDownSPI(false);
 	#else
@@ -1984,18 +1989,18 @@ void RA8875::_charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bc
 			//get charW and glyph
 			#if defined(_FORCE_PROGMEM__)
 				#if defined(ESP8266)
-						charW = FPSTR(&_currentFont->chars[charIndex].image->image_width);
+					charW = FPSTR(&_currentFont->chars[charIndex].image->image_width);
 					#if !defined(_RA8875_TXTRNDOPTIMIZER)
 						const uint8_t * charGlyp = FPSTR(&_currentFont->chars[charIndex].image->data);
 					#endif
 				#else
-						charW = PROGMEM_read(&_currentFont->chars[charIndex].image->image_width);
+					charW = PROGMEM_read(&_currentFont->chars[charIndex].image->image_width);
 					#if !defined(_RA8875_TXTRNDOPTIMIZER)
 						const uint8_t * charGlyp = PROGMEM_read(&_currentFont->chars[charIndex].image->data);
 					#endif
 				#endif
 			#else
-					charW = _currentFont->chars[charIndex].image->image_width;
+				charW = _currentFont->chars[charIndex].image->image_width;
 				#if !defined(_RA8875_TXTRNDOPTIMIZER)
 					const uint8_t * charGlyp = _currentFont->chars[charIndex].image->data;
 				#endif
@@ -3460,7 +3465,8 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
 /**************************************************************************/
 void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
 {
-	if ((x0 == x1 && y0 == y1) || ((x1 - x0 == 1) && (y1 - y0 == 1))) {//NEW
+	//if ((x0 == x1 && y0 == y1) || ((x1 - x0 == 1) && (y1 - y0 == 1))) {//NEW
+	if ((x0 == x1 && y0 == y1)) {//Thanks MrTOM
 		drawPixel(x0,y0,color);
 		return;
 	}
@@ -3491,14 +3497,18 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 /**************************************************************************/
 void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t length, uint16_t color,int offset)
 {
-	if (length < 2) {//NEW
+	
+	if (length < 2) {
 		drawPixel(x,y,color);
 	} else {
+		length--;//n
 		drawLine(
 		x,
 		y,
-		x + (length * _cosDeg_helper(angle + offset)),//_angle_offset
-		y + (length * _sinDeg_helper(angle + offset)), 
+		//x + (length * _cosDeg_helper(angle + offset)),//_angle_offset
+		x + round((length) * _cosDeg_helper(angle + offset)),//Thanks MrTom
+		//y + (length * _sinDeg_helper(angle + offset)), 
+		y + round((length) * _sinDeg_helper(angle + offset)),//Thanks MrTom
 		color);
 	}
 }
@@ -3520,11 +3530,16 @@ void RA8875::drawLineAngle(int16_t x, int16_t y, int16_t angle, uint16_t start, 
 	if (start - length < 2) {//NEW
 		drawPixel(x,y,color);
 	} else {
+		length--;//n
 		drawLine(
-		x + start * _cosDeg_helper(angle + offset),//_angle_offset
-		y + start * _sinDeg_helper(angle + offset),
-		x + (start + length) * _cosDeg_helper(angle + offset),
-		y + (start + length) * _sinDeg_helper(angle + offset), 
+		//x + start * _cosDeg_helper(angle + offset),//_angle_offset
+		x + round(start * _cosDeg_helper(angle + offset)),//Thanks MrTom
+		//y + start * _sinDeg_helper(angle + offset),
+		y + round(start * _sinDeg_helper(angle + offset)),//Thanks MrTom
+		//x + (start + length) * _cosDeg_helper(angle + offset),
+		x + round((start + length) * _cosDeg_helper(angle + offset)),//Thanks MrTom
+		//y + (start + length) * _sinDeg_helper(angle + offset), 
+		y + round((start + length) * _sinDeg_helper(angle + offset)), //Thanks MrTom
 		color);
 	}
 }
@@ -4247,7 +4262,7 @@ void RA8875::_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, b
 /**************************************************************************/
 void RA8875::_rect_helper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled)
 {
-	if (w < 1 || h < 1) return;//why draw invisible rects?
+	if (w < 0 || h < 0) return;//why draw invisible rects?(MrTOM temp fix)
 	if (w >= _width) return;
 	if (h >= _height) return;
 	
@@ -5564,7 +5579,7 @@ void RA8875::_writeData(uint8_t data)
 			_spiwrite(RA8875_DATAWRITE);
 			_spiwrite(data);
 		#else
-			#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+			#if defined(__MKL26Z64__)	
 				if (_altSPI){
 					SPI1.transfer(RA8875_DATAWRITE);
 					SPI1.transfer(data);
@@ -5594,7 +5609,7 @@ void  RA8875::writeData16(uint16_t data)
 	#if defined(__AVR__) && defined(_FASTSSPORT)
 		_spiwrite(RA8875_DATAWRITE);
 	#else
-		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+		#if defined(__MKL26Z64__)	
 			if (_altSPI){
 				SPI1.transfer(RA8875_DATAWRITE);
 			} else {
@@ -5605,7 +5620,7 @@ void  RA8875::writeData16(uint16_t data)
 		#endif
 	#endif
 	#if !defined(ENERGIA) && !defined(___DUESTUFF) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
-		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+		#if defined(__MKL26Z64__)	
 			if (_altSPI){
 				SPI1.transfer16(data);
 			} else {
@@ -5655,7 +5670,7 @@ uint8_t RA8875::_readData(bool stat)
 			stat == true ? _spiwrite(RA8875_CMDREAD) : _spiwrite(RA8875_DATAREAD);
 			uint8_t x = _spiread();
 		#else
-			#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+			#if defined(__MKL26Z64__)	
 				uint8_t x;
 				if (_altSPI){
 					stat == true ? SPI1.transfer(RA8875_CMDREAD) : SPI1.transfer(RA8875_DATAREAD);

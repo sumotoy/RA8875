@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.70b11p7
+	Version:0.70b11p8
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -38,7 +38,13 @@ Paul Stoffregen, the 'guru' behind many arduino magic, the father of Teensy
 Bill Greyman, another 'maestro', greatly inspired many coders
 Jnmattern & Marek Buriak for drawArc
 Last but not less important the contributors and beta tester of this library:
-M.Sandercrock, the experimentalist, and many others
+M.Sandercrock, the experimentalist, MrTom and many others
+-------------------------------------------------------------------------------------
+				>>>>>>>>>>>> Current version notes <<<<<<<<<<<<<<<
+-------------------------------------------------------------------------------------
+	0.70b11p8 changes: Fixed some small error (thanks Mr TOM) that affects drawLine
+	and drawLineAngle. Initial support for SPARK devices (very early development)
+	Fixed a couple of examples.
 -------------------------------------------------------------------------------------
 				>>>>>>>>>>>>>>>>>>>>> Wiring <<<<<<<<<<<<<<<<<<<<<<<<<
 -------------------------------------------------------------------------------------
@@ -605,26 +611,29 @@ using Print::write;
 	#endif
 	
 	//convert a 16bit color(565) into 8bit color(332) as requested by RA8875 datasheet
-	inline __attribute__((always_inline))
-		uint8_t _color16To8bpp(uint16_t color) {
-			return ((color & 0x3800) >> 6 | (color & 0x00E0) >> 3 | (color & 0x0003));
-		}
+	//inline __attribute__((always_inline))
+	uint8_t _color16To8bpp(uint16_t color) 
+		__attribute__((always_inline)) {
+		return ((color & 0x3800) >> 6 | (color & 0x00E0) >> 3 | (color & 0x0003));
+	}
 		
-	inline __attribute__((always_inline)) 
-		void _checkLimits_helper(int16_t &x,int16_t &y){
+	//inline __attribute__((always_inline)) 
+	void _checkLimits_helper(int16_t &x,int16_t &y)
+		__attribute__((always_inline)) {
 			if (x < 0) x = 0;
 			if (y < 0) y = 0;
 			if (x >= RA8875_WIDTH) x = RA8875_WIDTH - 1;
 			if (y >= RA8875_HEIGHT) y = RA8875_HEIGHT -1;
 			x = x;
 			y = y;
-		}
+	}
 		
-	inline __attribute__((always_inline)) 	
-		void _center_helper(int16_t &x, int16_t &y){
+	//inline __attribute__((always_inline)) 	
+	void _center_helper(int16_t &x, int16_t &y)
+		__attribute__((always_inline)) {
 			if (x == CENTER) x = _width/2;
 			if (y == CENTER) y = _height/2;
-		}
+	}
 	#if defined(___TEENSYES)//all of them (32 bit only)
 		// nothing, already done
 	#elif defined(ENERGIA)
@@ -635,12 +644,10 @@ using Print::write;
 				volatile uint32_t *csport;
 			#endif
 		#elif defined(ESP8266) // ESP8266
-			#if defined(_FASTSSPORT)
 				uint32_t _pinRegister(uint8_t pin)
 				__attribute__((always_inline)) {
 					return _BV(pin);
 				}
-			#endif
 		#else// AVR,ARM (not DUE),STM,CHIPKIT
 	    //TODO:must check if all processor are compatible
 			#if defined(_FASTSSPORT)
@@ -649,8 +656,10 @@ using Print::write;
 		#endif
 	#endif
     // Low level access  commands ----------------------
-	inline __attribute__((always_inline)) 
-	void _startSend(){
+	
+	//inline __attribute__((always_inline)) 
+	void _startSend()
+		__attribute__((always_inline)) {
 		#if defined(SPI_HAS_TRANSACTION)
 			#if defined(__MKL26Z64__)	
 				_altSPI == true ? SPI1.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3)) : SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
@@ -665,54 +674,52 @@ using Print::write;
 		
 		#if defined(___TEENSYES)//all of them (32 bit only)
 			digitalWriteFast(_cs, LOW);
-		#else
-			#if !defined(ENERGIA)//UNO,DUE,ETC.
-				#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
-					//nothing
-				#else//DUE (normal),UNO,ETC.
-					#if defined(ESP8266)	
-						#if defined(_FASTSSPORT)
-							GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, _pinRegister(_cs));//L
-						#else
-							digitalWrite(_cs, LOW);// for now
-						#endif
-					#elif !defined(ESP8266) && defined(_FASTSSPORT)
-						*csport &= ~cspinmask;
-					#else
-						digitalWrite(_cs, LOW);
-					#endif
-				#endif
-			#else//ENERGIA
-				digitalWrite(_cs, LOW);
-			#endif
-		#endif
-	}
-	
-	inline __attribute__((always_inline)) 
-	void _endSend(){
-	#if defined(___TEENSYES)//all of them (32 bit only)
-		digitalWriteFast(_cs, HIGH);
-	#else
-		#if !defined(ENERGIA)
+		#elif !defined(ENERGIA)//UNO,DUE,ETC.
 			#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
 				//nothing
 			#else//DUE (normal),UNO,ETC.
 				#if defined(ESP8266)	
 					#if defined(_FASTSSPORT)
-						GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, _pinRegister(_cs));//H
+						GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, _pinRegister(_cs));//L
 					#else
-						digitalWrite(_cs, HIGH);//for now
+						digitalWrite(_cs, LOW);// for now
 					#endif
 				#elif !defined(ESP8266) && defined(_FASTSSPORT)
-					*csport |= cspinmask;
+					*csport &= ~cspinmask;
 				#else
-					digitalWrite(_cs, HIGH);
+					digitalWrite(_cs, LOW);
 				#endif
 			#endif
 		#else//ENERGIA
-			digitalWrite(_cs, HIGH);
+			digitalWrite(_cs, LOW);
 		#endif
+	}
+	
+	//inline __attribute__((always_inline)) 
+	void _endSend()
+		__attribute__((always_inline)) {
+	#if defined(___TEENSYES)//all of them (32 bit only)
+		digitalWriteFast(_cs, HIGH);
+	#elif !defined(ENERGIA)
+		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)//DUE extended SPI
+			//nothing
+		#else//DUE (normal),UNO,ETC.
+			#if defined(ESP8266)	
+				#if defined(_FASTSSPORT)
+					GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, _pinRegister(_cs));//H
+				#else
+					digitalWrite(_cs, HIGH);//for now
+				#endif
+			#elif !defined(ESP8266) && defined(_FASTSSPORT)
+				*csport |= cspinmask;
+			#else
+				digitalWrite(_cs, HIGH);
+			#endif
+		#endif
+	#else//ENERGIA
+		digitalWrite(_cs, HIGH);
 	#endif
+	
 	#if defined(SPI_HAS_TRANSACTION)
 		#if defined(__MKL26Z64__)	
 			_altSPI == true ? SPI1.endTransaction() : SPI.endTransaction();
@@ -735,9 +742,9 @@ using Print::write;
 	#endif
 
 #if defined(_FASTCPU)
-inline __attribute__((always_inline)) 
+//inline __attribute__((always_inline)) 
 void _slowDownSPI(bool slow,uint32_t slowSpeed=10000000UL)
-{
+	__attribute__((always_inline)) {
 	#if defined(SPI_HAS_TRANSACTION)
 		if (slow){
 			_SPImaxSpeed = slowSpeed;
@@ -771,23 +778,26 @@ void _slowDownSPI(bool slow,uint32_t slowSpeed=10000000UL)
 #endif
 
 #if defined(__AVR__)
-	inline __attribute__((always_inline))
-		void _spiwrite16(uint16_t d) {
+	//inline __attribute__((always_inline))
+		void _spiwrite16(uint16_t d) 
+			__attribute__((always_inline)) {
 			SPDR = highByte(d);
 			while (!(SPSR & _BV(SPIF)));
 			SPDR = lowByte(d);
 			while (!(SPSR & _BV(SPIF)));
 		}
 
-	inline __attribute__((always_inline))
-		void _spiwrite(uint8_t c) {
+	//inline __attribute__((always_inline))
+		void _spiwrite(uint8_t c) 
+			__attribute__((always_inline)) {
 			SPDR = c;
 			//asm volatile("nop");
 			while (!(SPSR & _BV(SPIF)));
 		}
 		
-	inline __attribute__((always_inline))
-		uint8_t _spiread(void) {
+	//inline __attribute__((always_inline))
+		uint8_t _spiread(void) 
+			__attribute__((always_inline)) {
 			uint8_t r = 0;
 			SPDR = 0x00;
 			//asm volatile("nop");

@@ -39,6 +39,9 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
 
 **0.70b11p7** changes...<br>
  - Added an user option in _settings/RA8875UserSettings.h to use alternative Wire1 on Arduino DUE, experimental since I'm actually don't have a DUE.<br>
+
+**0.70b11p8** changes...(will be downloadable in few hours)<br>
+ - Fixed some small bugs (thanks Mr Tom), added some extra support for different CPU's, fixed a couple of examples.<br>
  
 
 Current beta **tested only with**:
@@ -54,10 +57,12 @@ Check 'Proof of working' in wiki.<br>
  - Teensy 3.0
  - Teensy LC
  - Arduino UNO
+ - Arduino Leonardo
  - Arduino NANO
  - Arduino DUE
  - Arduino MEGA
  - Arduino YUN
+ - Many arduino variants based on AVR
  <br>
  <b>Display tested:</b><br>
  - EastRising RA8875 5" (480x272)
@@ -67,7 +72,12 @@ Check 'Proof of working' in wiki.<br>
  - Adafruit (800x480)<br>
  <b>Planned but still not working:</b>
  - Energia (basic support added but never tested)
- - ESP8266 (compile but several problems with HEAP and PROGMEM to fix)<br>
+ - ESP8266 (compile but several problems with HEAP and PROGMEM to fix)
+ - SPARK (early development, NEVER tested)<br>
+ <b>Currently not working (needs library changes and support):</b>
+ - Arduino ZERO
+ - Raspberry (there's alternative libraries for this since many uses python)
+ - STM ARM processors (one day, for sure)<br>
  <br>
  If your display not works, please check your connections, supply values, etc.<br>
  Remember it's an SPI connection so there's hardware limitations on some CPU, for example DUE can use as CS pin 4,10   or 52, Teensy can use more but not all, 8 Bit arduino can use almost any, etc..<br>

@@ -189,10 +189,22 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 */
 	#include "Arduino.h"
 	#include <pins_arduino.h>
-	#define _FASTCPU
+	//#define _FASTCPU
+	#if defined(_FORCE_PROGMEM__)
+		//#undef _FORCE_PROGMEM__
+		#define PROGMEM __attribute__((section(".progmem.data")))
+	#endif
+	#define __PRGMTAG_	
+/* 
+--------------------------------------------------------------
+			PARTICLE PHOTON, ETC.
+	Still in development
+--------------------------------------------------------------
+*/
+#elif defined(SPARK)
+	#include "application.h"
 	#if defined(_FORCE_PROGMEM__)
 		#undef _FORCE_PROGMEM__
-		#define PROGMEM __attribute__((section(".progmem.data")))
 	#endif
 	#define __PRGMTAG_	
 /* 

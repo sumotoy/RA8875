@@ -185,8 +185,10 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 		const static uint32_t MAXSPISPEED	= 15000000UL;  // try experiment higher values but NOT over 22000000!
 		//#define _FASTSSPORT
 	#elif defined(ESP8266)	
-		const static uint32_t MAXSPISPEED	= 8000000;  //don't go higher than 22000000!;
+		const static uint32_t MAXSPISPEED	= 8000000UL;  //don't go higher than 22000000!;
 		//#define _FASTSSPORT
+	#elif defined(SPARK)
+		const static uint32_t MAXSPISPEED	= 8000000UL;  //don't go higher than 22000000!;
 	// TODO: add more CPU here!
 	#else												 //rest of the world (UNO, etc)
 		const static uint32_t MAXSPISPEED	= 10000000UL;  //be careful, higher values result in extremely slow rendering!
@@ -226,8 +228,12 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 			//#define _FASTSSPORT
 		#elif defined(ESP8266)//legacy
 			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4	//8mhz
-			#define SPI_SPEED_READ 		SPI_CLOCK_DIV4
-			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV4	//10.5Mhz
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV4	//8
+		#elif defined(SPARK)//Really early development
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4	//8mhz
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV4	//8
 		#else
 		// TODO: Add more CPU here!
 	//rest of the world included UNO, etc.

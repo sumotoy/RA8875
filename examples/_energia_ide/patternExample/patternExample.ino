@@ -33,28 +33,17 @@ void setup()
   Serial.println("RA8875 start");
 
   tft.begin(RA8875_800x480);
-  tft.fillWindow(RA8875_BLUE);
-  tft.writePattern(100, 100, _pattern16x16, 16, false); //this write a pattern 16x16 at 100,100
-  tft.BTE_layer(SOURCE, 1);
-  tft.BTE_layer(DEST, 1);
-  tft.BTE_moveFrom(100, 100);
-  tft.BTE_moveTo(200, 200);
-  tft.BTE_size(16, 16);
-  tft.setTransparentColor(0xF800);
-  tft.BTE_ropcode(0xC5);
-  tft.BTE_enable(true);
 
-  tft.BTE_layer(SOURCE, 1);
-  tft.BTE_layer(DEST, 1);
-  tft.BTE_moveFrom(0, 0);
-  tft.BTE_moveTo(300, 300);
-  tft.BTE_size(16, 16);
-  tft.setTransparentColor(0xF800);
-  tft.BTE_ropcode(0xC4);
-  tft.BTE_enable(true);
 }
 
 void loop()
 {
-
+  tft.clearScreen(RA8875_BLUE);
+  tft.writePattern(100, 100, _pattern16x16, 16, false); //this write a pattern 16x16 at 100,100
+  tft.BTE_move(100, 100, 16, 16, 200, 200, 1, 1, true, 0xC5);
+  delay(1000);
+  tft.clearScreen(RA8875_BLUE);
+  tft.writePattern(200, 200, _pattern16x16, 16, false);
+  tft.BTE_move(200, 200, 16, 16, 300, 300, 1, 1, true, 0xC4);
+  delay(1000);
 }
