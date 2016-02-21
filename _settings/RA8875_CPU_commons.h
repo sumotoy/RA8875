@@ -154,7 +154,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	  #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
 	  #define pgm_read_word(addr) (*(const unsigned short *)(addr))
 	#endif
-#elif defined(STM32F2XX) || defined(STM32F10X_MD) || defined(STM32_SERIES_F1) || defined(STM32_SERIES_F2)
+#elif !defined(SPARK) && (defined(STM32F2XX) || defined(STM32F10X_MD) || defined(STM32_SERIES_F1) || defined(STM32_SERIES_F2))
 /* 
 --------------------------------------------------------------
 			STM32 BOARDS
@@ -190,17 +190,30 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 --------------------------------------------------------------
 */
 	#include "application.h"
+	#include "math.h"
+	/*
 	#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
 	#define pgm_read_byte_near(addr) (*(const unsigned char *)(addr))
 	#define pgm_read_word(addr) (*(const unsigned short *)(addr))
 	#define pgm_read_word_near(addr) (*(const unsigned short *)(addr))
-	#if !defined(_FORCE_PROGMEM__)
-		#define _FORCE_PROGMEM__
-	#else
-		#undef PROGMEM
-		#define PROGMEM __attribute__((section(".progmem.data")))//fix the compiler warning
+	*/
+	#ifndef bitRead
+		#define bitRead(a,b) ((a) & (1<<(b)))
 	#endif
-	#define __PRGMTAG_	PROGMEM
+	#ifndef bitWrite
+		#define __bitSet(value, bit) ((value) |= (1UL << (bit)))
+		#define __bitClear(value, bit) ((value) &= ~(1UL << (bit)))
+		#define bitWrite(value, bit, bitvalue) (bitvalue ? __bitSet(value, bit) : __bitClear(value, bit))
+	#endif
+	#ifndef PI
+		#define PI 3.14159265358979323846
+	#endif
+	#if defined(_FORCE_PROGMEM__)
+		#undef _FORCE_PROGMEM__
+	#endif
+	#undef PROGMEM
+	#define PROGMEM __attribute__((section(".progmem.data")))//fix the compiler warning
+	#define __PRGMTAG_	
 #elif defined(__arm__) && !defined(ESP8266) && !defined(___TEENSYES) && !defined(SPARK) && !defined(STM32F2XX) && !defined(STM32F10X_MD) && !defined(STM32_SERIES_F1) && !defined(STM32_SERIES_F2) && !defined(ESP8266)
 /* 
 --------------------------------------------------------------

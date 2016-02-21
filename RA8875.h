@@ -144,6 +144,7 @@ CS       10		53           YES       CS
 
 #include "_settings/RA8875_CPU_commons.h"
 
+
 #if !defined(swapvals)
 	#if defined(ESP8266)
 		#define swapvals(a, b) { int16_t t = a; a = b; b = t; }
@@ -707,7 +708,7 @@ using Print::write;
 						digitalWrite(_cs, LOW);// for now
 					#endif
 				#elif defined(SPARK)
-					pinResetFast(_cs, LOW);
+					pinResetFast(_cs);
 				#elif !defined(ESP8266) && defined(_FASTSSPORT)
 					*csport &= ~cspinmask;
 				#else
@@ -735,7 +736,7 @@ using Print::write;
 					digitalWrite(_cs, HIGH);
 				#endif
 			#elif defined(SPARK)
-				pinSetFast(_cs, HIGH);
+				pinSetFast(_cs);
 			#elif !defined(ESP8266) && defined(_FASTSSPORT)
 				*csport |= cspinmask;
 			#else

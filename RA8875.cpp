@@ -443,7 +443,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 		#elif defined(SPARK)
 			pinMode(_cs, OUTPUT);
 			SPI.begin();
-			pinSetFast(_cs, HIGH);//for now
+			pinSetFast(_cs);//for now
 		#else
 			//UNO,MEGA,Yun,nano,duemilanove and other 8 bit arduino's
 			pinMode(_cs, OUTPUT);

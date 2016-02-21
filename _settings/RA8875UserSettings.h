@@ -230,10 +230,10 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4	//8mhz
 			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
 			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV4	//8
-		#elif defined(SPARK)//Really early development
-			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV4	//8mhz
-			#define SPI_SPEED_READ 		SPI_CLOCK_DIV8
-			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV4	//8
+		#elif defined(SPARK)//Really early development (72MHz )
+			#define SPI_SPEED_WRITE 	SPI_CLOCK_DIV8	//9mhz
+			#define SPI_SPEED_READ 		SPI_CLOCK_DIV4	//18Mhz
+			#define SPI_SPEED_SAFE 		SPI_CLOCK_DIV8	//9
 		#else
 		// TODO: Add more CPU here!
 	//rest of the world included UNO, etc.
