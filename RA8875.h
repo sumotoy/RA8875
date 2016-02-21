@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.70b11p8
+	Version:0.70b11p9
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -45,6 +45,8 @@ M.Sandercrock, the experimentalist, MrTom and many others
 	0.70b11p8 changes: Fixed some small error (thanks Mr TOM) that affects drawLine
 	and drawLineAngle. Initial support for SPARK devices (very early development)
 	Fixed a couple of examples.
+	0.70b11p9 changes: Now compile with particle spark! But spark development toolchain it's a nightmare so 
+	use https://github.com/sumotoy/spark_ra8875
 -------------------------------------------------------------------------------------
 				>>>>>>>>>>>>>>>>>>>>> Wiring <<<<<<<<<<<<<<<<<<<<<<<<<
 -------------------------------------------------------------------------------------
