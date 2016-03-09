@@ -2,7 +2,7 @@
 	--------------------------------------------------
 	RA8875 LCD/TFT Graphic Controller Driver Library
 	--------------------------------------------------
-	Version:0.70b11p9
+	Version:0.70b11p10
 	++++++++++++++++++++++++++++++++++++++++++++++++++
 	Written by: Max MC Costa for s.u.m.o.t.o.y
 	++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -47,6 +47,7 @@ M.Sandercrock, the experimentalist, MrTom and many others
 	Fixed a couple of examples.
 	0.70b11p9 changes: Now compile with particle spark! But spark development toolchain it's a nightmare so 
 	use https://github.com/sumotoy/spark_ra8875
+	0.70b11p10: Some changes proposed by MrTom to fix the triangle hardware bug of RA8875
 -------------------------------------------------------------------------------------
 				>>>>>>>>>>>>>>>>>>>>> Wiring <<<<<<<<<<<<<<<<<<<<<<<<<
 -------------------------------------------------------------------------------------
@@ -144,7 +145,7 @@ CS       10		53           YES       CS
 #ifndef _RA8875MC_H_
 #define _RA8875MC_H_
 
-#include "_settings/RA8875_CPU_commons.h"
+#include "_includes/RA8875_CPU_commons.h"
 
 
 #if !defined(swapvals)
@@ -185,9 +186,9 @@ CJK-Uni:	\u4E00 -> \u9FD5	/u4E ... /u9F
 */
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
 
-#include "_settings/font.h"
-#include "_settings/RA8875Registers.h"
-#include "_settings/RA8875ColorPresets.h"
+#include "_includes/font.h"
+#include "_includes/RA8875Registers.h"
+#include "_includes/RA8875ColorPresets.h"
 #include "_settings/RA8875UserSettings.h"
 
 #if defined(_FORCE_PROGMEM__) && !defined(ESP8266)
@@ -220,7 +221,9 @@ class RA8875 : public Print {
 //------------- INSTANCE -------------------------------------------------------------------
 	#if defined(__MK20DX128__) || defined(__MK20DX256__)//Teensy 3.0, Teensy 3.1
 		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
-	#elif defined(__MKL26Z64__)//TeensyLC with FT5206_TOUCH
+	#elif defined(__MKL26Z64__)//TeensyLC
+		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
+	#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)	
 		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
 	#elif defined(___DUESTUFF)//DUE
 		RA8875(const uint8_t CSp, const uint8_t RSTp=255);
@@ -620,6 +623,7 @@ using Print::write;
 	void 		_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
 	void 		_rect_helper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled);
 	void 		_roundRect_helper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled);
+	float		_check_area(int16_t Ax, int16_t Ay, int16_t Bx, int16_t By, int16_t Cx, int16_t Cy);
 	void 		_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled);
 	void 		_ellipseCurve_helper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis,uint8_t curvePart, uint16_t color, bool filled);
 	void 		_drawArc_helper(uint16_t cx, uint16_t cy, uint16_t radius, uint16_t thickness, float startAngle, float endAngle, uint16_t color);
@@ -630,6 +634,7 @@ using Print::write;
 	#if defined(_RA8875_TXTRNDOPTIMIZER)
 	void 		_charLineRender(bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor);
 	#endif
+	
 	
 	//convert a 16bit color(565) into 8bit color(332) as requested by RA8875 datasheet
 	//inline __attribute__((always_inline))

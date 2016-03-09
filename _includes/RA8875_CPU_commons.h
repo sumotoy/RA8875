@@ -78,6 +78,22 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 		#define PROGMEM __attribute__((section(".progmem.data")))//Mmm... Maybe not needed
 	#endif
 	#define __PRGMTAG_	
+#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
+/* 
+--------------------------------------------------------------
+			FUTURE TEENSY PRODUCTS
+	one day (when out) will be supported
+--------------------------------------------------------------
+*/
+	#define ___TEENSYES
+	#define _FASTCPU//It's a fast CPU with a fast SPI
+	#include "Arduino.h"
+	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h (maybe not needed)
+	#if defined(_FORCE_PROGMEM__)
+		#undef _FORCE_PROGMEM__//force library not use PROGMEM
+		#define PROGMEM __attribute__((section(".progmem.data")))//Mmm... Maybe not needed
+	#endif
+	#define __PRGMTAG_	
 #elif defined(__32MX320F128H__) || defined(__32MX795F512L__) //chipkit uno, chipkit max
 /* 
 --------------------------------------------------------------
