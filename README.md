@@ -1,4 +1,4 @@
-RA8875 library b11p9 [Testing gold release]
+RA8875 library b11p10 [Testing gold release]
 ===========================================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
@@ -43,9 +43,15 @@ Moved a lot of 'bla bla' in the wiki, readme cleaned.
 **0.70b11p8** changes...(will be downloadable in few hours)<br>
  - Fixed some small bugs (thanks Mr Tom), added some extra support for different CPU's, fixed a couple of examples.
  - Introduced some major changes in initialization, it seems works but better check with differents MCU's before apply as 'gold master'<br>
- - 
- **0.70b11p9** changes...(will be downloadable in few hours)<br>
+
+
+**0.70b11p9** changes...<br>
  - Fixed compiling compatibility with Particle Spark<br>
+
+**0.70b11p10** changes...<br>
+ - Added initial support for incoming Teensy's
+ - Some changes from MrTom accepted, should fix an hardware bug in trianles and some other minor things
+ - Created _includes folder and moved from settings some file that should never change, this will help users to save their settings between updates.<br>
  
 
 Current beta **tested only with**:
