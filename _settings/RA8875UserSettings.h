@@ -62,6 +62,15 @@ Please choose at list one (NOT both), if you comment both it's the same as _AVOI
 //#define USE_RA8875_TOUCH//resistive touch screen
 //#define USE_FT5206_TOUCH//capacitive touch screen
 
+
+
+/* [ONLY ADAFRUIT USERS - Weird rotation issue on some 800x480 adafruit display] +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+An user had a strange rotation problem with an Adafruit 800x480 display. If this happen to you
+(only if this happen!) please try to uncomment the following line.
+Default:commented
+*/
+//#define USE_ADAFRUIT_PHASE_FIXUP
+
 /* [USE ALTERNATIVE I2C/WIRE ON ARDUINO DUE] +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Arduino DUE has 2 I2C interfaces, default use Wire but you can force library to use Wire1.
 Just uncomment the line below, this option works only for Arduino DUE and has NO effects
