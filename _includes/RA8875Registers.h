@@ -56,7 +56,7 @@ License:GNU General Public License v3.0
 	14:VSYNC Pulse Width Register
 	*/
 	//PostBurner PLL parameters --------------------------------------------------------------
-	#if defined(USE_ADAFRUIT_PHASE_FIXUP)
+	#if !defined(USE_ADAFRUIT_PHASE_FIXUP)
 	const static uint8_t sysClockPar[3][2] = {
 	//{0x0B,0x01},//0 -> 320x240		->
 	{0x0B,0x02},//1 -> 480x272		    -> 0
