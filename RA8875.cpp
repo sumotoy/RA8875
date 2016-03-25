@@ -4166,7 +4166,7 @@ void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int
       yCenter:   y location of the ellipse center
       longAxis:  Size in pixels of the long axis
       shortAxis: Size in pixels of the short axis
-      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
+      curvePart: Curve to draw in clock-wise dir: 0[180-270Â°],1[270-0Â°],2[0-90Â°],3[90-180Â°]
       color: RGB565 color
 */
 /**************************************************************************/
@@ -4191,7 +4191,7 @@ void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16
       yCenter:   y location of the ellipse center
       longAxis:  Size in pixels of the long axis
       shortAxis: Size in pixels of the short axis
-      curvePart: Curve to draw in clock-wise dir: 0[180-270°],1[270-0°],2[0-90°],3[90-180°]
+      curvePart: Curve to draw in clock-wise dir: 0[180-270Â°],1[270-0Â°],2[0-90Â°],3[90-180Â°]
       color: RGB565 color
 */
 /**************************************************************************/
@@ -4409,9 +4409,9 @@ void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, in
 		return;
 	}
 	*/
-	if (y0 > y1) {swapvals(y0, y1); swapvals(x0, x1);}			// Sort points from Y < to >
-	if (y1 > y2) {swapvals(y2, y1); swapvals(x2, x1);}
-	if (y0 > y1) {swapvals(y0, y1); swapvals(x0, x1);}
+	//if (y0 > y1) {swapvals(y0, y1); swapvals(x0, x1);}			// Sort points from Y < to >
+	//if (y1 > y2) {swapvals(y2, y1); swapvals(x2, x1);}
+	//if (y0 > y1) {swapvals(y0, y1); swapvals(x0, x1);}
 
 /*	
 	if (y0 == y2) { // Handle awkward all-on-same-line case as its own thing
@@ -4453,7 +4453,7 @@ void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, in
 		filled = false;									// Horizontal line
 	}
 	if (filled){
-		if (_check_area(x0,y0, x1,y1, x2,y2) < 0.85) {
+		if (_check_area(x0,y0, x1,y1, x2,y2) < 0.9) {
 			filled = false;			// Draw non-filled triangle to avoid filled triangle bug when two vertices are close together.
 		}
 	}
