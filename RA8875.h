@@ -641,7 +641,7 @@ using Print::write;
 	//inline __attribute__((always_inline))
 	uint8_t _color16To8bpp(uint16_t color) 
 		__attribute__((always_inline)) {
-		return ((color & 0x3800) >> 6 | (color & 0x00E0) >> 3 | (color & 0x0003));
+		return (map((color & 0xF800) >> 11, 0,28, 0,7)<<5 | map((color & 0x07E0) >> 5, 0,56, 0,7)<<2 | map(color & 0x001F, 0,24, 0,3));
 	}
 		
 	//inline __attribute__((always_inline)) 
