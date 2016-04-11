@@ -161,7 +161,7 @@ CS       10		53           YES       CS
 enum RA8875sizes { 			RA8875_480x272, RA8875_800x480, RA8875_800x480ALT, Adafruit_480x272, Adafruit_800x480 };
 enum RA8875tcursor { 		NOCURSOR=0,IBEAM,UNDER,BLOCK };//0,1,2,3
 enum RA8875tsize { 			X16=0,X24,X32 };//0,1,2
-enum RA8875fontSource { 	INTERNAL=0, EXTERNAL };//0,1
+enum RA8875fontSource { 	INTFONT=0, EXTFONT };//0,1
 enum RA8875fontCoding { 	ISO_IEC_8859_1, ISO_IEC_8859_2, ISO_IEC_8859_3, ISO_IEC_8859_4 };
 enum RA8875extRomType { 	GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W, GT30L32S4W, ER3303_1, ER3304_1, ER3301_1 };
 enum RA8875extRomCoding { 	GB2312, GB12345, BIG5, UNICODE, ASCII, UNIJIS, JIS0208, LATIN };
@@ -310,7 +310,7 @@ class RA8875 : public Print {
 	uint8_t 	getFontHeight(boolean inRows=false);
 	//----------FONT -------------------------------------------------------------------------
 	void		setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc,enum RA8875extRomFamily erf=STANDARD);
-	void 		setFont(enum RA8875fontSource s);//INTERNAL,EXTERNAL (if you have a chip installed)
+	void 		setFont(enum RA8875fontSource s);//INTFONT,EXTFONT (if you have a chip installed)
 	//void 		setFont(const struct FONT_DEF *	fnt);
 	void		setFont(const tFont *font);
 	void 		setIntFontCoding(enum RA8875fontCoding f);

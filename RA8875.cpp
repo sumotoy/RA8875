@@ -609,7 +609,7 @@ void RA8875::_initialize()
 	delay(10); //100
 	setCursorBlinkRate(DEFAULTCURSORBLINKRATE);//set default blink rate
 	setIntFontCoding(DEFAULTINTENCODING);//set default internal font encoding
-	setFont(INTERNAL);	//set internal font use
+	setFont(INTFONT);	//set internal font use
 	//postburner PLL!
 	_setSysClock(sysClockPar[_initIndex][0],sysClockPar[_initIndex][1],initStrings[_initIndex][2]);
 	_inited = true;
@@ -1160,7 +1160,7 @@ void RA8875::setIntFontCoding(enum RA8875fontCoding f)
 /**************************************************************************/
 /*!  
 		External Font Rom setup
-		This will not phisically change the register but should be called before setFont(EXTERNAL)!
+		This will not phisically change the register but should be called before setFont(EXTFONT)!
 		You should use this values accordly Font ROM datasheet!
 		Parameters:
 		ert: ROM Type          (GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, GT23L32S4W, GT30H32S4W)
@@ -1258,7 +1258,7 @@ void RA8875::fontRomSpeed(uint8_t sp)
 /**************************************************************************/
 void RA8875::setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg) 
 {
-	if (_FNTsource == EXTERNAL) {//only on EXTERNAL ROM fonts!
+	if (_FNTsource == EXTFONT) {//only on EXTFONT ROM fonts!
 		_EXTFNTfamily = erf;
 		_SFRSET_Reg &= ~(0x03); // clear bits from 0 to 1
 		switch(erf){	//check rom font family
@@ -1287,14 +1287,14 @@ void RA8875::setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg)
 /*!  
 		choose from internal/external (if exist) Font Rom
 		Parameters:
-		s: Font source (INTERNAL,EXTERNAL)
+		s: Font source (INTFONT,EXTFONT)
 */
 /**************************************************************************/
 void RA8875::setFont(enum RA8875fontSource s) 
 {
 	if (!_textMode) _setTextMode(true);//we are in graph mode?
 	_TXTparameters &= ~(1 << 7);//render OFF
-	if (s == INTERNAL){
+	if (s == INTFONT){
 		_setFNTdimensions(0);
 		//check the font coding
 		if (bitRead(_TXTparameters,0) == 1) {//0.96b22 _extFontRom = true
@@ -1305,7 +1305,7 @@ void RA8875::setFont(enum RA8875fontSource s)
 		_writeRegister(RA8875_FNCR0,_FNCR0_Reg);
 		_FNTsource = s;
 		delay(1);
-	} else if (s == EXTERNAL){
+	} else if (s == EXTFONT){
 		if (bitRead(_TXTparameters,0) == 1) {//0.96b22 _extFontRom = true
 			_FNTsource = s;
 			//now switch
@@ -1320,7 +1320,7 @@ void RA8875::setFont(enum RA8875fontSource s)
 			_writeRegister(RA8875_SROC,0x28);// 0x28 rom 0,24bit adrs,wave 3,1 byte dummy,font mode, single mode 00101000
 			delay(4);
 		} else {
-			setFont(INTERNAL);
+			setFont(INTFONT);
 			_setFNTdimensions(0);
 		}
 	} else {
@@ -1374,7 +1374,7 @@ void RA8875::setFont(const tFont *font)
 		} else {
 			//font malformed, doesn't have needed space parameter
 			//will return to system font
-			setFont(INTERNAL);
+			setFont(INTFONT);
 			return;
 		}
 	}
@@ -1758,7 +1758,7 @@ void RA8875::cursorIncrement(bool on)
 /**************************************************************************/
 void RA8875::setFontSize(enum RA8875tsize ts)
 {
-	if (_FNTsource == EXTERNAL && bitRead(_TXTparameters,7) == 0) {
+	if (_FNTsource == EXTFONT && bitRead(_TXTparameters,7) == 0) {
 		switch(ts){
 			case X16:
 				_FWTSET_Reg &= 0x3F;

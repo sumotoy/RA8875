@@ -5,8 +5,8 @@ font rom.
 In short:
 
 1) use setExternalFontRom to set ROM and it's correct encoding
-2) use setFont(EXTERNAL) to use the external font
-3) to switch back to internal font ROM, use setFont(INTERNAL)
+2) use setFont(EXTFONT) to use the external font
+3) to switch back to internal font ROM, use setFont(INTFONT)
 
 Library can handle the following Font ROM:
 GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, 
@@ -51,7 +51,7 @@ void setup()
   //get from nothing ti garbage on screen!
   tft.setExternalFontRom(ER3303_1,GB12345);
   //switch to external rom
-  tft.setFont(EXTERNAL);
+  tft.setFont(EXTFONT);
   //now write some chinese....
   //note that when using ext font chip the size will be X24
   //since most of font maps are 24x24.
@@ -62,13 +62,13 @@ void setup()
   tft.setCursor(0,50);
   tft.println("ABCD 1234567890"); //I will use println this time!
   //switch to internal rom 
-  tft.setFont(INTERNAL);
+  tft.setFont(INTFONT);
   tft.setTextColor(RA8875_GREEN);
   tft.println("ABCD 1234567890"); 
   //not bad neh? you can use different encodings without use
   //any MCU memory, just add an hardware font chip and istruct library.
-  tft.setFont(EXTERNAL);
-  //you can switching back on the fly to EXTERNAL
+  tft.setFont(EXTFONT);
+  //you can switching back on the fly to EXTFONT
   tft.print("ÉîÛÚÐñÈÕ¶«·½¿Æ¼¼ÓÐÏÞ¹«Ë¾");
   //voilà
 }

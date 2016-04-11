@@ -35,9 +35,17 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#if defined(__TM4C129XNCZAD__) || defined(__TM4C1294NCPDT__)//tiva???
 		#define NEEDS_SET_MODULE
 		#define _FASTCPU
+		#if defined(_FORCE_PROGMEM__)//arm do not need this
+			#undef _FORCE_PROGMEM__//force library not use PROGMEM
+		#endif
+		#define __PRGMTAG_	
 	#elif defined(__LM4F120H5QR__) || defined(__TM4C123GH6PM__)//stellaris first version
 		#define NEEDS_SET_MODULE
 		#define _FASTCPU
+		#if defined(_FORCE_PROGMEM__)//arm do not need this
+			#undef _FORCE_PROGMEM__//force library not use PROGMEM
+		#endif
+		#define __PRGMTAG_	
 	#elif defined(__MSP430MCU__)//MSP430???
 		// don't know
 	#elif defined(TMS320F28069)//C2000???
@@ -54,14 +62,14 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	Fully supported (tested)
 --------------------------------------------------------------
 */
-	#if !defined(_FORCE_PROGMEM__)
+	#if !defined(_FORCE_PROGMEM__)//avr need this
 		#define _FORCE_PROGMEM__
 	#endif
-	#define __PRGMTAG_	PROGMEM
 	#include "Arduino.h"
 	#include <pins_arduino.h>
 	#include <math.h>
 	#include <avr/pgmspace.h>
+	#define __PRGMTAG_	PROGMEM
 #elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
 /* 
 --------------------------------------------------------------
@@ -72,26 +80,29 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#define ___TEENSYES
 	#define _FASTCPU//It's a fast CPU with a fast SPI
 	#include "Arduino.h"
-	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h (maybe not needed)
-	#if defined(_FORCE_PROGMEM__)
+	#if defined(_FORCE_PROGMEM__)//arm do not need this
+		//#include <avr/pgmspace.h>
 		#undef _FORCE_PROGMEM__//force library not use PROGMEM
-		#define PROGMEM __attribute__((section(".progmem.data")))//Mmm... Maybe not needed
+		//Mmm... Maybe not needed. Maybe useful for user code?
+		//#define PROGMEM __attribute__((section(".progmem.data")))
 	#endif
+	
 	#define __PRGMTAG_	
 #elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
 /* 
 --------------------------------------------------------------
 			FUTURE TEENSY PRODUCTS
-	one day (when out) will be supported
+	will be supported in future
 --------------------------------------------------------------
 */
 	#define ___TEENSYES
 	#define _FASTCPU//It's a fast CPU with a fast SPI
 	#include "Arduino.h"
-	#include <avr/pgmspace.h>//Teensy3 and AVR arduinos can use pgmspace.h (maybe not needed)
-	#if defined(_FORCE_PROGMEM__)
+	#if defined(_FORCE_PROGMEM__)//arm do not need this
+		//#include <avr/pgmspace.h>
 		#undef _FORCE_PROGMEM__//force library not use PROGMEM
-		#define PROGMEM __attribute__((section(".progmem.data")))//Mmm... Maybe not needed
+		//Mmm... Maybe not needed. Maybe useful for user code?
+		//#define PROGMEM __attribute__((section(".progmem.data")))
 	#endif
 	#define __PRGMTAG_	
 #elif defined(__32MX320F128H__) || defined(__32MX795F512L__) //chipkit uno, chipkit max
@@ -111,6 +122,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#ifndef __PGMSPACE_H_
 	  #define __PGMSPACE_H_ 1
 	  #define PROGMEM
+	  //following probably useless!
 	  #define PGM_P  const char *
 	  #define PSTR(str) (str)
 	  #define pgm_read_byte_near(addr) pgm_read_byte(addr)
@@ -132,6 +144,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#ifndef __PGMSPACE_H_
 	  #define __PGMSPACE_H_ 1
 	  #define PROGMEM
+	  //following probably useless! ARM do not need PROGMEM
 	  #define PGM_P  const char *
 	  #define PSTR(str) (str)
 	  #define pgm_read_byte_near(addr) pgm_read_byte(addr)
@@ -164,6 +177,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#ifndef __PGMSPACE_H_
 	  #define __PGMSPACE_H_ 1
 	  #define PROGMEM
+	  //following probably useless! ARM do not need PROGMEM
 	  #define PGM_P  const char *
 	  #define PSTR(str) (str)
 	  #define pgm_read_byte_near(addr) pgm_read_byte(addr)
@@ -195,7 +209,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	//#define _FASTCPU
 	#if defined(_FORCE_PROGMEM__)
 		//#undef _FORCE_PROGMEM__
-		#define PROGMEM __attribute__((section(".progmem.data")))
+		#define PROGMEM __attribute__((section(".progmem.data")))//Really necessary? Prolly not
 	#endif
 	#define __PRGMTAG_	
 #elif defined (__arm__) && defined(SPARK)
@@ -228,7 +242,9 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 		#undef _FORCE_PROGMEM__
 	#endif
 	#undef PROGMEM
-	#define PROGMEM __attribute__((section(".progmem.data")))//fix the compiler warning
+	//prolly not needed but fix the compiler warning
+	#define PROGMEM __attribute__((section(".progmem.data")))
+	//
 	#define __PRGMTAG_	
 #elif defined(__arm__) && !defined(ESP8266) && !defined(___TEENSYES) && !defined(SPARK) && !defined(STM32F2XX) && !defined(STM32F10X_MD) && !defined(STM32_SERIES_F1) && !defined(STM32_SERIES_F2) && !defined(ESP8266)
 /* 

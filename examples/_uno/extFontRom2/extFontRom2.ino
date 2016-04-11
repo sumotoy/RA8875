@@ -5,8 +5,8 @@ font rom.
 In short:
 
 1) use setExternalFontRom to set ROM and it's correct encoding
-2) use setFont(EXTERNAL) to use the external font
-3) to switch back to internal font ROM, use setFont(INTERNAL)
+2) use setFont(EXTFONT) to use the external font
+3) to switch back to internal font ROM, use setFont(INTFONT)
 
 Library can handle the following Font ROM:
 GT21L16T1W, GT21H16T1W, GT23L16U2W, GT30H24T3Y, GT23L24T3Y, GT23L24M1Z, 
@@ -38,7 +38,7 @@ void setup()
   tft.setRotation(0);//works at any rotation as well
 
   tft.setExternalFontRom(ER3304_1, GB2312);//we set the correct ROM
-  tft.setFont(EXTERNAL);//enable ROM
+  tft.setFont(EXTFONT);//enable ROM
   tft.setFontSize(X16);//not all ROM have X16,X24,X32 so check your ROM datasheet!
   tft.setFontScale(1);//with ROM font we can use scaling as well
   //Font ROM uses same commads as internal fonts....
@@ -51,9 +51,9 @@ void setup()
   tft.println("«·½¿Æ¼¼ÓÐÏÞ¹«Ë¾");
   //tft.println("ÉîÛÚÐñÈÕ¶");
   //now switch to internal font
-  tft.setFont(INTERNAL);
+  tft.setFont(INTFONT);
   tft.println("Internal ascii");
-  //so you can switch between INTERNAL and EXTERNAL by using setFont
+  //so you can switch between INTFONT and EXTFONT by using setFont
   //without loosing the initial assignments!
 
 }
