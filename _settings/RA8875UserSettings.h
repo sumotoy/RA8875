@@ -185,7 +185,7 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 
 #if defined(SPI_HAS_TRANSACTION)
 //SPI transaction enabled library----------------------
-	#if defined(__MK20DX128__) || defined(__MK20DX256__) //[Teensy 3.0 , 3.1 , 3.2]
+	#if defined(__MK20DX128__) || defined(__MK20DX256__)  || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 		const static uint32_t MAXSPISPEED	= 22000000UL;  //don't go higher than 22000000!;
 	#elif defined(__MKL26Z64__)							 //[Teensy LC] (12 or 24 Mhz max)
 		const static uint32_t MAXSPISPEED	= 12000000UL;	 //default SPI main speed TeensyLC

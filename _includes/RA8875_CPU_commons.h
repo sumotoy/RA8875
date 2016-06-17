@@ -70,7 +70,7 @@ Part of RA8875 library from https://github.com/sumotoy/RA8875
 	#include <math.h>
 	#include <avr/pgmspace.h>
 	#define __PRGMTAG_	PROGMEM
-#elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+#elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 /* 
 --------------------------------------------------------------
 			TEENSY 3, TEENSY 3.1, TEENSY 3.2, TEENSY LC

@@ -66,7 +66,7 @@ Bit:	Called by:		In use:
 */
 /**************************************************************************/
 //------------------------------TEENSY 3/3.1 ---------------------------------------
-#if defined(__MK20DX128__) || defined(__MK20DX256__)	
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 	RA8875::RA8875(const uint8_t CSp,const uint8_t RSTp,const uint8_t mosi_pin,const uint8_t sclk_pin,const uint8_t miso_pin)
 	{
 		_mosi = mosi_pin;
@@ -362,7 +362,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_INTC1_Reg = 0b00000000;
 
 	//------------------------------- Start SPI initialization ------------------------------------------
-	#if defined(__MK20DX128__) || defined(__MK20DX256__)//Teensy 3,3.1
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 		//always uses SPI transaction
 		if ((_mosi == 11 || _mosi == 7) && (_miso == 12 || _miso == 8) && (_sclk == 13 || _sclk == 14)) {//valid SPI pins?
 			if (_mosi != 11) SPI.setMOSI(_mosi);

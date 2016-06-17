@@ -220,7 +220,7 @@ class RA8875 : public Print {
 	// void 		debugData(uint16_t data,uint8_t len=8);
 	// void 		showLineBuffer(uint8_t data[],int len);
 //------------- INSTANCE -------------------------------------------------------------------
-	#if defined(__MK20DX128__) || defined(__MK20DX256__)//Teensy 3.0, Teensy 3.1
+	#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
 	#elif defined(__MKL26Z64__)//TeensyLC
 		RA8875(const uint8_t CSp,const uint8_t RSTp=255,const uint8_t mosi_pin=11,const uint8_t sclk_pin=13,const uint8_t miso_pin=12);
@@ -693,7 +693,7 @@ using Print::write;
 			#if defined(__MKL26Z64__)	
 				_altSPI == true ? SPI1.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3)) : SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));
 			#elif defined(ESP8266)	
-				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE0));//it works, anyway ESP doesn't work in MODE3!
+				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE3));//it works, anyway ESP doesn't work in MODE3!
 			#elif defined(SPARK)	
 				SPI.beginTransaction(SPISettings(_SPImaxSpeed, MSBFIRST, SPI_MODE0));//TODO !
 			#else
